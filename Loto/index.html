@@ -128,6 +128,32 @@
         border-color: #f3e8ff;
       }
 
+      /* Theme Pink */
+      .theme-pink .loto-cell {
+        border-color: #e5e7eb;
+      }
+
+      .theme-pink .loto-cell.has-number {
+        background-color: #fdf2f8; /* pink-50 */
+        color: #be185d; /* pink-700 */
+        border-color: #f9a8d4; /* pink-300 */
+      }
+
+      .theme-pink .ticket-border {
+        border-color: #ec4899; /* pink-500 */
+        background-color: white;
+      }
+
+      .theme-pink .ticket-header {
+        color: #db2777; /* pink-600 */
+        border-bottom-color: #fbcfe8; /* pink-200 */
+      }
+
+      .theme-pink .grid-bg {
+        background-color: #fdf2f8; /* pink-50 */
+        border-color: #fce7f3; /* pink-100 */
+      }
+
       /* Theme White (new default) */
       .theme-white .loto-cell {
         border-color: #e5e7eb;
@@ -183,6 +209,19 @@
       }
       .stat-card {
         animation: countUp 0.5s ease-out forwards;
+      }
+
+      /* Custom color override for random ticket */
+      :root {
+        --custom-number-bg: null;
+        --custom-number-color: null;
+        --custom-number-border: null;
+      }
+
+      .theme-custom .loto-cell.has-number {
+        background-color: var(--custom-number-bg);
+        color: var(--custom-number-color);
+        border-color: var(--custom-number-border);
       }
     </style>
   </head>
@@ -299,7 +338,24 @@
                     onclick="window.setTheme('purple')"
                     class="h-10 rounded-lg bg-purple-100 border-2 border-transparent hover:border-purple-500 hover:scale-105 transition"
                   ></button>
+                  <button
+                    onclick="window.setTheme('pink')"
+                    class="h-10 rounded-lg bg-pink-100 border-2 border-transparent hover:border-pink-500 hover:scale-105 transition"
+                  ></button>
                 </div>
+              </div>
+
+              <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Màu số tùy chọn (áp dụng cho vé random)
+                </label>
+                <input
+                  type="color"
+                  id="random-color-picker"
+                  value="#7e22ce"
+                  class="w-14 h-10 border rounded cursor-pointer"
+                  onchange="window.setRandomCustomColor(this.value)"
+                />
               </div>
 
               <button
@@ -1045,6 +1101,8 @@
       };
 
       window.setTheme = (theme) => {
+        randomCustomColor = null;
+
         currentTheme = theme;
         const wrapper = document.getElementById("ticket-preview-wrapper");
         wrapper.className = `theme-${theme} w-full flex justify-center`;
@@ -1121,6 +1179,12 @@
         isCurrentTicketSaved = false; // Reset save status
 
         renderGrid("loto-grid", matrix);
+
+        if (randomCustomColor) {
+          const wrapper = document.getElementById("ticket-preview-wrapper");
+          wrapper.className = `theme-custom w-full flex justify-center`;
+        }
+
         document.getElementById("btn-confirm").disabled = false;
         document.getElementById("btn-download-img").disabled = false;
         document.getElementById("preview-user").textContent = username;
@@ -1881,6 +1945,31 @@
         link.download = fileName || `Loto_${Date.now()}.png`;
         link.href = canvas.toDataURL();
         link.click();
+      };
+
+      let randomCustomColor = null;
+
+      window.setRandomCustomColor = (hex) => {
+        randomCustomColor = hex;
+
+        // chuyển sang theme custom
+        currentTheme = "custom";
+        const wrapper = document.getElementById("ticket-preview-wrapper");
+        wrapper.className = `theme-custom w-full flex justify-center`;
+
+        // set CSS variable
+        document.documentElement.style.setProperty(
+          "--custom-number-bg",
+          hex + "20" // nền nhạt
+        );
+        document.documentElement.style.setProperty(
+          "--custom-number-color",
+          hex
+        );
+        document.documentElement.style.setProperty(
+          "--custom-number-border",
+          hex
+        );
       };
 
       checkLoginStatus();
