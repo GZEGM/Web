@@ -212,17 +212,6 @@
       }
 
       /* Custom color override for random ticket */
-      :root {
-        --custom-number-bg: null;
-        --custom-number-color: null;
-        --custom-number-border: null;
-      }
-
-      .theme-custom .loto-cell.has-number {
-        background-color: var(--custom-number-bg);
-        color: var(--custom-number-color);
-        border-color: var(--custom-number-border);
-      }
     </style>
   </head>
   <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -345,7 +334,7 @@
                 </div>
               </div>
 
-              <div class="mt-4">
+              <!-- <div class="mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   Màu số tùy chọn (áp dụng cho vé random)
                 </label>
@@ -356,7 +345,7 @@
                   class="w-14 h-10 border rounded cursor-pointer"
                   onchange="window.setRandomCustomColor(this.value)"
                 />
-              </div>
+              </div> -->
 
               <button
                 onclick="window.generateRandomTicket()"
@@ -1101,7 +1090,7 @@
       };
 
       window.setTheme = (theme) => {
-        randomCustomColor = null;
+        // randomCustomColor = null;
 
         currentTheme = theme;
         const wrapper = document.getElementById("ticket-preview-wrapper");
@@ -1180,10 +1169,10 @@
 
         renderGrid("loto-grid", matrix);
 
-        if (randomCustomColor) {
-          const wrapper = document.getElementById("ticket-preview-wrapper");
-          wrapper.className = `theme-custom w-full flex justify-center`;
-        }
+        // if (randomCustomColor) {
+        //   const wrapper = document.getElementById("ticket-preview-wrapper");
+        //   wrapper.className = `theme-custom w-full flex justify-center`;
+        // }
 
         document.getElementById("btn-confirm").disabled = false;
         document.getElementById("btn-download-img").disabled = false;
@@ -1945,31 +1934,6 @@
         link.download = fileName || `Loto_${Date.now()}.png`;
         link.href = canvas.toDataURL();
         link.click();
-      };
-
-      let randomCustomColor = null;
-
-      window.setRandomCustomColor = (hex) => {
-        randomCustomColor = hex;
-
-        // chuyển sang theme custom
-        currentTheme = "custom";
-        const wrapper = document.getElementById("ticket-preview-wrapper");
-        wrapper.className = `theme-custom w-full flex justify-center`;
-
-        // set CSS variable
-        document.documentElement.style.setProperty(
-          "--custom-number-bg",
-          hex + "20" // nền nhạt
-        );
-        document.documentElement.style.setProperty(
-          "--custom-number-color",
-          hex
-        );
-        document.documentElement.style.setProperty(
-          "--custom-number-border",
-          hex
-        );
       };
 
       checkLoginStatus();
