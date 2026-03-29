@@ -121,7 +121,13 @@
           onclick="window.generateShareLink()"
           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-semibold flex items-center gap-2 shadow-md shadow-indigo-100"
         >
-          <i class="fa-solid fa-share-nodes"></i> Sao chép link chia sẻ
+          <i class="fa-solid fa-share-nodes"></i> Link thời khóa biểu
+        </button>
+        <button
+          onclick="window.generateAttendanceShareLink()"
+          class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-semibold flex items-center gap-2 shadow-md shadow-emerald-100"
+        >
+          <i class="fa-solid fa-table-list"></i> Link chuyên cần
         </button>
         <button
           onclick="window.resetAppData()"
@@ -491,7 +497,7 @@
                   class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden"
                 >
                   <div
-                    class="p-4 border-b bg-white flex justify-between items-center gap-3"
+                    class="p-4 border-b bg-white flex flex-wrap justify-between items-center gap-3"
                   >
                     <div>
                       <h3
@@ -506,6 +512,13 @@
                         Dấu ✓ nghĩa là học viên có mặt ở tiết đó.
                       </p>
                     </div>
+                    <button
+                      id="stats-edit-btn-toan"
+                      onclick="window.toggleStatsEditMode('Toán')"
+                      class="px-3 py-2 bg-amber-500 text-white hover:bg-amber-600 rounded-lg transition text-xs font-bold flex items-center gap-2 shadow-sm min-w-[110px] justify-center"
+                    >
+                      <i class="fa-solid fa-pen-to-square"></i> Sửa tick
+                    </button>
                     <button
                       onclick="
                         window.exportCurrentTable(
@@ -531,7 +544,7 @@
                   class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden"
                 >
                   <div
-                    class="p-4 border-b bg-white flex justify-between items-center gap-3"
+                    class="p-4 border-b bg-white flex flex-wrap justify-between items-center gap-3"
                   >
                     <div>
                       <h3
@@ -546,6 +559,13 @@
                         Dấu ✓ nghĩa là học viên có mặt ở tiết đó.
                       </p>
                     </div>
+                    <button
+                      id="stats-edit-btn-ly"
+                      onclick="window.toggleStatsEditMode('Lý')"
+                      class="px-3 py-2 bg-amber-500 text-white hover:bg-amber-600 rounded-lg transition text-xs font-bold flex items-center gap-2 shadow-sm min-w-[110px] justify-center"
+                    >
+                      <i class="fa-solid fa-pen-to-square"></i> Sửa tick
+                    </button>
                     <button
                       onclick="
                         window.exportCurrentTable(
@@ -653,6 +673,136 @@
                   </thead>
                   <tbody id="stats-table-body" class="text-[13px]"></tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: ATTENDANCE PUBLIC -->
+        <div
+          id="view-attendance-public"
+          class="absolute inset-0 overflow-auto p-6 bg-slate-50 hidden"
+        >
+          <div class="max-w-7xl mx-auto space-y-6">
+            <div
+              class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden"
+            >
+              <div
+                class="p-5 border-b bg-emerald-600 text-white flex flex-wrap justify-between items-center gap-3"
+              >
+                <div>
+                  <h2 class="font-bold flex items-center gap-2 text-lg">
+                    <i class="fa-solid fa-check-double"></i> Bảng Chuyên Cần
+                    Công Khai
+                  </h2>
+                  <p
+                    class="text-[11px] opacity-80 uppercase font-bold tracking-widest mt-1"
+                  >
+                    Chỉ xem
+                  </p>
+                </div>
+                <div
+                  class="inline-flex rounded-xl bg-white/15 p-1 backdrop-blur-sm"
+                >
+                  <button
+                    id="public-att-tab-toan"
+                    onclick="window.switchPublicAttendanceTab('Toán')"
+                    class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap"
+                  >
+                    Môn Toán
+                  </button>
+                  <button
+                    id="public-att-tab-ly"
+                    onclick="window.switchPublicAttendanceTab('Lý')"
+                    class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap"
+                  >
+                    Môn Lý
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-5">
+                <div id="public-att-pane-toan" class="space-y-3">
+                  <div
+                    class="flex items-center justify-between gap-3 flex-wrap"
+                  >
+                    <div>
+                      <h3
+                        class="font-bold text-slate-800 flex items-center gap-2"
+                      >
+                        <span
+                          class="w-2.5 h-2.5 rounded-full bg-blue-500"
+                        ></span>
+                        Bảng chuyên cần môn Toán
+                      </h3>
+                      <p class="text-xs text-slate-500 mt-1">
+                        Dấu ✓ nghĩa là học viên có mặt ở tiết đó.
+                      </p>
+                    </div>
+                    <button
+                      onclick="
+                        window.exportCurrentTable(
+                          'public-att-toan-body',
+                          'thong-ke-chuyen-can-toan-cong-khai',
+                          'Chuyên cần Toán',
+                        )
+                      "
+                      class="px-3 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 text-xs font-bold flex items-center gap-2"
+                    >
+                      <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                    </button>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                      <thead id="public-att-toan-head"></thead>
+                      <tbody
+                        id="public-att-toan-body"
+                        class="text-[13px]"
+                      ></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div id="public-att-pane-ly" class="space-y-3 hidden">
+                  <div
+                    class="flex items-center justify-between gap-3 flex-wrap"
+                  >
+                    <div>
+                      <h3
+                        class="font-bold text-slate-800 flex items-center gap-2"
+                      >
+                        <span
+                          class="w-2.5 h-2.5 rounded-full bg-red-500"
+                        ></span>
+                        Bảng chuyên cần môn Lý
+                      </h3>
+                      <p class="text-xs text-slate-500 mt-1">
+                        Dấu ✓ nghĩa là học viên có mặt ở tiết đó.
+                      </p>
+                    </div>
+                    <button
+                      onclick="
+                        window.exportCurrentTable(
+                          'public-att-ly-body',
+                          'thong-ke-chuyen-can-ly-cong-khai',
+                          'Chuyên cần Lý',
+                        )
+                      "
+                      class="px-3 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 text-xs font-bold flex items-center gap-2"
+                    >
+                      <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                    </button>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                      <thead id="public-att-ly-head"></thead>
+                      <tbody
+                        id="public-att-ly-body"
+                        class="text-[13px]"
+                      ></tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -852,6 +1002,11 @@
       const urlParams = new URLSearchParams(window.location.search);
       let shareId = urlParams.get("id") || "main_data";
       const isStudentView = urlParams.get("view") === "student";
+      const isAttendancePublicView = urlParams.get("view") === "attendance";
+      const publicAttendanceDefaultSubject =
+        urlParams.get("subject") === "Lý" ? "Lý" : "Toán";
+      const publicOnly = urlParams.get("public") === "1";
+
       const ADMIN_RESET_CODE = "Dienkon";
 
       // Initial default data structure
@@ -1130,6 +1285,9 @@
       };
       const DEFAULT_APP_DATA = JSON.parse(JSON.stringify(appData));
       let editingStudentId = null;
+      let lastAttendanceSubject = "Toán";
+      let lastAttendanceTopicId = null;
+      const statsEditMode = { Toán: false, Lý: false };
 
       function cloneData(data) {
         return JSON.parse(JSON.stringify(data));
@@ -1276,6 +1434,7 @@
         renderStatsTable();
         renderDiscountEditor();
         applyViewMode();
+        applyPublicAttendanceView();
 
         // Re-render attendance if open
         if (
@@ -1306,15 +1465,34 @@
         if (tabNav) tabNav.classList.add("hidden");
         if (headerActions) headerActions.classList.add("hidden");
         if (scheduleExportBtn) scheduleExportBtn.classList.add("hidden");
-        ["attendance", "students", "stats"].forEach((t) => {
+        ["attendance", "students", "stats", "attendance-public"].forEach(
+          (t) => {
+            const view = document.getElementById(`view-${t}`);
+            const tab = document.getElementById(`tab-${t}`);
+            if (view) view.classList.add("hidden");
+            if (tab) tab.classList.add("hidden");
+          },
+        );
+        const scheduleTab = document.getElementById("tab-schedule");
+        if (scheduleTab) scheduleTab.classList.add("hidden");
+        window.switchTab("schedule");
+      }
+
+      function applyPublicAttendanceView() {
+        if (!isAttendancePublicView) return;
+        const tabNav = document.getElementById("tab-nav");
+        const headerActions = document.getElementById("header-actions");
+        if (tabNav) tabNav.classList.add("hidden");
+        if (headerActions) headerActions.classList.add("hidden");
+        ["schedule", "attendance", "students", "stats"].forEach((t) => {
           const view = document.getElementById(`view-${t}`);
           const tab = document.getElementById(`tab-${t}`);
           if (view) view.classList.add("hidden");
           if (tab) tab.classList.add("hidden");
         });
-        const scheduleTab = document.getElementById("tab-schedule");
-        if (scheduleTab) scheduleTab.classList.add("hidden");
-        window.switchTab("schedule");
+        const publicView = document.getElementById("view-attendance-public");
+        if (publicView) publicView.classList.remove("hidden");
+        window.renderPublicAttendanceView();
       }
 
       function showError(msg) {
@@ -1479,9 +1657,16 @@
 
       // --- TAB 2: ATTENDANCE ---
       window.renderAttendanceTopics = function () {
-        const sub = document.getElementById("att-subject").value;
+        const subEl = document.getElementById("att-subject");
         const sel = document.getElementById("att-topic");
+        if (!subEl || !sel) return;
+
+        const sub = subEl.value;
+        const keepTopicId = sel.value || lastAttendanceTopicId;
+        lastAttendanceSubject = sub;
         sel.innerHTML = "";
+
+        let matched = false;
         appData.schedule
           .filter((i) => i.subject === sub)
           .forEach((i) => {
@@ -1489,13 +1674,24 @@
             opt.value = i.id;
             opt.textContent = `${i.date || "---"} | ${i.topic}`;
             sel.appendChild(opt);
+            if (i.id === keepTopicId) matched = true;
           });
+
+        if (matched) {
+          sel.value = keepTopicId;
+        } else if (sel.options.length) {
+          sel.selectedIndex = 0;
+        }
+
+        lastAttendanceTopicId = sel.value || null;
         window.loadAttendanceDetail();
       };
 
       window.loadAttendanceDetail = function () {
         const id = document.getElementById("att-topic").value;
         const item = appData.schedule.find((i) => i.id === id);
+        lastAttendanceTopicId = id || null;
+        if (item) lastAttendanceSubject = item.subject;
         const box = document.getElementById("lesson-content-inputs");
         if (!item) return;
 
@@ -1635,13 +1831,69 @@
         return cols;
       }
 
-      function renderSubjectStatsTable(subject, headId, bodyId, colorClass) {
+      let currentPublicAttendanceSubject = publicAttendanceDefaultSubject;
+
+      window.switchPublicAttendanceTab = function (subject) {
+        currentPublicAttendanceSubject = subject === "Lý" ? "Lý" : "Toán";
+        const tabToan = document.getElementById("public-att-tab-toan");
+        const tabLy = document.getElementById("public-att-tab-ly");
+        const paneToan = document.getElementById("public-att-pane-toan");
+        const paneLy = document.getElementById("public-att-pane-ly");
+
+        if (tabToan && tabLy) {
+          const activeToan = currentPublicAttendanceSubject === "Toán";
+          tabToan.className = activeToan
+            ? "px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap bg-white text-emerald-700 shadow-sm"
+            : "px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-white/85 hover:text-white";
+          tabLy.className = !activeToan
+            ? "px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap bg-white text-emerald-700 shadow-sm"
+            : "px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-white/85 hover:text-white";
+        }
+
+        if (paneToan)
+          paneToan.classList.toggle(
+            "hidden",
+            currentPublicAttendanceSubject !== "Toán",
+          );
+        if (paneLy)
+          paneLy.classList.toggle(
+            "hidden",
+            currentPublicAttendanceSubject !== "Lý",
+          );
+      };
+
+      window.renderPublicAttendanceView = function () {
+        renderSubjectStatsTable(
+          "Toán",
+          "public-att-toan-head",
+          "public-att-toan-body",
+          "text-blue-600",
+          true,
+        );
+        renderSubjectStatsTable(
+          "Lý",
+          "public-att-ly-head",
+          "public-att-ly-body",
+          "text-red-600",
+          true,
+        );
+        window.switchPublicAttendanceTab(currentPublicAttendanceSubject);
+      };
+
+      function renderSubjectStatsTable(
+        subject,
+        headId,
+        bodyId,
+        colorClass,
+        publicOnly = false,
+      ) {
         const head = document.getElementById(headId);
         const body = document.getElementById(bodyId);
         if (!head || !body) return;
 
         const lessons = appData.schedule.filter((i) => i.subject === subject);
         const cols = getSubjectLessonColumns(subject);
+        const editing = !publicOnly && !!statsEditMode[subject];
 
         if (!lessons.length || !cols.length) {
           head.innerHTML = `<tr><th class="p-4 border-b text-slate-400 text-center">Chưa có chuyên đề</th></tr>`;
@@ -1656,7 +1908,7 @@
           const title = `${lesson.chapter || "Chuyên đề"}<br>${lesson.topic}<br>T${period}`;
           headHtml += `<th class="p-4 border-b border-r text-center min-w-[140px] align-top">${title}</th>`;
         });
-        headHtml += `<th class="p-4 border-b text-center min-w-[110px] bg-emerald-50 text-emerald-700">Chăm chỉ</th>`;
+        headHtml += `<th class="p-4 border-b text-center min-w-[110px] bg-emerald-50 text-emerald-700">${editing ? "Chăm chỉ (sửa)" : "Chăm chỉ"}</th>`;
         headHtml += `</tr>`;
         head.innerHTML = headHtml;
 
@@ -1679,7 +1931,14 @@
                   ],
                 );
                 if (checked) attended += 1;
-                return `<td class="p-3 border-r text-center ${checked ? "bg-emerald-50/70" : "bg-white"}"><span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-black ${checked ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"}">${checked ? "✓" : ""}</span></td>`;
+                const baseCellClass = checked ? "bg-emerald-50/70" : "bg-white";
+                const badgeClass = checked
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "bg-slate-100 text-slate-300 hover:bg-slate-200";
+                const cellContent = editing
+                  ? `<button type="button" onclick="window.toggleStatsAttendance('${lesson.id}', '${student.id}', ${period})" class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black transition ${badgeClass}" title="${checked ? "Bỏ tick" : "Thêm tick"}">${checked ? "✓" : "+"}</button>`
+                  : `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-black ${checked ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"}">${checked ? "✓" : ""}</span>`;
+                return `<td class="p-3 border-r text-center ${baseCellClass}">${cellContent}</td>`;
               })
               .join("");
             return `<tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
@@ -1691,6 +1950,62 @@
           })
           .join("");
       }
+
+      function updateStatsEditButtons() {
+        const configs = [
+          ["Toán", "stats-edit-btn-toan"],
+          ["Lý", "stats-edit-btn-ly"],
+        ];
+        configs.forEach(([subject, id]) => {
+          const btn = document.getElementById(id);
+          if (!btn) return;
+          const editing = !publicOnly && !!statsEditMode[subject];
+          btn.classList.toggle("bg-emerald-600", editing);
+          btn.classList.toggle("hover:bg-emerald-700", editing);
+          btn.classList.toggle("bg-amber-500", !editing);
+          btn.classList.toggle("hover:bg-amber-600", !editing);
+          btn.classList.toggle("text-white", true);
+          btn.innerHTML = editing
+            ? '<i class="fa-solid fa-check"></i> Đang sửa'
+            : '<i class="fa-solid fa-pen-to-square"></i> Sửa tick';
+        });
+      }
+
+      function setAttendanceMark(tid, sid, p, val) {
+        if (!appData.attendance[tid]) {
+          appData.attendance[tid] = { contents: {}, records: {} };
+        }
+        if (!appData.attendance[tid].records[sid]) {
+          appData.attendance[tid].records[sid] = {};
+        }
+        if (val) {
+          appData.attendance[tid].records[sid][p] = true;
+        } else {
+          delete appData.attendance[tid].records[sid][p];
+          if (Object.keys(appData.attendance[tid].records[sid]).length === 0) {
+            delete appData.attendance[tid].records[sid];
+          }
+        }
+      }
+
+      window.toggleStatsEditMode = function (subject) {
+        statsEditMode[subject] = !statsEditMode[subject];
+        renderStatsTable();
+        showToast(
+          statsEditMode[subject]
+            ? `Đã bật chế độ sửa chuyên cần môn ${subject}`
+            : `Đã tắt chế độ sửa chuyên cần môn ${subject}`,
+        );
+      };
+
+      window.toggleStatsAttendance = function (lessonId, studentId, period) {
+        const current = Boolean(
+          appData.attendance[lessonId]?.records?.[studentId]?.[period],
+        );
+        setAttendanceMark(lessonId, studentId, period, !current);
+        saveToFirebase();
+        renderStatsTable();
+      };
 
       function calcDiscountAmount(student, base, mc, lc) {
         const discounts = Array.isArray(student.discounts)
@@ -1706,9 +2021,7 @@
         return Math.min(totalDiscount, base);
       }
       window.toggleAtt = (tid, sid, p, val) => {
-        if (!appData.attendance[tid].records[sid])
-          appData.attendance[tid].records[sid] = {};
-        appData.attendance[tid].records[sid][p] = val;
+        setAttendanceMark(tid, sid, p, val);
         saveToFirebase();
       };
       window.checkAll = (tid, p) => {
@@ -1716,9 +2029,7 @@
         appData.students
           .filter((s) => s.subjects.includes(sub))
           .forEach((s) => {
-            if (!appData.attendance[tid].records[s.id])
-              appData.attendance[tid].records[s.id] = {};
-            appData.attendance[tid].records[s.id][p] = true;
+            setAttendanceMark(tid, s.id, p, true);
           });
         saveToFirebase();
         window.loadAttendanceDetail();
@@ -1872,6 +2183,7 @@
           "stats-ly-body",
           "text-red-600",
         );
+        updateStatsEditButtons();
 
         const body = document.getElementById("stats-table-body");
         body.innerHTML = "";
@@ -1940,8 +2252,33 @@
           showToast("Không thể xuất Excel lúc này.");
           return;
         }
+
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.table_to_sheet(table, { raw: true });
+
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        const colWidths = [];
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          let maxLen = 10;
+          for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = ws[cellAddress];
+            if (!cell || cell.v == null) continue;
+
+            const rawValue = String(cell.v);
+            const lines = rawValue.split(/\r?\n/);
+            const lineMax = lines.reduce(
+              (m, line) => Math.max(m, line.length),
+              0,
+            );
+            maxLen = Math.max(maxLen, lineMax);
+          }
+
+          // Tăng độ rộng vừa đủ để nội dung gọn hơn nhưng không quá loe.
+          colWidths.push({ wch: Math.min(Math.max(maxLen + 2, 12), 45) });
+        }
+        ws["!cols"] = colWidths;
+
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
         XLSX.writeFile(wb, `${filename}.xlsx`);
       };
@@ -1950,8 +2287,18 @@
         const baseUrl = new URL(window.location.href);
         baseUrl.searchParams.set("id", shareId);
         baseUrl.searchParams.set("view", "student");
+        baseUrl.searchParams.delete("subject");
         navigator.clipboard.writeText(baseUrl.toString());
         showToast("Đã copy link học viên (chỉ xem thời khóa biểu).");
+      };
+
+      window.generateAttendanceShareLink = () => {
+        const baseUrl = new URL(window.location.href);
+        baseUrl.searchParams.set("id", shareId);
+        baseUrl.searchParams.set("view", "attendance");
+        baseUrl.searchParams.delete("subject");
+        navigator.clipboard.writeText(baseUrl.toString());
+        showToast("Đã copy link bảng chuyên cần công khai.");
       };
 
       initApp();
