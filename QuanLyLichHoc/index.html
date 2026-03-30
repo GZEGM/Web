@@ -1293,13 +1293,106 @@
         return JSON.parse(JSON.stringify(data));
       }
 
-      function formatDateDisplay(dateStr) {
+      function parseDateKey(dateStr) {
+        if (!dateStr) return null;
+        const parts = String(dateStr).split("-").map(Number);
+        if (parts.length !== 3 || parts.some((n) => Number.isNaN(n)))
+          return null;
+        const [year, month, day] = parts;
+        return new Date(year, month - 1, day);
+      }
+
+      function getTodayKey() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+
+      function formatDateDisplay(dateStr, shortYear = true) {
         if (!dateStr) return "---";
-        const d = new Date(dateStr);
+        const d = parseDateKey(dateStr);
+        if (!d) return "---";
         const day = String(d.getDate()).padStart(2, "0");
         const month = String(d.getMonth() + 1).padStart(2, "0");
         const year = String(d.getFullYear());
-        return `${day}/${month}/${year}`;
+        return `${day}/${month}/${shortYear ? year.slice(-2) : year}`;
+      }
+
+      function sortScheduleForDisplay(items = appData.schedule) {
+        return items
+          .map((item, idx) => ({ item, idx }))
+          .sort((a, b) => {
+            const da = parseDateKey(a.item.date);
+            const db = parseDateKey(b.item.date);
+            if (da && db) {
+              const diff = da.getTime() - db.getTime();
+              if (diff !== 0) return diff;
+            } else if (da && !db) {
+              return -1;
+            } else if (!da && db) {
+              return 1;
+            }
+            return a.idx - b.idx;
+          })
+          .map(({ item }) => item);
+      }
+
+      function groupScheduleByDate(items = appData.schedule) {
+        const sorted = items
+          .map((item, idx) => ({ item, idx }))
+          .sort((a, b) => {
+            const da = parseDateKey(a.item.date);
+            const db = parseDateKey(b.item.date);
+            if (da && db) {
+              const diff = da.getTime() - db.getTime();
+              if (diff !== 0) return diff;
+            } else if (da && !db) {
+              return -1;
+            } else if (!da && db) {
+              return 1;
+            }
+            return a.idx - b.idx;
+          });
+
+        const groups = [];
+        let current = null;
+        sorted.forEach(({ item }) => {
+          const key = item.date || "__UNSCHEDULED__";
+          if (!current || current.key !== key) {
+            current = {
+              key,
+              date: item.date || "",
+              items: [],
+            };
+            groups.push(current);
+          }
+          current.items.push(item);
+        });
+        return groups;
+      }
+
+      function getDiscountUnitLabel(type) {
+        return type === "fixed" ? "VND" : "%";
+      }
+
+      function formatDiscountSummary(discount) {
+        if (!discount) return "-";
+        const value = Number(discount.value) || 0;
+        const label =
+          discount.type === "total"
+            ? "Tổng"
+            : discount.type === "toan"
+              ? "Toán"
+              : discount.type === "ly"
+                ? "Lý"
+                : discount.type === "fixed"
+                  ? "VND"
+                  : "Khác";
+        if (discount.type === "fixed")
+          return `-${value.toLocaleString()}đ (${label})`;
+        return `-${value}% (${label})`;
       }
 
       function buildDiscountRows(discounts = []) {
@@ -1309,17 +1402,18 @@
         return rows
           .map(
             (d, idx) => `
-                  <div class="grid grid-cols-[1fr_120px_auto] gap-2 items-center discount-row" data-index="${idx}">
-                    <select class="discount-type w-full border-slate-200 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                  <div class="grid grid-cols-[1fr_160px_auto] gap-2 items-center discount-row" data-index="${idx}">
+                    <select onchange="window.syncDiscountRowMode(this)" class="discount-type w-full border-slate-200 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                       <option value="none" ${d.type === "none" ? "selected" : ""}>Không có ưu đãi</option>
                       <option value="total" ${d.type === "total" ? "selected" : ""}>Giảm trên TỔNG tiền</option>
                       <option value="toan" ${d.type === "toan" ? "selected" : ""}>Chỉ giảm trên môn TOÁN</option>
                       <option value="ly" ${d.type === "ly" ? "selected" : ""}>Chỉ giảm trên môn LÝ</option>
+                      <option value="fixed" ${d.type === "fixed" ? "selected" : ""}>Ưu đãi giá trị thật (VNĐ)</option>
                     </select>
                     <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                       <span class="text-xs font-bold text-slate-400 ml-1">GIẢM:</span>
-                      <input type="number" min="0" max="100" value="${d.value || 0}" class="discount-value w-full bg-transparent border-none text-sm focus:ring-0 text-right font-bold text-blue-600" />
-                      <span class="text-xs font-bold text-slate-400 mr-1">%</span>
+                      <input type="number" min="0" value="${d.value || 0}" class="discount-value w-full bg-transparent border-none text-sm focus:ring-0 text-right font-bold text-blue-600" />
+                      <span class="discount-unit text-xs font-bold text-slate-400 mr-1">${getDiscountUnitLabel(d.type)}</span>
                     </div>
                     <button type="button" class="remove-discount text-slate-300 hover:text-red-500 text-sm font-bold" onclick="window.removeDiscountRow(this)">
                       <i class="fa-solid fa-xmark"></i>
@@ -1545,45 +1639,109 @@
       function renderScheduleTable() {
         const body = document.getElementById("schedule-table-body");
         body.innerHTML = "";
+
         const publicMode = isStudentView;
-        const extraHeaders = publicMode
-          ? ""
-          : '<th class="p-4 border-b w-32 text-center">Tác vụ</th>';
         const table = document.querySelector("#view-schedule table thead tr");
         if (table) {
           table.innerHTML = `
-                          <th class="p-4 border-b border-r w-24 text-center">Môn</th>
-                          <th class="p-4 border-b border-r">Chuyên đề bài học</th>
-                          <th class="p-4 border-b border-r w-28 text-center">Số tiết</th>
-                          <th class="p-4 border-b border-r w-48">Ngày dự kiến</th>
-                          ${extraHeaders}
+                          <th class="p-4 border-b border-r w-36 text-center">Ngày</th>
+                          <th class="p-4 border-b border-r">Toán</th>
+                          <th class="p-4 border-b">Lý</th>
                       `;
         }
-        appData.schedule.forEach((item, idx) => {
-          const tr = document.createElement("tr");
-          tr.className =
-            "hover:bg-slate-50 border-b border-slate-100 group transition-colors";
-          const isToan = item.subject === "Toán";
-          const periodsCell = publicMode
-            ? `<span class="font-bold text-slate-700">${item.periods}</span>`
-            : `<input type="number" value="${item.periods}" onchange="window.updatePeriod('${item.id}', this.value)" class="w-16 border rounded-lg p-1 text-center font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500">`;
-          const dateCell = publicMode
-            ? `<span class="font-medium text-slate-600">${formatDateDisplay(item.date)}</span>`
-            : `<input type="date" value="${item.date}" onchange="window.handleDateChange(${idx}, this.value, '${item.date}')" class="w-full border-none p-0 text-sm font-medium text-slate-600 outline-none bg-transparent">`;
-          const actionCell = publicMode
-            ? ""
-            : `<td class="p-4 text-center"><button onclick="window.jumpToAtt('${item.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-tighter">Điểm danh <i class="fa-solid fa-chevron-right ml-1"></i></button></td>`;
 
+        const groups = groupScheduleByDate(appData.schedule);
+        const todayKey = getTodayKey();
+
+        if (!groups.length) {
+          body.innerHTML = `<tr><td colspan="3" class="p-10 text-center text-slate-300 italic font-bold">Chưa có dữ liệu lịch ôn tập</td></tr>`;
+          return;
+        }
+
+        const renderLessonCard = (item) => {
+          const isToan = item.subject === "Toán";
+          const color = isToan
+            ? "border-blue-100 bg-blue-50/40 text-blue-700"
+            : "border-red-100 bg-red-50/40 text-red-700";
+          const topicText = escapeHtml(item.topic || "(Chưa có chuyên đề)");
+          const chapterText = escapeHtml(item.chapter || "Không thuộc chương");
+          const dateValue = item.date || "";
+          const dateLabel = dateValue
+            ? formatDateDisplay(dateValue, true)
+            : "Chưa sắp xếp";
+          return `
+            <div class="rounded-2xl border ${color} bg-white p-3 shadow-sm">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">${chapterText}</div>
+                  <div class="font-bold text-slate-800 leading-snug break-words">${topicText}</div>
+                </div>
+                ${
+                  publicMode
+                    ? `<span class="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-black ${isToan ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}">${item.periods} tiết</span>`
+                    : `<label class="shrink-0 inline-flex items-center gap-2 rounded-full border ${isToan ? "border-blue-100 bg-blue-50 text-blue-700" : "border-red-100 bg-red-50 text-red-700"} px-2.5 py-1 text-[11px] font-black"><span>Tiết</span><input type="number" min="1" value="${item.periods}" onchange="window.updatePeriod('${item.id}', this.value)" class="w-12 bg-transparent text-right outline-none"></label>`
+                }
+              </div>
+              <div class="mt-3 space-y-2">
+                ${
+                  publicMode
+                    ? `<div class="text-[11px] font-semibold text-slate-500">${dateLabel}</div>`
+                    : `<input type="date" value="${dateValue}" onchange="window.handleDateChange('${item.id}', this.value, '${item.date || ""}')" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500">`
+                }
+                ${publicMode ? "" : `<button onclick="window.jumpToAtt('${item.id}')" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800 transition"><i class="fa-solid fa-arrow-right"></i> Điểm danh</button>`}
+              </div>
+            </div>
+          `;
+        };
+
+        groups.forEach((group) => {
+          const isUnscheduled = !group.date;
+          const isToday = group.date && group.date === todayKey;
+          const toanLessons = group.items.filter(
+            (item) => item.subject === "Toán",
+          );
+          const lyLessons = group.items.filter((item) => item.subject === "Lý");
+
+          const rowClass = isToday
+            ? "bg-amber-50/80 border-amber-200 ring-1 ring-amber-200"
+            : isUnscheduled
+              ? "bg-slate-50 border-slate-200"
+              : "bg-white border-slate-200";
+
+          const dateTitle = isUnscheduled
+            ? "Chưa sắp xếp"
+            : formatDateDisplay(group.date, true);
+          const badge = isToday
+            ? `<span class="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-white">Hôm nay</span>`
+            : isUnscheduled
+              ? `<span class="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-black text-slate-600">Chưa xếp</span>`
+              : `<span class="text-[10px] font-semibold text-slate-400">${group.items.length} bài</span>`;
+
+          const renderCell = (items, subject) => {
+            if (!items.length) {
+              return `<div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 text-center text-xs italic text-slate-300">Không có bài ${subject}</div>`;
+            }
+            return `<div class="space-y-3">${items.map(renderLessonCard).join("")}</div>`;
+          };
+
+          const toanCell = renderCell(toanLessons, "Toán");
+          const lyCell = renderCell(lyLessons, "Lý");
+
+          const tr = document.createElement("tr");
+          tr.className = `border-b transition-colors ${rowClass}`;
+          if (isToday) {
+            tr.setAttribute("data-highlight", "today");
+          }
           tr.innerHTML = `
-                          <td class="p-4 border-r border-slate-100 text-center font-black ${isToan ? "text-blue-600 bg-blue-50/30" : "text-red-600 bg-red-50/30"}">${item.subject}</td>
-                          <td class="p-4 border-r border-slate-100 font-semibold text-slate-700">
-                              <span class="text-[10px] text-slate-400 block uppercase mb-1">${item.chapter || "Không thuộc chương"}</span>
-                              ${item.topic}
-                          </td>
-                          <td class="p-4 border-r border-slate-100 text-center">${periodsCell}</td>
-                          <td class="p-4 border-r border-slate-100">${dateCell}</td>
-                          ${actionCell}
-                      `;
+            <td class="p-4 align-top border-r ${isToday ? "bg-amber-100/70" : "bg-slate-50"}">
+              <div class="flex flex-col items-center justify-center gap-1">
+                <div class="text-sm font-black text-slate-800 leading-tight">${dateTitle}</div>
+                ${badge}
+              </div>
+            </td>
+            <td class="p-3 align-top border-r ${isToday ? "bg-amber-50/40" : "bg-white"}">${toanCell}</td>
+            <td class="p-3 align-top ${isToday ? "bg-amber-50/40" : "bg-white"}">${lyCell}</td>
+          `;
           body.appendChild(tr);
         });
       }
@@ -1597,19 +1755,34 @@
       };
 
       let pendingShift = null;
-      window.handleDateChange = function (idx, nDate, oDate) {
-        if (!oDate) {
-          appData.schedule[idx].date = nDate;
+      window.handleDateChange = function (id, nDate, oDate) {
+        const item = appData.schedule.find((lesson) => lesson.id === id);
+        if (!item) return;
+
+        if (!nDate) {
+          item.date = "";
           saveToFirebase();
           return;
         }
+
+        if (!oDate) {
+          item.date = nDate;
+          saveToFirebase();
+          return;
+        }
+
         const diff = Math.round((new Date(nDate) - new Date(oDate)) / 86400000);
         if (diff === 0) return;
+
+        const sortedIndex = sortScheduleForDisplay(appData.schedule).findIndex(
+          (lesson) => lesson.id === id,
+        );
         pendingShift = {
-          idx,
+          id,
+          sortedIndex,
           diff,
           nDate,
-          subject: appData.schedule[idx].subject,
+          subject: item.subject,
         };
         document.getElementById("shift-modal-text").textContent =
           `Bạn vừa đổi ngày. Muốn đẩy toàn bộ các bài Môn ${pendingShift.subject} phía sau đi ${diff > 0 ? diff : Math.abs(diff)} ngày không?`;
@@ -1620,20 +1793,25 @@
 
       window.closeShiftModal = function (all) {
         if (pendingShift) {
-          appData.schedule[pendingShift.idx].date = pendingShift.nDate;
+          const currentItem = appData.schedule.find(
+            (lesson) => lesson.id === pendingShift.id,
+          );
+          if (currentItem) currentItem.date = pendingShift.nDate;
+
           if (all) {
-            for (
-              let i = pendingShift.idx + 1;
-              i < appData.schedule.length;
-              i++
-            ) {
-              if (
-                appData.schedule[i].subject === pendingShift.subject &&
-                appData.schedule[i].date
-              ) {
-                let d = new Date(appData.schedule[i].date);
-                d.setDate(d.getDate() + pendingShift.diff);
-                appData.schedule[i].date = d.toISOString().split("T")[0];
+            const sorted = sortScheduleForDisplay(appData.schedule);
+            const startIndex = sorted.findIndex(
+              (lesson) => lesson.id === pendingShift.id,
+            );
+
+            for (let i = startIndex + 1; i < sorted.length; i++) {
+              const lesson = sorted[i];
+              if (lesson.subject === pendingShift.subject && lesson.date) {
+                const d = parseDateKey(lesson.date);
+                if (d) {
+                  d.setDate(d.getDate() + pendingShift.diff);
+                  lesson.date = d.toISOString().split("T")[0];
+                }
               }
             }
           }
@@ -1667,15 +1845,15 @@
         sel.innerHTML = "";
 
         let matched = false;
-        appData.schedule
-          .filter((i) => i.subject === sub)
-          .forEach((i) => {
-            const opt = document.createElement("option");
-            opt.value = i.id;
-            opt.textContent = `${i.date || "---"} | ${i.topic}`;
-            sel.appendChild(opt);
-            if (i.id === keepTopicId) matched = true;
-          });
+        sortScheduleForDisplay(
+          appData.schedule.filter((i) => i.subject === sub),
+        ).forEach((i) => {
+          const opt = document.createElement("option");
+          opt.value = i.id;
+          opt.textContent = `${formatDateDisplay(i.date, true)} | ${i.topic}`;
+          sel.appendChild(opt);
+          if (i.id === keepTopicId) matched = true;
+        });
 
         if (matched) {
           sel.value = keepTopicId;
@@ -1759,22 +1937,39 @@
         if (!list) return;
         const wrapper = document.createElement("div");
         wrapper.className =
-          "grid grid-cols-[1fr_120px_auto] gap-2 items-center discount-row";
+          "grid grid-cols-[1fr_160px_auto] gap-2 items-center discount-row";
         wrapper.innerHTML = `
-                <select class="discount-type w-full border-slate-200 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <select onchange="window.syncDiscountRowMode(this)" class="discount-type w-full border-slate-200 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                   <option value="none" ${discount.type === "none" ? "selected" : ""}>Không có ưu đãi</option>
                   <option value="total" ${discount.type === "total" ? "selected" : ""}>Giảm trên TỔNG tiền</option>
                   <option value="toan" ${discount.type === "toan" ? "selected" : ""}>Chỉ giảm trên môn TOÁN</option>
                   <option value="ly" ${discount.type === "ly" ? "selected" : ""}>Chỉ giảm trên môn LÝ</option>
+                  <option value="fixed" ${discount.type === "fixed" ? "selected" : ""}>Ưu đãi giá trị thật (VNĐ)</option>
                 </select>
                 <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                   <span class="text-xs font-bold text-slate-400 ml-1">GIẢM:</span>
-                  <input type="number" min="0" max="100" value="${discount.value || 0}" class="discount-value w-full bg-transparent border-none text-sm focus:ring-0 text-right font-bold text-blue-600" />
-                  <span class="text-xs font-bold text-slate-400 mr-1">%</span>
+                  <input type="number" min="0" value="${discount.value || 0}" class="discount-value w-full bg-transparent border-none text-sm focus:ring-0 text-right font-bold text-blue-600" />
+                  <span class="discount-unit text-xs font-bold text-slate-400 mr-1">${getDiscountUnitLabel(discount.type)}</span>
                 </div>
                 <button type="button" onclick="window.removeDiscountRow(this)" class="remove-discount text-slate-300 hover:text-red-500 text-sm font-bold"><i class="fa-solid fa-xmark"></i></button>
               `;
         list.appendChild(wrapper);
+        window.syncDiscountRowMode(wrapper.querySelector(".discount-type"));
+      };
+
+      window.syncDiscountRowMode = function (selectEl) {
+        const row = selectEl?.closest(".discount-row");
+        if (!row) return;
+        const unit = row.querySelector(".discount-unit");
+        const valueInput = row.querySelector(".discount-value");
+        const isFixed = selectEl.value === "fixed";
+        if (unit) unit.textContent = isFixed ? "VND" : "%";
+        if (valueInput) {
+          valueInput.min = "0";
+          valueInput.step = isFixed ? "1000" : "1";
+          valueInput.removeAttribute("max");
+          if (!isFixed) valueInput.setAttribute("max", "100");
+        }
       };
 
       window.removeDiscountRow = function (btn) {
@@ -1805,7 +2000,7 @@
           .map((row) => ({
             type: row.querySelector(".discount-type")?.value || "none",
             value:
-              parseInt(row.querySelector(".discount-value")?.value || "0") || 0,
+              Number(row.querySelector(".discount-value")?.value || "0") || 0,
           }))
           .filter((d) => d.type !== "none" && d.value > 0);
       }
@@ -2013,10 +2208,14 @@
           : [];
         let totalDiscount = 0;
         discounts.forEach((d) => {
-          const rate = (d.value || 0) / 100;
-          if (d.type === "total") totalDiscount += base * rate;
-          else if (d.type === "toan") totalDiscount += mc * rate;
-          else if (d.type === "ly") totalDiscount += lc * rate;
+          const value = Number(d.value) || 0;
+          if (d.type === "fixed") totalDiscount += value;
+          else {
+            const rate = value / 100;
+            if (d.type === "total") totalDiscount += base * rate;
+            else if (d.type === "toan") totalDiscount += mc * rate;
+            else if (d.type === "ly") totalDiscount += lc * rate;
+          }
         });
         return Math.min(totalDiscount, base);
       }
@@ -2047,12 +2246,7 @@
         appData.students.forEach((s, idx) => {
           const dStr =
             Array.isArray(s.discounts) && s.discounts.length
-              ? s.discounts
-                  .map((d) => {
-                    const m = { total: "Tổng", toan: "Toán", ly: "Lý" };
-                    return `-${d.value}% (${m[d.type] || d.type})`;
-                  })
-                  .join("<br>")
+              ? s.discounts.map((d) => formatDiscountSummary(d)).join("<br>")
               : "Không";
           body.innerHTML += `<tr class="border-b hover:bg-slate-50">
                           <td class="p-4 text-center text-slate-400">${idx + 1}</td>
@@ -2212,19 +2406,7 @@
 
           const discountText =
             Array.isArray(s.discounts) && s.discounts.length
-              ? s.discounts
-                  .map((d) => {
-                    const label =
-                      d.type === "total"
-                        ? "Tổng"
-                        : d.type === "toan"
-                          ? "Toán"
-                          : d.type === "ly"
-                            ? "Lý"
-                            : "Khác";
-                    return `-${d.value}% (${label})`;
-                  })
-                  .join("<br>")
+              ? s.discounts.map((d) => formatDiscountSummary(d)).join("<br>")
               : "-";
 
           body.innerHTML += `<tr class="border-b hover:bg-slate-50 transition-colors">
