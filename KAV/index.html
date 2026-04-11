@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hệ Thống Cập Nhật Tiến Độ Lớp Học</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .card-shadow {
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-in;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
+    <div class="max-w-2xl mx-auto p-4 sm:p-6">
+      <!-- Header & Tổng tiến độ -->
+      <header
+        class="text-center mb-8 sticky top-0 bg-gray-50 py-4 z-10 border-b"
+      >
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">
+          TIẾN ĐỘ LỚP HỌC (Realtime)
+        </h1>
+        <div
+          class="bg-white rounded-2xl p-6 card-shadow inline-block min-w-[200px]"
+        >
+          <p
+            class="text-gray-500 text-sm uppercase tracking-wider font-semibold"
+          >
+            Trung bình cả lớp
+          </p>
+          <div
+            id="class-average"
+            class="text-5xl font-black text-blue-600 mt-1"
+          >
+            0%
+          </div>
+        </div>
+      </header>
+
+      <!-- Form tìm kiếm và cập nhật -->
+      <div
+        class="bg-white rounded-xl p-6 card-shadow mb-6 border border-blue-100"
+      >
+        <h2
+          class="text-lg font-semibold mb-4 border-l-4 border-blue-500 pl-3 text-blue-900"
+        >
+          Cập nhật tiến độ cá nhân
+        </h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Bước 1: Tìm và chọn tên của bạn</label
+            >
+            <div class="relative">
+              <input
+                type="text"
+                id="name-search"
+                placeholder="Gõ tên để tìm nhanh..."
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <div
+                id="search-results"
+                class="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden z-20"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Khu vực hiển thị khi đã chọn tên -->
+          <div
+            id="update-controls"
+            class="hidden space-y-4 animate-fade-in bg-blue-50 p-4 rounded-xl border border-blue-200"
+          >
+            <div
+              class="flex items-center justify-between border-b border-blue-200 pb-2 mb-2"
+            >
+              <span class="font-medium text-blue-800"
+                >Xin chào:
+                <span
+                  id="selected-name-display"
+                  class="font-bold text-lg"
+                ></span
+              ></span>
+              <button
+                onclick="resetSelection()"
+                class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-gray-600"
+              >
+                Thoát chọn
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <button
+                onclick="copyToClipboard('username')"
+                class="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors text-sm group"
+              >
+                <span class="text-gray-500 italic text-xs">Tài khoản:</span>
+                <span
+                  id="display-user"
+                  class="font-mono font-bold text-blue-700 ml-2"
+                ></span>
+                <span
+                  class="ml-auto text-xs bg-blue-500 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100"
+                  >Copy</span
+                >
+              </button>
+              <button
+                onclick="copyToClipboard('password')"
+                class="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors text-sm group"
+              >
+                <span class="text-gray-500 italic text-xs">Mật khẩu:</span>
+                <span
+                  id="display-pass"
+                  class="font-mono font-bold text-blue-700 ml-2"
+                ></span>
+                <span
+                  class="ml-auto text-xs bg-blue-500 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100"
+                  >Copy</span
+                >
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Bước 2: Nhập số tiến độ mới (%)</label
+              >
+              <div class="flex gap-2">
+                <input
+                  type="number"
+                  id="progress-input"
+                  min="0"
+                  max="100"
+                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold text-xl text-center"
+                  placeholder="0 - 100"
+                />
+                <button
+                  id="btn-save"
+                  onclick="updateProgress()"
+                  class="bg-blue-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all transform active:scale-95 shadow-md disabled:opacity-50"
+                >
+                  LƯU LẠI
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Công cụ Lọc và Sắp xếp -->
+      <div
+        class="bg-white rounded-xl p-4 card-shadow mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between border border-gray-200"
+      >
+        <!-- Sắp xếp -->
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap"
+            >Sắp xếp:</label
+          >
+          <select
+            id="sort-select"
+            onchange="handleSortChange()"
+            class="p-2 border border-gray-300 rounded-lg text-sm w-full sm:w-auto outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+          >
+            <option value="name-asc">Tên (A - Z)</option>
+            <option value="prog-asc">Tiến độ (Tăng dần)</option>
+            <option value="prog-desc">Tiến độ (Giảm dần)</option>
+          </select>
+        </div>
+
+        <!-- Lọc -->
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap"
+            >Lọc:</label
+          >
+          <select
+            id="filter-operator"
+            class="p-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+          >
+            <option value="all">Tất cả</option>
+            <option value=">=">≥</option>
+            <option value="<=">≤</option>
+            <option value="=">=</option>
+          </select>
+          <input
+            type="number"
+            id="filter-value"
+            min="0"
+            max="100"
+            placeholder="%"
+            class="p-2 border border-gray-300 rounded-lg text-sm w-16 outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 disabled:opacity-50 disabled:bg-gray-100"
+            disabled
+          />
+          <button
+            onclick="applyFilter()"
+            class="bg-gray-800 text-white px-3 py-2 rounded-lg text-sm hover:bg-gray-700 transition-colors whitespace-nowrap shadow-sm"
+          >
+            Lọc
+          </button>
+          <button
+            onclick="clearFilter()"
+            class="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-300 transition-colors whitespace-nowrap shadow-sm"
+          >
+            Xóa
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh sách hiển thị -->
+      <div class="bg-white rounded-xl overflow-hidden card-shadow">
+        <div
+          class="p-4 bg-gray-800 text-white font-bold grid grid-cols-12 text-sm items-center"
+        >
+          <div class="col-span-8">
+            DANH SÁCH HỌC SINH
+            <span id="list-count" class="font-normal text-gray-300 text-xs ml-1"
+              >(0)</span
+            >
+          </div>
+          <div class="col-span-4 text-center">TIẾN ĐỘ</div>
+        </div>
+        <div id="student-list" class="divide-y divide-gray-100">
+          <div class="p-8 text-center text-gray-500 italic">
+            Đang tải dữ liệu...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thông báo Toast -->
+    <div
+      id="toast"
+      class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-black/80 text-white px-6 py-3 rounded-full text-sm font-medium opacity-0 transition-opacity pointer-events-none z-50"
+    >
+      Đã sao chép!
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        doc,
+        setDoc,
+        getDocs,
+        onSnapshot,
+        updateDoc,
+        query,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAKk-2dwDATm0ONwQG_H006ZA8J9TPHn5U",
+        authDomain: "dienkon-6ebc3.firebaseapp.com",
+        databaseURL: "https://dienkon-6ebc3-default-rtdb.firebaseio.com",
+        projectId: "dienkon-6ebc3",
+        storageBucket: "dienkon-6ebc3.firebasestorage.app",
+        messagingSenderId: "63131460738",
+        appId: "1:63131460738:web:8025bc717a1602213c809b",
+        measurementId: "G-3907PZCGPX",
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+      const appId =
+        typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+
+      let students = [];
+      let selectedStudentId = null;
+
+      // State cho Lọc và Sắp xếp
+      let currentSort = "name-asc";
+      let currentFilter = { op: "all", val: 0 };
+
+      // Elements
+      const searchInput = document.getElementById("name-search");
+      const resultsBox = document.getElementById("search-results");
+      const updatePanel = document.getElementById("update-controls");
+      const nameDisplay = document.getElementById("selected-name-display");
+      const userDisplay = document.getElementById("display-user");
+      const passDisplay = document.getElementById("display-pass");
+      const progressInp = document.getElementById("progress-input");
+      const listDiv = document.getElementById("student-list");
+      const classAvgDiv = document.getElementById("class-average");
+      const btnSave = document.getElementById("btn-save");
+      const listCountSpan = document.getElementById("list-count");
+
+      // Filter/Sort Elements
+      const sortSelect = document.getElementById("sort-select");
+      const filterOp = document.getElementById("filter-operator");
+      const filterVal = document.getElementById("filter-value");
+
+      // Quản lý trạng thái ô nhập Filter
+      filterOp.addEventListener("change", (e) => {
+        if (e.target.value === "all") {
+          filterVal.disabled = true;
+          filterVal.value = "";
+        } else {
+          filterVal.disabled = false;
+        }
+      });
+
+      // Initial Data (Sử dụng nếu DB trống)
+      const initialStudents = [
+        {
+          name: "Nguyễn Thị Tuyết Anh",
+          user: "nguyentuyetanh252",
+          pass: "11@1nh2526",
+          progress: 65,
+        },
+        {
+          name: "Trần Thị Ngọc Châu",
+          user: "tranngocchau85",
+          pass: "11@1nh2526",
+          progress: 10,
+        },
+        {
+          name: "Nguyễn Thị Mỹ Chi",
+          user: "nguyenmychi7",
+          pass: "11@1nh2526",
+          progress: 82,
+        },
+        {
+          name: "Trần Thị Kim Chi",
+          user: "trankimchi017",
+          pass: "11@1nh2526",
+          progress: 99,
+        },
+        {
+          name: "Lý Thị Hồng Cúc",
+          user: "lyhongcuc",
+          pass: "11@1nh2526",
+          progress: 100,
+        },
+        {
+          name: "Nguyễn Thị Huyền Diệu",
+          user: "nguyendieu828",
+          pass: "11@1nh2526",
+          progress: 93,
+        },
+        {
+          name: "Trần Thị Trúc Đan",
+          user: "trandan18",
+          pass: "11@1nh2526",
+          progress: 94,
+        },
+        {
+          name: "Nguyễn Tiến Đạt",
+          user: "nguyendat011",
+          pass: "11@1nh2526",
+          progress: 81,
+        },
+        {
+          name: "Dương Thanh Điền",
+          user: "duongdien11",
+          pass: "11@1nh2526",
+          progress: 100,
+        },
+        {
+          name: "Phạm Trường Giang",
+          user: "phamtruonggiang867",
+          pass: "11@1nh2526",
+          progress: 76,
+        },
+        {
+          name: "Lê Chí Hảo",
+          user: "lechihao33",
+          pass: "11@1nh2526",
+          progress: 6,
+        },
+        {
+          name: "Nguyễn Thị Diễm Hằng",
+          user: "nguyenhang08",
+          pass: "11@1nh2526",
+          progress: 9,
+        },
+        {
+          name: "Nguyễn Thị Ngọc Hân",
+          user: "nguyenngochan2006",
+          pass: "11@1nh2526",
+          progress: 29,
+        },
+        {
+          name: "Trương Gia Hân",
+          user: "truonghan29",
+          pass: "11@1nh2526",
+          progress: 39,
+        },
+        {
+          name: "Mai Trung Hiếu",
+          user: "maitrunghieu410",
+          pass: "11@1nh2526",
+          progress: 49,
+        },
+        {
+          name: "Lê Quốc Huy",
+          user: "lequochuy752",
+          pass: "11@1nh2526",
+          progress: 34,
+        },
+        {
+          name: "Nguyễn Huỳnh Thanh Huy",
+          user: "nguyenhuy4265",
+          pass: "11@1nh2526",
+          progress: 8,
+        },
+        {
+          name: "Nguyễn Thị Mỹ Huyên",
+          user: "nguyenhuyen1242",
+          pass: "11@1nh2526",
+          progress: 37,
+        },
+        {
+          name: "Trương Thị Bích Huyền",
+          user: "truonghuyen75",
+          pass: "11@1nh2526",
+          progress: 12,
+        },
+        {
+          name: "Trần Trọng Hữu",
+          user: "tranhuu08",
+          pass: "11@1nh2526",
+          progress: 6,
+        },
+        {
+          name: "Đỗ Nguyễn Khải",
+          user: "dokhai1",
+          pass: "11@1nh2526",
+          progress: 8,
+        },
+        {
+          name: "Nguyễn Bỉnh Khiêm",
+          user: "nguyenbinhkhiem4",
+          pass: "11@1nh2526",
+          progress: 22,
+        },
+        {
+          name: "Nguyễn Thị Diễm Kiều",
+          user: "nguyenkieu21",
+          pass: "11@1nh2526",
+          progress: 91,
+        },
+        {
+          name: "Nguyễn Hoàng Kim",
+          user: "nguyenkim006",
+          pass: "11@1nh2526",
+          progress: 28,
+        },
+        {
+          name: "Tăng Thị Trúc Lam",
+          user: "tanglam1",
+          pass: "11@1nh2526",
+          progress: 44,
+        },
+        {
+          name: "Nguyễn Thị Ngọc Loan",
+          user: "nguyenloan60",
+          pass: "11@1nh2526",
+          progress: 100,
+        },
+        {
+          name: "Hồ Thị Cẩm Ly",
+          user: "hocamly8",
+          pass: "11@1nh2526",
+          progress: 43,
+        },
+        {
+          name: "Nguyễn Thiện Nghĩa",
+          user: "nguyennghia9269",
+          pass: "11@1nh2526",
+          progress: 7,
+        },
+        {
+          name: "Nguyễn Trung Nhân",
+          user: "nguyennhan542",
+          pass: "11@1nh2526",
+          progress: 80,
+        },
+        {
+          name: "Lê Minh Phú",
+          user: "lephu48",
+          pass: "11@1nh2526",
+          progress: 59,
+        },
+        {
+          name: "Trần Triệu Phú",
+          user: "tranphu340",
+          pass: "11@1nh2526",
+          progress: 8,
+        },
+        {
+          name: "Trần Hoàng Phúc",
+          user: "tranphuc944",
+          pass: "11@1nh2526",
+          progress: 81,
+        },
+        {
+          name: "Lê Thị Tố Quyên",
+          user: "lequyen330",
+          pass: "11@1nh2526",
+          progress: 84,
+        },
+        {
+          name: "Nguyễn Hồng Thái",
+          user: "nguyenthai48",
+          pass: "11@1nh2526",
+          progress: 0,
+        },
+        {
+          name: "Nguyễn Hữu Thắng",
+          user: "nguyenthang3677",
+          pass: "11@1nh2526",
+          progress: 3,
+        },
+        {
+          name: "Đặng Bảo Thi",
+          user: "dangthi7",
+          pass: "11@1nh2526",
+          progress: 74,
+        },
+        {
+          name: "Lê Nguyễn Anh Thư",
+          user: "lethu626",
+          pass: "11@1nh2526",
+          progress: 89,
+        },
+        {
+          name: "Nguyễn Thị Anh Thư",
+          user: "nguyenthu901",
+          pass: "11@1nh2526",
+          progress: 69,
+        },
+        {
+          name: "Nhan Thanh Thương",
+          user: "nhanthanhthuong2",
+          pass: "11@1nh2526",
+          progress: 29,
+        },
+        {
+          name: "Phạm Thị Cẩm Tiên",
+          user: "phamcamtien0",
+          pass: "11@1nh2526",
+          progress: 32,
+        },
+        {
+          name: "Phạm Văn Quốc Toàn",
+          user: "phamtoan18",
+          pass: "11@1nh2526",
+          progress: 72,
+        },
+        {
+          name: "Trần Cao Hoàng Trân",
+          user: "trantran6717",
+          pass: "11@1nh2526",
+          progress: 100,
+        },
+        {
+          name: "Nguyễn Văn Trọng",
+          user: "nguyentrong570",
+          pass: "11@1nh2526",
+          progress: 44,
+        },
+        {
+          name: "Phan Thị Mộng Tuyền",
+          user: "phantuyen07",
+          pass: "11@1nh2526",
+          progress: 96,
+        },
+        {
+          name: "Trương Đổ Ngọc Tuyết",
+          user: "truongtuyet3",
+          pass: "11@1nh2526",
+          progress: 6,
+        },
+        {
+          name: "Nguyễn Hữu Vinh",
+          user: "nguyenvinh284",
+          pass: "11@1nh2526",
+          progress: 59,
+        },
+        {
+          name: "Trương Thị Cẩm Yến",
+          user: "truongcamyen",
+          pass: "11@1nh2526",
+          progress: 6,
+        },
+      ];
+
+      async function initAuth() {
+        if (
+          typeof __initial_auth_token !== "undefined" &&
+          __initial_auth_token
+        ) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return;
+        setupRealtimeSync();
+      });
+
+      async function setupRealtimeSync() {
+        const dataCol = collection(
+          db,
+          "artifacts",
+          appId,
+          "public",
+          "data",
+          "students",
+        );
+
+        // Lắng nghe thay đổi realtime
+        onSnapshot(
+          dataCol,
+          (snapshot) => {
+            if (snapshot.empty) {
+              seedData();
+              return;
+            }
+
+            students = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+
+            updateAvg(); // Cập nhật trung bình tổng thể của cả lớp
+            renderList(); // Render danh sách có áp dụng sort & filter
+          },
+          (error) => {
+            console.error("Firestore Error:", error);
+          },
+        );
+      }
+
+      async function seedData() {
+        const dataCol = collection(
+          db,
+          "artifacts",
+          appId,
+          "public",
+          "data",
+          "students",
+        );
+        for (const s of initialStudents) {
+          const docRef = doc(dataCol);
+          await setDoc(docRef, s);
+        }
+      }
+
+      function updateAvg() {
+        if (students.length === 0) return;
+        const sum = students.reduce((a, b) => a + b.progress, 0);
+        classAvgDiv.innerText = (sum / students.length).toFixed(1) + "%";
+      }
+
+      // Logic tô màu trực tiếp bằng Tailwind CSS classes
+      function getBgClass(val) {
+        if (val <= 10) return "bg-red-500 text-white font-semibold"; // Đỏ cho <= 10%
+        if (val === 100) return "bg-green-500 text-white font-bold"; // Xanh cho = 100%
+        if (val >= 90) return "bg-yellow-400 text-black font-semibold"; // Vàng cho >= 90%
+        return "bg-white text-gray-800 hover:bg-gray-50"; // Trắng/Xám cho các trường hợp còn lại
+      }
+
+      // Logic xử lý Lọc & Sắp xếp
+      function getProcessedStudents() {
+        let result = [...students];
+
+        // 1. Áp dụng Lọc (Filter)
+        if (currentFilter.op !== "all") {
+          const val = currentFilter.val;
+          result = result.filter((s) => {
+            if (currentFilter.op === ">=") return s.progress >= val;
+            if (currentFilter.op === "<=") return s.progress <= val;
+            if (currentFilter.op === "=") return s.progress === val;
+            return true;
+          });
+        }
+
+        // 2. Áp dụng Sắp xếp (Sort)
+        result.sort((a, b) => {
+          if (currentSort === "name-asc") {
+            return a.name.localeCompare(b.name, "vi");
+          } else if (currentSort === "prog-asc") {
+            return a.progress - b.progress;
+          } else if (currentSort === "prog-desc") {
+            return b.progress - a.progress;
+          }
+          return 0;
+        });
+
+        return result;
+      }
+
+      window.handleSortChange = () => {
+        currentSort = sortSelect.value;
+        renderList();
+      };
+
+      window.applyFilter = () => {
+        const op = filterOp.value;
+        if (op !== "all") {
+          const val = parseInt(filterVal.value);
+          if (isNaN(val)) {
+            showToast("Vui lòng nhập số % để lọc!");
+            return;
+          }
+          currentFilter = { op: op, val: val };
+        } else {
+          currentFilter = { op: "all", val: 0 };
+        }
+        renderList();
+      };
+
+      window.clearFilter = () => {
+        filterOp.value = "all";
+        filterVal.value = "";
+        filterVal.disabled = true;
+        currentFilter = { op: "all", val: 0 };
+        renderList();
+      };
+
+      function renderList() {
+        const processedStudents = getProcessedStudents();
+
+        // Update count text
+        listCountSpan.innerText = `(${processedStudents.length} / ${students.length})`;
+
+        if (processedStudents.length === 0) {
+          listDiv.innerHTML = `<div class="p-8 text-center text-gray-500 italic">Không tìm thấy học sinh nào phù hợp với bộ lọc.</div>`;
+          return;
+        }
+
+        listDiv.innerHTML = processedStudents
+          .map(
+            (s) => `
+                <div class="grid grid-cols-12 p-3 text-sm items-center border-b transition-colors ${getBgClass(s.progress)}">
+                    <div class="col-span-8 truncate pr-2">${s.name}</div>
+                    <div class="col-span-4 text-center text-lg">${s.progress}%</div>
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      // Search logic (cho phần cập nhật)
+      searchInput.addEventListener("input", (e) => {
+        const queryText = e.target.value.toLowerCase().trim();
+        if (!queryText) {
+          resultsBox.classList.add("hidden");
+          return;
+        }
+
+        const matches = students.filter((s) =>
+          s.name.toLowerCase().includes(queryText),
+        );
+
+        if (matches.length) {
+          resultsBox.innerHTML = matches
+            .map(
+              (m) => `
+                    <div class="p-3 hover:bg-blue-100 cursor-pointer border-b last:border-0" data-id="${m.id}">
+                        ${m.name} <span class="text-xs text-gray-400">(${m.progress}%)</span>
+                    </div>
+                `,
+            )
+            .join("");
+
+          resultsBox.querySelectorAll("[data-id]").forEach((el) => {
+            el.onclick = () => select(el.getAttribute("data-id"));
+          });
+
+          resultsBox.classList.remove("hidden");
+        } else {
+          resultsBox.innerHTML =
+            '<div class="p-3 text-gray-400">Không tìm thấy...</div>';
+          resultsBox.classList.remove("hidden");
+        }
+      });
+
+      function select(id) {
+        selectedStudentId = id;
+        const s = students.find((item) => item.id === id);
+        nameDisplay.innerText = s.name;
+        userDisplay.innerText = s.user;
+        passDisplay.innerText = s.pass;
+        progressInp.value = s.progress;
+
+        updatePanel.classList.remove("hidden");
+        resultsBox.classList.add("hidden");
+        searchInput.value = "";
+      }
+
+      window.resetSelection = () => {
+        selectedStudentId = null;
+        updatePanel.classList.add("hidden");
+      };
+
+      window.copyToClipboard = (type) => {
+        const s = students.find((item) => item.id === selectedStudentId);
+        const text = type === "username" ? s.user : s.pass;
+        const el = document.createElement("textarea");
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        showToast(`Đã copy: ${text}`);
+      };
+
+      window.updateProgress = async () => {
+        const val = parseInt(progressInp.value);
+        if (isNaN(val) || val < 0 || val > 100) {
+          showToast("Nhập từ 0 đến 100 nhé!");
+          return;
+        }
+
+        btnSave.disabled = true;
+        btnSave.innerText = "ĐANG LƯU...";
+
+        try {
+          const docRef = doc(
+            db,
+            "artifacts",
+            appId,
+            "public",
+            "data",
+            "students",
+            selectedStudentId,
+          );
+          await updateDoc(docRef, { progress: val });
+          showToast("Cập nhật thành công!");
+          resetSelection();
+        } catch (err) {
+          showToast("Lỗi khi lưu dữ liệu!");
+          console.error(err);
+        } finally {
+          btnSave.disabled = false;
+          btnSave.innerText = "LƯU LẠI";
+        }
+      };
+
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.innerText = msg;
+        t.style.opacity = "1";
+        setTimeout(() => (t.style.opacity = "0"), 2000);
+      }
+
+      initAuth();
+    </script>
+  </body>
+</html>
