@@ -128,30 +128,6 @@
         color: #4338ca;
         vertical-align: middle;
       }
-      .source-editor {
-        min-height: 2.5rem;
-        resize: vertical;
-      }
-      .inline-preview {
-        margin-top: 0.5rem;
-        padding: 0.75rem 1rem;
-        border: 1px dashed #d1d5db;
-        border-radius: 0.75rem;
-        background: #fafafa;
-        overflow-x: auto;
-      }
-      .search-input {
-        width: 100%;
-        border: 1px solid #d1d5db;
-        border-radius: 0.9rem;
-        padding: 0.75rem 1rem;
-        outline: none;
-        transition: 0.2s;
-      }
-      .search-input:focus {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
-      }
 
       @media (max-width: 768px) {
         body {
@@ -302,15 +278,6 @@
             </button>
           </div>
         </div>
-        <div class="mb-4">
-          <input
-            id="dashboard-search"
-            type="search"
-            class="search-input max-w-xl"
-            placeholder="Tìm bài thi theo tên hoặc mã..."
-            oninput="filterDashboardExams()"
-          />
-        </div>
         <div
           class="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
           id="admin-exam-list"
@@ -378,16 +345,6 @@
             </div>
           </div>
 
-          <div class="mb-4">
-            <input
-              id="stats-search"
-              type="search"
-              class="search-input max-w-xl"
-              placeholder="Tìm kiếm trong thống kê..."
-              oninput="window.statsSearch = this.value.trim().toLowerCase(); renderStatsTables();"
-            />
-          </div>
-
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
               <p
@@ -440,7 +397,6 @@
                   <tr>
                     <th class="px-6 py-4">Bài thi</th>
                     <th class="px-6 py-4">Lượt nộp</th>
-                    <th class="px-6 py-4">Học sinh</th>
                     <th class="px-6 py-4">Điểm TB</th>
                     <th class="px-6 py-4">Cao nhất</th>
                     <th class="px-6 py-4">Gian lận</th>
@@ -469,11 +425,7 @@
                     <th class="px-6 py-4">Mã</th>
                     <th class="px-6 py-4">Số câu</th>
                     <th class="px-6 py-4">Lượt nộp</th>
-                    <th class="px-6 py-4">Học sinh</th>
-                    <th class="px-6 py-4">TB</th>
-                    <th class="px-6 py-4">Cao nhất</th>
-                    <th class="px-6 py-4">Thấp nhất</th>
-                    <th class="px-6 py-4">Gian lận</th>
+                    <th class="px-6 py-4">Hạn nộp</th>
                   </tr>
                 </thead>
                 <tbody
@@ -684,41 +636,6 @@
           <div
             class="w-full md:w-72 bg-white border-r overflow-y-auto shrink-0 flex flex-col p-5"
           >
-            <div class="mb-4">
-              <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Tìm câu hỏi
-              </label>
-              <input
-                id="question-search"
-                type="search"
-                class="search-input"
-                placeholder="Tìm theo nội dung..."
-                oninput="window.createQuestionSearch = this.value.trim().toLowerCase(); renderEditorQuestions();"
-              />
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Chế độ soạn
-              </label>
-              <div class="grid grid-cols-2 gap-2">
-                <button
-                  onclick="setCreateEditMode('visual')"
-                  id="btn-create-mode-visual"
-                  class="px-3 py-2 rounded-xl text-sm font-bold border transition bg-blue-600 text-white border-blue-600"
-                >
-                  Trực quan
-                </button>
-                <button
-                  onclick="setCreateEditMode('latex')"
-                  id="btn-create-mode-latex"
-                  class="px-3 py-2 rounded-xl text-sm font-bold border transition bg-gray-100 text-gray-700 border-gray-200"
-                >
-                  LaTeX
-                </button>
-              </div>
-            </div>
-
             <h3
               class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"
             >
@@ -1186,42 +1103,15 @@
         return JSON.parse(JSON.stringify(obj));
       }
 
-      function normalizeText(value) {
-        return String(value ?? "").replace(/\r/g, "").replace(/[ \t]+/g, " ").trim();
-      }
-
-      function applyMathShortcuts(raw) {
-        let text = String(raw ?? "");
-        text = text.replace(/\r/g, "");
-        text = text.replace(/\b(?:sqrt)\s*\(([^()]+)\)/gi, (_, inner) => `$\\sqrt{${inner.trim()}}$`);
-        text = text.replace(/\b(?:frac)\s*\(([^(),]+)\s*,\s*([^()]+)\)/gi, (_, a, b) => `$\\frac{${a.trim()}}{${b.trim()}}$`);
-        text = text.replace(/([A-Za-z0-9\\)\]\}]+)\^\{?([A-Za-z0-9+\-*/,.]+)\}?/g, (_, base, exp) => `$${base}^{${exp.trim()}}$`);
-        text = text.replace(/([A-Za-z0-9\\)\]\}]+)_\{?([A-Za-z0-9+\-*/,.]+)\}?/g, (_, base, sub) => `$${base}_{${sub.trim()}}$`);
-        text = text.replace(/\s*\/\s*([^\s]+)/g, (m, rhs) => ` / ${rhs}`); // keep readable unless using frac()
-        return text;
-      }
-
-      function normalizeMathInput(value) {
-        return applyMathShortcuts(normalizeText(value));
-      }
-
       function normalizeQuestionForSave(question) {
         const q = deepClone(question);
         if (q.type === "mcq" && Array.isArray(q.options)) {
-          q.options = q.options.map((opt) => normalizeMathInput(opt));
+          q.options = q.options.map((opt) => String(opt ?? ""));
           q.originalOptions = deepClone(q.options);
           q.correctIndex = Math.max(0, Number(q.correctIndex || 0));
           q.originalCorrectIndex = q.correctIndex;
           q.optionOrder = q.options.map((_, idx) => idx);
-        } else if (q.type === "tf" && Array.isArray(q.statements)) {
-          q.statements = q.statements.map((s) => ({
-            ...s,
-            text: normalizeMathInput(s.text),
-          }));
-        } else if (q.type === "short" && Array.isArray(q.exactAnswers)) {
-          q.exactAnswers = q.exactAnswers.map((a) => normalizeMathInput(a));
         }
-        q.text = normalizeMathInput(q.text);
         return q;
       }
 
@@ -1230,111 +1120,59 @@
       }
 
       function splitSmartImportBlocks(text) {
-        const source = String(text || "").replace(/\r/g, "\n");
-        const lines = source.split("\n");
+        const source = String(text || "").replace(/\r/g, "");
+        const matches = [...source.matchAll(/(?:^|\n)\s*Câu\s*\d+\s*[\.:]/gi)];
+        if (!matches.length) return [];
         const blocks = [];
-        let current = [];
-        const startRegex = /^\s*Câu\s*\d+\s*[:\.)-]?/i;
-        for (const line of lines) {
-          if (startRegex.test(line) && current.length) {
-            blocks.push(current.join("\n").trim());
-            current = [line];
-          } else {
-            current.push(line);
-          }
+        for (let i = 0; i < matches.length; i++) {
+          const start = matches[i].index + matches[i][0].length;
+          const end =
+            i + 1 < matches.length ? matches[i + 1].index : source.length;
+          blocks.push(source.slice(start, end).trim());
         }
-        if (current.length) blocks.push(current.join("\n").trim());
         return blocks.filter(Boolean);
       }
 
-      function extractQuestionAndOptions(block) {
-        const raw = String(block || "").replace(/\t/g, " ");
-        const answerMatch = raw.match(/(?:^|\n|\s)(?:Đáp\s*án|ĐA|Đáp\s*án\s*đúng)\s*[:=\-\.]?\s*([A-D])/i);
-        const correctIndex = answerMatch ? answerMatch[1].toUpperCase().charCodeAt(0) - 65 : 0;
-        const withoutAnswer = answerMatch ? raw.replace(answerMatch[0], " ") : raw;
-
-        const markerCandidates = [
-          /(?:^|\n)\s*([A-D])[\.\:\)\-]\s*/g,
-          /(?:^|\n)\s*([A-D])\s{2,}/g,
-          /(?:^|\s)([A-D])[\.\:\)\-]?\s+/g,
-        ];
-
-        let markers = [];
-        for (const rx of markerCandidates) {
-          const m = [...withoutAnswer.matchAll(rx)].map((x) => ({
-            letter: x[1].toUpperCase(),
-            index: x.index + x[0].length,
-          }));
-          if (m.length >= 2) {
-            markers = m;
-            break;
-          }
-        }
-
-        if (!markers.length) {
-          const lineBased = withoutAnswer.split(/\n+/).map((l) => l.trim()).filter(Boolean);
-          let qTextParts = [];
-          const options = { A: "", B: "", C: "", D: "" };
-          let currentKey = null;
-          for (const line of lineBased) {
-            const lineMatch = line.match(/^([A-D])[\.\:\)\-]?\s*(.*)$/i);
-            if (lineMatch) {
-              currentKey = lineMatch[1].toUpperCase();
-              options[currentKey] = normalizeText(lineMatch[2]);
-            } else if (currentKey) {
-              options[currentKey] = normalizeText(`${options[currentKey]} ${line}`);
-            } else {
-              qTextParts.push(line);
-            }
-          }
-          const questionText = normalizeText(qTextParts.join(" "));
-          const optionList = [options.A, options.B, options.C, options.D];
-          if (!questionText || optionList.some((opt) => !normalizeText(opt))) return null;
-          return {
-            id: generateId(),
-            type: "mcq",
-            text: questionText,
-            options: optionList.map((opt) => normalizeText(opt)),
-            correctIndex,
-            originalOptions: deepClone(optionList.map((opt) => normalizeText(opt))),
-            originalCorrectIndex: correctIndex,
-            optionOrder: [0, 1, 2, 3],
-            imageUrl: null,
-          };
-        }
-
-        const questionText = normalizeText(withoutAnswer.slice(0, markers[0].index));
-        const options = ["", "", "", ""];
-        markers.forEach((m, idx) => {
-          const start = m.index;
-          const end = idx + 1 < markers.length ? markers[idx + 1].index : withoutAnswer.length;
-          const content = normalizeText(withoutAnswer.slice(start, end));
-          options[m.letter.charCodeAt(0) - 65] = content;
-        });
-
-        // remove any leading labels from sliced content
-        const cleaned = options.map((opt, idx) =>
-          normalizeText(opt.replace(new RegExp(`^${["A","B","C","D"][idx]}[\.\:\)\-]?\s*`, "i"), ""))
+      function parseImportedMcqBlock(block) {
+        if (!block) return null;
+        const normalized = block.replace(/\t/g, "    ");
+        const answerMatch = normalized.match(
+          /(?:Đáp\s*án|ĐA|Đáp\s*án\s*đúng)\s*[:=\-\.]?\s*([A-D])/i,
         );
-        if (!questionText || cleaned.some((opt) => !opt)) {
-          return null;
-        }
-
+        const correctIndex = answerMatch
+          ? answerMatch[1].toUpperCase().charCodeAt(0) - 65
+          : 0;
+        const body = answerMatch
+          ? normalized.replace(answerMatch[0], " ")
+          : normalized;
+        const labelRegex = /(^|[\n\r\t ])([A-D])[\.\:\)\-]?\s*/gi;
+        const matches = [...body.matchAll(labelRegex)];
+        const options = ["", "", "", ""];
+        if (!matches.length) return null;
+        const questionText = body.slice(0, matches[0].index).trim();
+        matches.forEach((m, idx) => {
+          const contentStart = m.index + m[0].length;
+          const contentEnd =
+            idx + 1 < matches.length ? matches[idx + 1].index : body.length;
+          const content = body
+            .slice(contentStart, contentEnd)
+            .replace(/\s+/g, " ")
+            .trim();
+          const optIdx = m[2].toUpperCase().charCodeAt(0) - 65;
+          if (optIdx >= 0 && optIdx < 4) options[optIdx] = content;
+        });
+        if (!questionText || options.some((opt) => !opt)) return null;
         return {
           id: generateId(),
           type: "mcq",
-          text: questionText,
-          options: cleaned,
+          text: questionText.replace(/\s+/g, " ").trim(),
+          options,
           correctIndex,
-          originalOptions: deepClone(cleaned),
+          originalOptions: deepClone(options),
           originalCorrectIndex: correctIndex,
           optionOrder: [0, 1, 2, 3],
           imageUrl: null,
         };
-      }
-
-      function parseImportedMcqBlock(block) {
-        return extractQuestionAndOptions(block);
       }
 
       async function getAllDocsFiltered(name, predicate) {
@@ -1456,30 +1294,6 @@
       let statsDataCache = null;
       let activeStatsTab = "summary";
       let currentViewingResultId = null;
-      window.adminDashboardSearch = "";
-      window.statsSearch = "";
-      window.createQuestionSearch = "";
-      window.createEditMode = localStorage.getItem("create_edit_mode") || "visual";
-
-      function updateCreateModeButtons(mode) {
-        const v = document.getElementById("btn-create-mode-visual");
-        const l = document.getElementById("btn-create-mode-latex");
-        if (!v || !l) return;
-        v.className =
-          mode === "visual"
-            ? "px-3 py-2 rounded-xl text-sm font-bold border transition bg-blue-600 text-white border-blue-600"
-            : "px-3 py-2 rounded-xl text-sm font-bold border transition bg-gray-100 text-gray-700 border-gray-200";
-        l.className =
-          mode === "latex"
-            ? "px-3 py-2 rounded-xl text-sm font-bold border transition bg-blue-600 text-white border-blue-600"
-            : "px-3 py-2 rounded-xl text-sm font-bold border transition bg-gray-100 text-gray-700 border-gray-200";
-      }
-      window.setCreateEditMode = (mode) => {
-        createEditMode = mode === "latex" ? "latex" : "visual";
-        localStorage.setItem("create_edit_mode", createEditMode);
-        updateCreateModeButtons(createEditMode);
-        renderEditorQuestions();
-      };
 
       window.openDashboard = () => {
         history.replaceState({}, "", "admin.html");
@@ -1658,21 +1472,15 @@
           return showToast("Vui lòng nhập nội dung!", "warning");
         const blocks = splitSmartImportBlocks(text);
         let addedCount = 0;
-        const errors = [];
-        blocks.forEach((block, idx) => {
+        blocks.forEach((block) => {
           const q = parseImportedMcqBlock(block);
           if (q) {
             examDraft.questions.push(q);
             addedCount++;
-          } else {
-            errors.push(idx + 1);
           }
         });
         if (addedCount > 0) {
-          showToast(
-            `Đã thêm ${addedCount} câu hỏi${errors.length ? `, bỏ qua ${errors.length} khối chưa nhận dạng` : ""}!`,
-            "success",
-          );
+          showToast(`Đã thêm ${addedCount} câu hỏi!`, "success");
           renderEditorQuestions();
           closeSmartImport();
           setTimeout(() => {
@@ -1693,7 +1501,6 @@
           maxAttempts: 1,
           questions: [],
         };
-        updateCreateModeButtons(createEditMode);
         editingExamId =
           editingExamId ||
           new URLSearchParams(location.search).get("editId") ||
@@ -1770,14 +1577,14 @@
       window.updText = (id, v) => {
         const q = examDraft.questions.find((x) => x.id === id);
         if (q) {
-          q.text = normalizeMathInput(v);
+          q.text = v;
           typesetMath();
         }
       };
       window.updOpt = (qId, idx, v) => {
         const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
-          q.options[idx] = normalizeMathInput(v);
+          q.options[idx] = v;
           typesetMath();
         }
       };
@@ -1793,7 +1600,7 @@
         if (q) {
           const s = q.statements.find((x) => x.id === sId);
           if (s) {
-            s.text = normalizeMathInput(v);
+            s.text = v;
             typesetMath();
           }
         }
@@ -1808,46 +1615,22 @@
       window.updSh = (qId, v) => {
         const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
-          q.exactAnswers[0] = normalizeMathInput(v);
+          q.exactAnswers[0] = v;
           typesetMath();
         }
       };
 
       function renderEditorQuestions() {
         const container = document.getElementById("ce-questions-canvas");
-        const qs = examDraft.questions || [];
-        const search = String(window.createQuestionSearch || "").trim().toLowerCase();
-        const filtered = search
-          ? qs.filter((q, idx) => {
-              const hay = [
-                idx + 1,
-                q.text,
-                ...(q.options || []),
-                ...(q.statements || []).map((s) => s.text),
-                ...(q.exactAnswers || []),
-              ]
-                .map((x) => String(x || "").toLowerCase())
-                .join(" ");
-              return hay.includes(search);
-            })
-          : qs;
-
+        const qs = examDraft.questions;
         document.getElementById("empty-exam-state").style.display = qs.length
-          ? filtered.length
-            ? "none"
-            : "block"
+          ? "none"
           : "block";
-        document.getElementById("empty-exam-state").innerHTML = qs.length && !filtered.length
-          ? `<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl"><i class="fa-solid fa-magnifying-glass"></i></div><p class="text-xl font-medium text-gray-500">Không có câu hỏi phù hợp</p><p class="text-sm mt-2">Thử đổi từ khóa tìm kiếm</p>`
-          : `<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl"><i class="fa-regular fa-clipboard"></i></div><p class="text-xl font-medium text-gray-500">Chưa có câu hỏi nào</p><p class="text-sm mt-2">Chọn công cụ bên trái để bắt đầu tạo đề</p>`;
-
         Array.from(container.children).forEach((c) => {
           if (c.id !== "empty-exam-state") c.remove();
         });
 
-        filtered.forEach((q, i) => {
-          const realIndex = qs.findIndex((x) => x.id === q.id);
-          const displayNo = realIndex >= 0 ? realIndex + 1 : i + 1;
+        qs.forEach((q, i) => {
           const div = document.createElement("div");
           div.className =
             "bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6 relative group transition-all hover:shadow-md";
@@ -1857,27 +1640,11 @@
               <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
             </div>
             <div class="flex gap-4 mb-4">
-              <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
+              <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${i + 1}</div>
               <div class="flex-1">
-          `;
-
-          if (createEditMode === "latex") {
-            h += `
-                <textarea
-                  class="search-input source-editor font-mono text-sm leading-6"
-                  placeholder="Nhập câu hỏi bằng LaTeX hoặc dấu nhanh như sqrt(x), x^2..."
-                  oninput="updText('${q.id}', this.value); this.value = this.value;"
-                  onblur="updText('${q.id}', this.value)"
-                >${escapeHtml(q.text || "")}</textarea>
-                <div class="inline-preview">${window.renderTextToWysiwyg(q.text)}</div>
-              </div>
-            </div>`;
-          } else {
-            h += `
                 <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
               </div>
             </div>`;
-          }
 
           if (q.imageUrl)
             h += `<div class="pl-14 mb-4 relative inline-block group/img"><img src="${q.imageUrl}" class="image-preview" /><button onclick="removeImage('${q.id}')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover/img:opacity-100 transition"><i class="fa-solid fa-xmark"></i></button></div>`;
@@ -1886,36 +1653,17 @@
             h += `<div class="pl-14 space-y-3">`;
             q.options.forEach((opt, oI) => {
               const isC = Number(q.correctIndex) === oI;
-              if (createEditMode === "latex") {
-                h += `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition">
-                  <input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">
-                  <span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI]}.</span>
-                  <div class="flex-1">
-                    <textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea>
-                    <div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>
-                  </div>
-                </div>`;
-              } else {
-                h += `<div class="flex items-center gap-3 bg-gray-50 rounded-lg p-2 pr-4 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition"><input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer ml-2"><span class="font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span><div contenteditable="true" onblur="updOpt('${q.id}', ${oI}, window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm ${isC ? "font-semibold text-green-700" : ""}">${window.renderTextToWysiwyg(opt)}</div></div>`;
-              }
+              h += `<div class="flex items-center gap-3 bg-gray-50 rounded-lg p-2 pr-4 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition"><input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer ml-2"><span class="font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span><div contenteditable="true" onblur="updOpt('${q.id}', ${oI}, window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm ${isC ? "font-semibold text-green-700" : ""}">${window.renderTextToWysiwyg(opt)}</div></div>`;
             });
             h += `</div>`;
           } else if (q.type === "tf") {
             h += `<div class="pl-14 space-y-3">`;
             q.statements.forEach((s, sI) => {
-              if (createEditMode === "latex") {
-                h += `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div class="flex-1"><textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updTf('${q.id}','${s.id}', this.value)" onblur="updTf('${q.id}','${s.id}', this.value)">${escapeHtml(s.text)}</textarea><div class="inline-preview">${window.renderTextToWysiwyg(s.text)}</div></div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`;
-              } else {
-                h += `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div contenteditable="true" onblur="updTf('${q.id}','${s.id}', window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm">${window.renderTextToWysiwyg(s.text)}</div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`;
-              }
+              h += `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div contenteditable="true" onblur="updTf('${q.id}','${s.id}', window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm">${window.renderTextToWysiwyg(s.text)}</div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`;
             });
             h += `</div>`;
           } else if (q.type === "short") {
-            if (createEditMode === "latex") {
-              h += `<div class="pl-14 mt-3"><textarea class="search-input source-editor font-mono text-sm leading-6 md:w-1/2" oninput="updSh('${q.id}', this.value)" onblur="updSh('${q.id}', this.value)">${escapeHtml(q.exactAnswers?.[0] || "")}</textarea><div class="inline-preview md:w-1/2">${window.renderTextToWysiwyg(q.exactAnswers?.[0])}</div></div>`;
-            } else {
-              h += `<div class="pl-14 mt-3"><div contenteditable="true" onblur="updSh('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 outline-none focus:border-purple-500 text-purple-700 font-mono text-sm bg-purple-50/30" placeholder="Nhập đáp án chính xác...">${window.renderTextToWysiwyg(q.exactAnswers?.[0])}</div></div>`;
-            }
+            h += `<div class="pl-14 mt-3"><div contenteditable="true" onblur="updSh('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 outline-none focus:border-purple-500 text-purple-700 font-mono text-sm bg-purple-50/30" placeholder="Nhập đáp án chính xác...">${window.renderTextToWysiwyg(q.exactAnswers?.[0])}</div></div>`;
           }
           div.innerHTML = h;
           container.appendChild(div);
@@ -1981,19 +1729,13 @@
       };
       window.editExam = (id) => window.openCreateExam(id);
       window.deleteExam = async (id) => {
-        if (!(await customConfirm(`Xóa bài thi và toàn bộ bài nộp liên quan?`))) return;
+        if (!(await customConfirm(`Xóa bài thi và bài nộp liên quan?`))) return;
         setLoading(true);
         try {
-          const relatedResults = await getAllDocsFiltered("results", (d) => d.examId === id);
-          for (const r of relatedResults) {
-            await deleteDoc(examDoc("results", r.id));
-          }
           await deleteDoc(examDoc("exams", id));
-          showToast(`Đã xóa bài thi và ${relatedResults.length} bài nộp`, "success");
+          showToast(`Đã xóa`, "success");
           window.openDashboard();
-        } catch (e) {
-          showToast("Xóa thất bại: " + e.message, "error");
-        }
+        } catch (e) {}
         setLoading(false);
       };
 
@@ -2029,60 +1771,37 @@
         );
       }
 
-      function renderDashboardExams() {
-        const listEl = document.getElementById("admin-exam-list");
-        if (!listEl) return;
-        const exams = (window.loadedExams || []).filter((ex) => {
-          const search = String(window.adminDashboardSearch || "").trim().toLowerCase();
-          if (!search) return true;
-          const hay = [
-            ex.title,
-            ex.id,
-            ex.timeLimit,
-            ex.questions?.length || 0,
-            ex.maxAttempts || "",
-          ].join(" ").toLowerCase();
-          return hay.includes(search);
-        });
-        listEl.innerHTML = "";
-        if (!exams.length) {
-          listEl.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300"><i class="fa-solid fa-folder-open text-5xl text-gray-300 mb-4"></i><p class="text-lg font-medium text-gray-500">Không có bài thi phù hợp</p></div>`;
-          return;
-        }
-        for (const ex of exams) {
-          const link = `${window.location.origin}${window.location.pathname.replace(/admin\.html$/, "student.html")}?examId=${encodeURIComponent(ex.id)}`;
-          listEl.innerHTML += `
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition flex flex-col">
-              <h3 class="font-bold text-lg text-gray-800 mb-3 truncate" title="${escapeHtml(ex.title)}">${escapeHtml(ex.title)}</h3>
-              <div class="space-y-2 text-sm text-gray-600 mb-5 flex-1">
-                <div class="flex items-center"><i class="fa-regular fa-clock w-6"></i> ${ex.timeLimit} phút</div>
-                <div class="flex items-center"><i class="fa-solid fa-list-ol w-6"></i> ${ex.questions?.length || 0} câu</div>
-                <div class="flex items-center"><i class="fa-solid fa-rotate-left w-6"></i> Lượt: ${ex.maxAttempts || "Vô hạn"}</div>
-                <div class="flex items-center gap-4"><div class="flex items-center"><i class="fa-solid ${ex.showResults !== false ? "fa-eye" : "fa-eye-slash"} w-6"></i> Điểm</div><div class="flex items-center"><i class="fa-solid ${ex.showDetails ? "fa-file-lines" : "fa-file-excel"} w-6"></i> Chi tiết</div></div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100">
-                <button onclick="editExam('${ex.id}')" class="bg-amber-50 text-amber-700 hover:bg-amber-100 py-2.5 rounded-xl text-sm font-bold transition">Sửa</button>
-                <button onclick="deleteExam('${ex.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 py-2.5 rounded-xl text-sm font-bold transition">Xóa</button>
-                <button onclick="openStatsTab()" class="bg-purple-50 text-purple-600 hover:bg-purple-100 py-2.5 rounded-xl text-sm font-bold transition">Thống kê</button>
-                <button onclick="copyLink('${link}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 py-2.5 rounded-xl text-sm font-bold transition"><i class="fa-solid fa-link"></i> Copy</button>
-              </div>
-            </div>`;
-        }
-      }
-
-      window.filterDashboardExams = () => {
-        window.adminDashboardSearch = document.getElementById("dashboard-search")?.value || "";
-        renderDashboardExams();
-      };
-
       async function loadAdminDashboard() {
         setLoading(true);
         showView("view-dashboard");
         try {
           const exams = await getAllDocsFiltered("exams");
           exams.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-          window.loadedExams = exams;
-          renderDashboardExams();
+          const listEl = document.getElementById("admin-exam-list");
+          listEl.innerHTML = "";
+          if (!exams.length)
+            listEl.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300"><i class="fa-solid fa-folder-open text-5xl text-gray-300 mb-4"></i><p class="text-lg font-medium text-gray-500">Chưa có bài thi nào</p></div>`;
+          else {
+            for (const ex of exams) {
+              const link = `${window.location.origin}${window.location.pathname.replace(/admin\.html$/, "student.html")}?examId=${encodeURIComponent(ex.id)}`;
+              listEl.innerHTML += `
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition flex flex-col">
+                  <h3 class="font-bold text-lg text-gray-800 mb-3 truncate" title="${escapeHtml(ex.title)}">${escapeHtml(ex.title)}</h3>
+                  <div class="space-y-2 text-sm text-gray-600 mb-5 flex-1">
+                    <div class="flex items-center"><i class="fa-regular fa-clock w-6"></i> ${ex.timeLimit} phút</div>
+                    <div class="flex items-center"><i class="fa-solid fa-list-ol w-6"></i> ${ex.questions?.length || 0} câu</div>
+                    <div class="flex items-center"><i class="fa-solid fa-rotate-left w-6"></i> Lượt: ${ex.maxAttempts || "Vô hạn"}</div>
+                    <div class="flex items-center gap-4"><div class="flex items-center"><i class="fa-solid ${ex.showResults !== false ? "fa-eye" : "fa-eye-slash"} w-6"></i> Điểm</div><div class="flex items-center"><i class="fa-solid ${ex.showDetails ? "fa-file-lines" : "fa-file-excel"} w-6"></i> Chi tiết</div></div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100">
+                    <button onclick="editExam('${ex.id}')" class="bg-amber-50 text-amber-700 hover:bg-amber-100 py-2.5 rounded-xl text-sm font-bold transition">Sửa</button>
+                    <button onclick="deleteExam('${ex.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 py-2.5 rounded-xl text-sm font-bold transition">Xóa</button>
+                    <button onclick="openStatsTab()" class="bg-purple-50 text-purple-600 hover:bg-purple-100 py-2.5 rounded-xl text-sm font-bold transition">Thống kê</button>
+                    <button onclick="copyLink('${link}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 py-2.5 rounded-xl text-sm font-bold transition"><i class="fa-solid fa-link"></i> Copy</button>
+                  </div>
+                </div>`;
+            }
+          }
         } catch (e) {
           showToast("Lỗi tải danh sách", "error");
         }
@@ -2136,28 +1855,11 @@
       function renderStatsTables() {
         const exams = statsDataCache?.exams || [];
         const results = statsDataCache?.results || [];
-        const search = String(window.statsSearch || "").trim().toLowerCase();
-
-        const examById = new Map(exams.map((e) => [e.id, e]));
-        const filteredExams = exams.filter((ex) => {
-          if (!search) return true;
-          const exRes = results.filter((r) => r.examId === ex.id);
-          const studentCount = new Set(exRes.map((r) => r.studentName || "")).size;
-          const hay = [
-            ex.title,
-            ex.id,
-            ex.questions?.length || 0,
-            ex.maxAttempts || "",
-            studentCount,
-            exRes.length,
-          ].join(" ").toLowerCase();
-          return hay.includes(search);
-        });
 
         // Tab Tổng quan
         const sumBody = document.getElementById("stats-summary-body");
         sumBody.innerHTML = "";
-        filteredExams.forEach((ex) => {
+        exams.forEach((ex) => {
           const exRes = results.filter((r) => r.examId === ex.id);
           const subs = exRes.length;
           const avg = subs
@@ -2168,45 +1870,34 @@
             (a, b) => a + (b.cheatViolations || 0),
             0,
           );
-          const students = new Set(exRes.map((r) => r.studentName || "")).size;
-          sumBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-red-500">${cheats}</td></tr>`;
+          sumBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-red-500">${cheats}</td></tr>`;
         });
         document.getElementById("stats-summary-empty").style.display =
-          filteredExams.length ? "none" : "block";
+          exams.length ? "none" : "block";
 
         // Tab Bài thi
         const exBody = document.getElementById("stats-exams-body");
         exBody.innerHTML = "";
-        filteredExams.forEach((ex) => {
-          const exRes = results.filter((r) => r.examId === ex.id);
-          const subs = exRes.length;
-          const students = new Set(exRes.map((r) => r.studentName || "")).size;
-          const avg = subs
-            ? (exRes.reduce((a, b) => a + (b.score || 0), 0) / subs).toFixed(1)
-            : "0.0";
-          const max = subs ? Math.max(...exRes.map((r) => r.score || 0)) : 0;
-          const min = subs ? Math.min(...exRes.map((r) => r.score || 0)) : 0;
-          const cheats = exRes.reduce((a, b) => a + (b.cheatViolations || 0), 0);
-          exBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4 text-xs">${ex.id}</td><td class="px-6 py-4">${ex.questions?.length || 0}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-amber-600 font-bold">${min}</td><td class="px-6 py-4 text-red-500">${cheats}</td></tr>`;
+        exams.forEach((ex) => {
+          const subs = results.filter((r) => r.examId === ex.id).length;
+          exBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4 text-xs">${ex.id}</td><td class="px-6 py-4">${ex.questions?.length || 0}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4 text-sm">${ex.expiresAt ? toVnTime(ex.expiresAt) : "Vô hạn"}</td></tr>`;
         });
         document.getElementById("stats-exams-empty").style.display =
-          filteredExams.length ? "none" : "block";
+          exams.length ? "none" : "block";
 
         // Tab Học sinh
         const stBody = document.getElementById("stats-students-body");
         stBody.innerHTML = "";
         const studentMap = {};
         results.forEach((r) => {
-          const key = r.studentName || "Không rõ";
-          if (search && !key.toLowerCase().includes(search) && !(examById.get(r.examId)?.title || "").toLowerCase().includes(search) && !(r.examId || "").toLowerCase().includes(search)) return;
-          if (!studentMap[key])
-            studentMap[key] = {
+          if (!studentMap[r.studentName])
+            studentMap[r.studentName] = {
               subs: 0,
               exams: new Set(),
               totalScore: 0,
               maxScore: 0,
             };
-          const s = studentMap[key];
+          const s = studentMap[r.studentName];
           s.subs++;
           s.exams.add(r.examId);
           s.totalScore += r.score || 0;
@@ -2224,14 +1915,9 @@
         // Tab Bài Nộp
         const subBody = document.getElementById("stats-submissions-body");
         subBody.innerHTML = "";
-        const sortedResults = [...results]
-          .filter((r) => {
-            if (!search) return true;
-            const title = examById.get(r.examId)?.title || r.examTitle || "";
-            const hay = [r.studentName, title, r.examId, r.id].join(" ").toLowerCase();
-            return hay.includes(search);
-          })
-          .sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+        const sortedResults = [...results].sort(
+          (a, b) => (b.submittedAt || 0) - (a.submittedAt || 0),
+        );
         sortedResults.forEach((r) => {
           const title =
             exams.find((e) => e.id === r.examId)?.title ||
