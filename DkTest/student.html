@@ -799,6 +799,11 @@
         studentName: localStorage.getItem("student_name_edu"),
       };
 
+      const ATTEMPT_STORAGE_KEY = "dk_active_attempts_edu_v1";
+      const ATTEMPT_HEARTBEAT_MS = 15000;
+      let currentAttemptState = null;
+      let currentAttemptCloudDocId = null;
+
       window.showToast = (msg, type = "info") => {
         const container = document.getElementById("toast-container");
         if (!container) return;
@@ -928,6 +933,248 @@
       }
       function deepClone(obj) {
         return JSON.parse(JSON.stringify(obj));
+      }
+
+      function safeStorageKeyPart(value) {
+        return String(value || "guest")
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9À-ɏ]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(0, 80) || "guest";
+      }
+
+      function buildAttemptKey(examId) {
+        return `${examId}__${safeStorageKeyPart(State.studentName)}__${safeStorageKeyPart(State.user?.uid || "anon")}`;
+      }
+
+      function getAttemptStore() {
+        try {
+          return JSON.parse(localStorage.getItem(ATTEMPT_STORAGE_KEY) || "{}") || {};
+        } catch {
+          return {};
+        }
+      }
+
+      function setAttemptStore(store) {
+        try {
+          localStorage.setItem(ATTEMPT_STORAGE_KEY, JSON.stringify(store || {}));
+        } catch {}
+      }
+
+      function loadStoredAttempt(examId) {
+        const store = getAttemptStore();
+        return store[buildAttemptKey(examId)] || null;
+      }
+
+      function saveStoredAttempt(record) {
+        if (!record?.examId) return;
+        const store = getAttemptStore();
+        store[buildAttemptKey(record.examId)] = { ...record, lastSavedAt: Date.now() };
+        setAttemptStore(store);
+      }
+
+      function clearStoredAttempt(examId) {
+        const store = getAttemptStore();
+        delete store[buildAttemptKey(examId)];
+        setAttemptStore(store);
+      }
+
+      function isActiveAttemptRecord(record) {
+        return (
+          !!record &&
+          record.status !== "submitted" &&
+          getAttemptRemainingSec(record) > 0
+        );
+      }
+
+      function getCurrentStudentAttemptIdentity() {
+        return {
+          studentName: String(State.studentName || "").trim(),
+          userId: String(State.user?.uid || "anon").trim(),
+        };
+      }
+
+      function belongsToCurrentStudent(record) {
+        if (!record) return false;
+        const identity = getCurrentStudentAttemptIdentity();
+        return (
+          (identity.userId &&
+            String(record.userId || "").trim() === identity.userId) ||
+          (identity.studentName &&
+            String(record.studentName || "").trim() === identity.studentName)
+        );
+      }
+
+      function getMostRecentActiveAttempt() {
+        const store = getAttemptStore();
+        let chosen = null;
+        Object.values(store).forEach((record) => {
+          if (!record || !record.examId) return;
+          if (!belongsToCurrentStudent(record)) return;
+          if (!isActiveAttemptRecord(record)) return;
+          if (
+            !chosen ||
+            Number(record.lastSeenAt || 0) > Number(chosen.lastSeenAt || 0)
+          ) {
+            chosen = deepClone(record);
+          }
+        });
+        return chosen;
+      }
+
+      async function ensureStudentRecord(name = State.studentName) {
+        const safeName = String(name || "").trim();
+        if (!safeName || !State.user?.uid) return;
+        try {
+          await setDoc(
+            doc(db, `${basePath}/students`, State.user.uid),
+            {
+              userId: State.user.uid,
+              name: safeName,
+              studentName: safeName,
+              lastLoginAt: Date.now(),
+              updatedAt: Date.now(),
+            },
+            { merge: true },
+          );
+        } catch (e) {}
+      }
+
+      async function resumeActiveAttemptIfNeeded(targetExamId = null) {
+        const active = getMostRecentActiveAttempt();
+        if (!active) return false;
+        if (targetExamId && active.examId === targetExamId) return false;
+        showToast(
+          `Đang có bài làm dở ở mã ${active.examId}, hệ thống sẽ mở lại bài đó.`,
+          "info",
+        );
+        history.replaceState(
+          {},
+          "",
+          `student.html?examId=${encodeURIComponent(active.examId)}`,
+        );
+        await loadExamIntro(active.examId);
+        return true;
+      }
+
+      function getAttemptDurationSec(record) {
+        return Math.max(0, Number(record?.durationSec || 0));
+      }
+
+      function getAttemptRemainingSec(record) {
+        const duration = getAttemptDurationSec(record);
+        const startedAt = Number(record?.startedAt || 0);
+        if (!duration || !startedAt) return duration;
+        const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        return Math.max(0, duration - elapsed);
+      }
+
+      function syncAnswerUiState() {
+        if (!currentExam) return;
+        currentExam.questions.forEach((q) => {
+          if (q.type === "mcq") {
+            const selected = answers[q.id];
+            q.options?.forEach((_, idx) => {
+              const input = document.querySelector(`input[name="ans_${q.id}"][value="${idx}"]`);
+              const label = document.getElementById(`lbl_${q.id}_${idx}`);
+              if (input) input.checked = Number(selected) === idx;
+              if (label) {
+                label.classList.toggle("border-green-500", Number(selected) === idx);
+                label.classList.toggle("bg-green-50", Number(selected) === idx);
+                label.classList.toggle("ring-2", Number(selected) === idx);
+                label.classList.toggle("ring-green-100", Number(selected) === idx);
+              }
+            });
+          } else if (q.type === "tf") {
+            q.statements?.forEach((s) => {
+              const val = answers[q.id]?.[s.id];
+              const t = document.getElementById(`lbl_t_${s.id}`);
+              const f = document.getElementById(`lbl_f_${s.id}`);
+              if (t && f) {
+                t.className = `px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition ${val === true ? "bg-green-500 text-white shadow" : "text-gray-500 hover:bg-gray-50"}`;
+                f.className = `px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition ${val === false ? "bg-red-500 text-white shadow" : "text-gray-500 hover:bg-gray-50"}`;
+              }
+            });
+          } else if (q.type === "short") {
+            const input = document.getElementById(`input_${q.id}`);
+            if (input && answers[q.id] !== undefined) input.value = answers[q.id];
+          }
+        });
+      }
+
+      async function syncAttemptToCloud(reason = "heartbeat") {
+        if (!currentAttemptState || !currentExam || !State.studentName) return;
+        const remainingSec = Math.max(0, Number(timeRemaining || 0));
+        currentAttemptState.remainingSec = remainingSec;
+        currentAttemptState.answers = deepClone(answers);
+        currentAttemptState.status = reason === "submitted" ? "submitted" : "active";
+        currentAttemptState.lastSeenAt = Date.now();
+        saveStoredAttempt(currentAttemptState);
+        const now = Date.now();
+        if (reason !== "submitted" && currentAttemptState.lastCloudSyncAt && now - currentAttemptState.lastCloudSyncAt < ATTEMPT_HEARTBEAT_MS) {
+          return;
+        }
+        currentAttemptCloudDocId = buildAttemptKey(currentExam.id);
+        try {
+          await setDoc(doc(db, `${basePath}/attempts`, currentAttemptCloudDocId), {
+            examId: currentExam.id,
+            examTitle: currentExam.title,
+            studentName: State.studentName,
+            userId: State.user?.uid || null,
+            startedAt: currentAttemptState.startedAt,
+            durationSec: currentAttemptState.durationSec,
+            remainingSec,
+            answers: deepClone(answers),
+            attemptQuestions: deepClone(currentExam.questions || []),
+            status: currentAttemptState.status,
+            lastSeenAt: currentAttemptState.lastSeenAt,
+            updatedAt: now,
+            submittedAt: reason === "submitted" ? now : currentAttemptState.submittedAt || null,
+            timeSpent: currentAttemptState.timeSpent || null,
+          }, { merge: true });
+          currentAttemptState.lastCloudSyncAt = now;
+          saveStoredAttempt(currentAttemptState);
+        } catch (e) {}
+      }
+
+      function createAttemptState(exam, startedAt = Date.now(), source = {}) {
+        return {
+          examId: exam.id,
+          examTitle: exam.title,
+          studentName: State.studentName,
+          userId: State.user?.uid || null,
+          startedAt,
+          durationSec: Math.max(0, Number((exam.timeLimit || 45) * 60)),
+          answers: deepClone(source.answers || {}),
+          attemptQuestions: deepClone(source.attemptQuestions || exam.questions || []),
+          status: source.status || "active",
+          submittedAt: source.submittedAt || null,
+          timeSpent: source.timeSpent || null,
+          lastSeenAt: Date.now(),
+          lastCloudSyncAt: source.lastCloudSyncAt || 0,
+          remainingSec: source.remainingSec || Math.max(0, Number((exam.timeLimit || 45) * 60)),
+        };
+      }
+
+      function hydrateAttemptState(exam, saved) {
+        if (!saved) return null;
+        currentAttemptState = createAttemptState(exam, Number(saved.startedAt || Date.now()), saved);
+        answers = deepClone(saved.answers || {});
+        currentExam = { ...exam, questions: deepClone(saved.attemptQuestions || exam.questions || []) };
+        attemptStartTime = currentAttemptState.startedAt;
+        timeRemaining = getAttemptRemainingSec(currentAttemptState);
+        syncAnswerUiState();
+        return currentAttemptState;
+      }
+
+      function touchAttemptState(reason = "heartbeat") {
+        if (!currentAttemptState || !currentExam) return;
+        currentAttemptState.answers = deepClone(answers);
+        currentAttemptState.remainingSec = Math.max(0, Number(timeRemaining || 0));
+        currentAttemptState.lastSeenAt = Date.now();
+        saveStoredAttempt(currentAttemptState);
+        void syncAttemptToCloud(reason);
       }
 
       function shuffleArray(arr) {
@@ -1125,9 +1372,13 @@
             );
             if (n) {
               document.getElementById("student-welcome-name").innerText = n;
-              showView("view-home");
-              await loadStudentHistory();
-              if (examId) await loadExamIntro(examId);
+              await ensureStudentRecord(n);
+              const resumed = await resumeActiveAttemptIfNeeded(examId || null);
+              if (!resumed) {
+                showView("view-home");
+                await loadStudentHistory();
+                if (examId) await loadExamIntro(examId);
+              }
             } else showView("view-login");
             setLoading(false);
           });
@@ -1144,11 +1395,14 @@
         localStorage.setItem("student_name_edu", n);
         State.studentName = n;
         document.getElementById("student-welcome-name").innerText = n;
-        showView("view-home");
-        await loadStudentHistory();
+        await ensureStudentRecord(n);
         const examId = new URLSearchParams(window.location.search).get(
           "examId",
         );
+        const resumed = await resumeActiveAttemptIfNeeded(examId || null);
+        if (resumed) return;
+        showView("view-home");
+        await loadStudentHistory();
         if (examId) await loadExamIntro(examId);
       };
 
@@ -1160,7 +1414,17 @@
         history.replaceState({}, "", "student.html");
         showView("view-login");
       };
-      window.goHome = () => {
+      window.goHome = async () => {
+        const active = getMostRecentActiveAttempt();
+        if (active) {
+          history.replaceState(
+            {},
+            "",
+            `student.html?examId=${encodeURIComponent(active.examId)}`,
+          );
+          await loadExamIntro(active.examId);
+          return;
+        }
         history.replaceState({}, "", "student.html");
         showView("view-home");
         loadStudentHistory();
@@ -1437,6 +1701,21 @@
             return;
           }
 
+          const activeAttempt = getMostRecentActiveAttempt();
+          if (activeAttempt && activeAttempt.examId !== id) {
+            showToast(
+              `Đang có bài làm dở ở mã ${activeAttempt.examId}, hệ thống sẽ mở lại bài đó.`,
+              "info",
+            );
+            history.replaceState(
+              {},
+              "",
+              `student.html?examId=${encodeURIComponent(activeAttempt.examId)}`,
+            );
+            await loadExamIntro(activeAttempt.examId);
+            return;
+          }
+
           const allResults = await getAllDocsFiltered(
             "results",
             (d) => d.examId === id,
@@ -1445,9 +1724,9 @@
             (r) => r.studentName === State.studentName,
           ).length;
 
+          const btnStart = document.getElementById("btn-start");
           document.getElementById("intro-attempts").innerHTML =
             `${userAttemptsCount} / ${data.maxAttempts || "∞"}`;
-          const btnStart = document.getElementById("btn-start");
 
           if (data.maxAttempts > 0 && userAttemptsCount >= data.maxAttempts) {
             btnStart.disabled = true;
@@ -1498,13 +1777,13 @@
               lbBody.innerHTML += `<tr class="hover:bg-gray-50">
                    <td class="px-4 py-2 text-center"><span class="w-6 h-6 inline-flex items-center justify-center rounded-full font-bold text-xs ${badge}">${idx + 1}</span></td>
                    <td class="px-4 py-2 font-medium">${window.renderTextToHtml(r.studentName)}</td>
-                   <td class="px-4 py-2 font-bold text-green-600">${r.score.toFixed(1)}</td>
+                   <td class="px-4 py-2 font-bold text-green-600">${Number(r.score || 0).toFixed(1)}</td>
                    <td class="px-4 py-2 text-xs text-gray-500">${formatDuration(r.timeSpent || 0)}</td>
                 </tr>`;
             });
           } else {
             document.getElementById("th-score").classList.add("hidden");
-            lbBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500 italic">Bảng xếp hạng bị ẩn theo cài đặt của Giáo viên.</td></tr>`;
+            lbBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500 italic">Bảng xếp hạng bị ẩn theo cài đặt của Giáo viên.</td></tr>`;
           }
 
           const qs = prepareQuestionsForAttempt(
@@ -1512,22 +1791,46 @@
             data.shuffle,
           );
 
-          currentExam = { id, ...data, questions: qs };
-          answers = {};
+          const savedAttempt = loadStoredAttempt(id);
+          const canResume =
+            savedAttempt &&
+            savedAttempt.status !== "submitted" &&
+            getAttemptRemainingSec(savedAttempt) > 0;
+          currentExam = { id, ...data, questions: canResume ? deepClone(savedAttempt.attemptQuestions || qs) : qs };
+          answers = canResume ? deepClone(savedAttempt.answers || {}) : {};
           cheatCount = 0;
           document.getElementById("intro-title").innerText = data.title;
           document.getElementById("intro-time").innerText = data.timeLimit;
-          document.getElementById("intro-count").innerText = qs.length;
+          document.getElementById("intro-count").innerText = currentExam.questions.length;
           document.getElementById("intro-expire").innerText = data.expiresAt
             ? toVnTime(data.expiresAt)
             : "Không";
           const cb = document.getElementById("agree-rules");
           if (cb) cb.checked = false;
+
+          if (canResume) {
+            showToast("Đã phát hiện bài làm đang dở, hệ thống sẽ tiếp tục.", "info");
+            await resumeSavedAttempt(savedAttempt);
+            setLoading(false);
+            return;
+          }
+
           showView("view-exam-intro");
         } catch (e) {
           showToast("Lỗi tải đề", "error");
         }
         setLoading(false);
+      }
+
+      async function resumeSavedAttempt(savedAttempt) {
+        if (!currentExam || !savedAttempt) return;
+        currentAttemptState = createAttemptState(currentExam, Number(savedAttempt.startedAt || Date.now()), savedAttempt);
+        answers = deepClone(savedAttempt.answers || {});
+        attemptStartTime = currentAttemptState.startedAt;
+        timeRemaining = getAttemptRemainingSec(currentAttemptState);
+        renderActiveExam(currentAttemptState);
+        showView("view-taking-exam");
+        touchAttemptState("heartbeat");
       }
 
       window.startAttempt = () => {
@@ -1541,23 +1844,56 @@
         )
           return showToast("Bạn đã hết lượt", "error");
 
-        attemptStartTime = Date.now();
-        renderActiveExam();
+        const savedAttempt = loadStoredAttempt(currentExam.id);
+        if (
+          savedAttempt &&
+          savedAttempt.status !== "submitted" &&
+          getAttemptRemainingSec(savedAttempt) > 0
+        ) {
+          showToast("Đang mở lại bài làm còn thời gian.", "info");
+          void resumeSavedAttempt(savedAttempt);
+          return;
+        }
+
+        currentAttemptState = createAttemptState(currentExam, Date.now(), {
+          answers: {},
+          attemptQuestions: currentExam.questions,
+        });
+        attemptStartTime = currentAttemptState.startedAt;
+        renderActiveExam(currentAttemptState);
         showView("view-taking-exam");
       };
 
-      function renderActiveExam() {
+      function renderActiveExam(state = null) {
         const ex = currentExam;
         questionPanelHidden = false;
         const panel = document.getElementById("question-panel");
         if (panel) panel.classList.remove("hidden");
         document.getElementById("taking-title").innerText = ex.title;
         if (timerInterval) clearInterval(timerInterval);
-        timeRemaining = (ex.timeLimit || 45) * 60;
+        if (state) {
+          currentAttemptState = state;
+          attemptStartTime = state.startedAt || Date.now();
+          timeRemaining = getAttemptRemainingSec(state);
+        } else {
+          timeRemaining = (ex.timeLimit || 45) * 60;
+          if (!currentAttemptState) {
+            currentAttemptState = createAttemptState(ex, Date.now(), {
+              answers,
+              attemptQuestions: ex.questions,
+            });
+          }
+        }
         updateTimerUI();
+        syncAnswerUiState();
         timerInterval = setInterval(() => {
-          timeRemaining--;
+          if (currentAttemptState?.startedAt) {
+            timeRemaining = getAttemptRemainingSec(currentAttemptState);
+          } else {
+            timeRemaining--;
+          }
           updateTimerUI();
+          touchAttemptState("heartbeat");
           if (timeRemaining <= 0) {
             clearInterval(timerInterval);
             showToast("Hết giờ! Tự động nộp bài.", "warning");
@@ -1612,9 +1948,11 @@
           cvs.appendChild(div);
         });
         typesetMath();
+        syncAnswerUiState();
       }
 
       function updateTimerUI() {
+
         const t = timeRemaining;
         const el = document.getElementById("taking-timer");
         const hh = String(Math.floor(t / 3600)).padStart(2, "0");
@@ -1632,26 +1970,8 @@
       window.recAns = (q, v) => {
         answers[q] = v;
         updNavUI(q, true);
-        currentExam.questions
-          .find((x) => x.id === q)
-          ?.options?.forEach((_, i) => {
-            document
-              .getElementById(`lbl_${q}_${i}`)
-              ?.classList.remove(
-                "border-green-500",
-                "bg-green-50",
-                "ring-2",
-                "ring-green-100",
-              );
-          });
-        document
-          .getElementById(`lbl_${q}_${v}`)
-          ?.classList.add(
-            "border-green-500",
-            "bg-green-50",
-            "ring-2",
-            "ring-green-100",
-          );
+        syncAnswerUiState();
+        touchAttemptState("answer");
       };
       window.recTf = (q, s, v) => {
         if (!answers[q]) answers[q] = {};
@@ -1659,14 +1979,13 @@
         const exQ = currentExam.questions.find((x) => x.id === q);
         if (exQ.statements.every((x) => answers[q][x.id] !== undefined))
           updNavUI(q, true);
-        const t = document.getElementById(`lbl_t_${s}`);
-        const f = document.getElementById(`lbl_f_${s}`);
-        t.className = `px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition ${v ? "bg-green-500 text-white shadow" : "text-gray-500 hover:bg-gray-50"}`;
-        f.className = `px-4 py-1.5 text-sm font-bold rounded-md cursor-pointer transition ${!v ? "bg-red-500 text-white shadow" : "text-gray-500 hover:bg-gray-50"}`;
+        syncAnswerUiState();
+        touchAttemptState("answer");
       };
       window.recSh = (q, v) => {
         answers[q] = v.trim();
         updNavUI(q, v.trim() !== "");
+        touchAttemptState("answer");
       };
 
       function updNavUI(qId, done = true) {
@@ -1712,7 +2031,7 @@
 
         clearInterval(timerInterval);
         setLoading(true);
-        const timeSpent = Math.round((Date.now() - attemptStartTime) / 1000);
+        const timeSpent = Math.max(0, Math.round((Date.now() - attemptStartTime) / 1000));
         const computed = computeAttemptScore(ex, answers);
         try {
           const docRef = doc(collection(db, `${basePath}/results`));
@@ -1731,6 +2050,18 @@
             attemptQuestions: deepClone(ex.questions),
             answers: deepClone(answers),
           });
+
+          currentAttemptState = currentAttemptState || createAttemptState(ex, attemptStartTime, {
+            answers,
+            attemptQuestions: ex.questions,
+          });
+          currentAttemptState.status = "submitted";
+          currentAttemptState.submittedAt = Date.now();
+          currentAttemptState.timeSpent = timeSpent;
+          currentAttemptState.remainingSec = 0;
+          await syncAttemptToCloud("submitted");
+          clearStoredAttempt(ex.id);
+          currentAttemptState = null;
 
           if (ex.showResults !== false) {
             document
@@ -1766,6 +2097,7 @@
       };
 
       function customConfirm(msg) {
+
         return new Promise((res) => {
           const bg = document.createElement("div");
           bg.className =
@@ -1808,6 +2140,10 @@
         }, 100);
       }
 
+      window.addEventListener("beforeunload", () => {
+        touchAttemptState("heartbeat");
+      });
+
       window.addEventListener("visibilitychange", () => {
         const v = document.getElementById("view-taking-exam");
         if (
@@ -1821,5 +2157,5 @@
         }
       });
     </script>
-  </body>
+  </body
 </html>
