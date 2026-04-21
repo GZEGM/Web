@@ -1420,33 +1420,6 @@
           .trim();
       }
 
-      function getStableStudentKey(record) {
-        if (!record) return "";
-        const candidates = [
-          record.userId,
-          record.studentId,
-          record.docId,
-          record.id,
-        ];
-        for (const candidate of candidates) {
-          const value = String(candidate ?? "").trim();
-          if (value) return value;
-        }
-        const fallbackName = String(
-          record.studentName || record.name || record.displayName || "",
-        ).trim();
-        return fallbackName;
-      }
-
-      function getStableStudentName(record) {
-        if (!record) return "";
-        const name = String(
-          record.studentName || record.name || record.displayName || "",
-        ).trim();
-        if (name) return name;
-        return getStableStudentKey(record);
-      }
-
       function normalizeShortAnswerText(value) {
         return String(value ?? "")
           .replace(/\r/g, "")
@@ -1600,7 +1573,7 @@
           : raw;
 
         const tfLineMarkers = [
-          ...withoutAnswer.matchAll(/(?:^|\n)\s*([a-d])[\.\)]\s*/gi),
+          ...withoutAnswer.matchAll(/(?:^|\n)\s*([a-d])[\.\:\)\-]\s*/gi),
         ];
 
         const parseTfAnswerMap = (text) => {
@@ -1630,7 +1603,7 @@
             .split(/\n+/)
             .map((l) => l.trim())
             .filter(Boolean)) {
-            const lineMatch = line.match(/^([a-d])[\.\)]?\s*(.*)$/i);
+            const lineMatch = line.match(/^([a-d])[\.\:\)\-]?\s*(.*)$/i);
             if (lineMatch) {
               currentKey = lineMatch[1].toLowerCase();
               statements[currentKey] = stripOptionPrefix(
@@ -2692,29 +2665,19 @@
         window.renderStatsTables();
       };
 
-      async function refreshStatsCache(silent = false) {
-        const [exams, results, attempts, students] = await Promise.all([
-          getAllDocsFiltered("exams"),
-          getAllDocsFiltered("results"),
-          getAllDocsFiltered("attempts"),
-          getAllDocsFiltered("students"),
-        ]);
-        statsDataCache = {
-          exams,
-          results,
-          attempts,
-          students,
-        };
-        refreshStatsUi();
-      }
-
       async function loadComprehensiveStats(silent = false) {
         if (!silent) setLoading(true);
         if (window.statsRefreshInterval) {
           clearInterval(window.statsRefreshInterval);
           window.statsRefreshInterval = null;
         }
-        await refreshStatsCache(true);
+        statsDataCache = {
+          exams: await getAllDocsFiltered("exams"),
+          results: await getAllDocsFiltered("results"),
+          attempts: await getAllDocsFiltered("attempts"),
+          students: await getAllDocsFiltered("students"),
+        };
+        refreshStatsUi();
         startStatsRealtimeListeners();
         window.statsRefreshInterval = setInterval(() => {
           if (
@@ -2722,9 +2685,9 @@
               .getElementById("view-stats")
               ?.classList.contains("hidden-view")
           ) {
-            void refreshStatsCache(true);
+            refreshStatsUi();
           }
-        }, 4000);
+        }, 10000);
         if (!silent) setLoading(false);
       }
 
@@ -2733,13 +2696,8 @@
         const exams = statsDataCache?.exams || [];
         const results = statsDataCache?.results || [];
         const attempts = statsDataCache?.attempts || [];
-        const exam =
-          exams.find((e) => e.id === examId) ||
-          (window.loadedExams || []).find((e) => e.id === examId) ||
-          null;
-        const examResults = results
-          .filter((r) => r.examId === examId)
-          .sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+        const exam = exams.find((e) => e.id === examId) || null;
+        const examResults = results.filter((r) => r.examId === examId);
         const activeAttempts = attempts.filter((a) => {
           if (!a || a.examId !== examId) return false;
           if (a.status === "submitted") return false;
@@ -2748,7 +2706,8 @@
         });
         const activeMap = new Map();
         activeAttempts.forEach((a) => {
-          const key = getStableStudentKey(a) || a.id;
+          const key =
+            String(a.userId || a.studentName || a.id || "").trim() || a.id;
           if (
             !activeMap.has(key) ||
             Number(activeMap.get(key).lastSeenAt || 0) <
@@ -2757,30 +2716,45 @@
             activeMap.set(key, a);
           }
         });
-        const scores = examResults.map((r) => Number(r.score || 0));
+        const resultMap = new Map();
+        examResults.forEach((r) => {
+          const key =
+            String(r.userId || r.studentName || r.id || "").trim() || r.id;
+          if (
+            !resultMap.has(key) ||
+            Number(resultMap.get(key).submittedAt || 0) <
+              Number(r.submittedAt || 0)
+          ) {
+            resultMap.set(key, r);
+          }
+        });
+        const latestResults = [...resultMap.values()].sort(
+          (a, b) => (b.submittedAt || 0) - (a.submittedAt || 0),
+        );
+        const scores = latestResults.map((r) => Number(r.score || 0));
         return {
-          exam: exam || {
-            id: examId,
-            title: "Bài thi đã bị xóa hoặc chưa đồng bộ",
-            questions: [],
-          },
-          results: examResults,
+          exam,
+          results: latestResults,
           activeAttempts: [...activeMap.values()].sort(
             (a, b) => (b.lastSeenAt || 0) - (a.lastSeenAt || 0),
           ),
           activeCount: activeMap.size,
-          resultCount: examResults.length,
+          resultCount: latestResults.length,
           studentCount: new Set(
-            examResults.map((r) => getStableStudentKey(r) || r.id || ""),
+            latestResults.map((r) => r.userId || r.studentName || r.id || ""),
           ).size,
-          avgScore: examResults.length
-            ? (scores.reduce((s, n) => s + n, 0) / examResults.length).toFixed(
-                1,
-              )
+          avgScore: latestResults.length
+            ? (
+                scores.reduce((s, n) => s + n, 0) / latestResults.length
+              ).toFixed(1)
             : "0.0",
-          maxScore: examResults.length ? Math.max(...scores).toFixed(1) : "0.0",
-          minScore: examResults.length ? Math.min(...scores).toFixed(1) : "0.0",
-          cheatCount: examResults.reduce(
+          maxScore: latestResults.length
+            ? Math.max(...scores).toFixed(1)
+            : "0.0",
+          minScore: latestResults.length
+            ? Math.min(...scores).toFixed(1)
+            : "0.0",
+          cheatCount: latestResults.reduce(
             (s, r) => s + (r.cheatViolations || 0),
             0,
           ),
@@ -2790,10 +2764,8 @@
       function openExamStatsDetail(examId) {
         const snap = getExamLiveSnapshot(examId);
         if (!snap.exam) {
-          showToast(
-            "Không đồng bộ được thông tin bài thi, nhưng vẫn mở thống kê từ dữ liệu đang có",
-            "warning",
-          );
+          showToast("Không tìm thấy bài thi", "error");
+          return;
         }
         currentExamStatsDetailId = examId;
         const info = document.getElementById("esd-info");
@@ -2850,8 +2822,16 @@
 
       function getStudentIdentity(student) {
         if (!student) return { id: "", name: "" };
-        const id = String(getStableStudentKey(student)).trim();
-        const name = String(getStableStudentName(student)).trim();
+        const id = String(
+          student.id || student.userId || student.studentId || "",
+        ).trim();
+        const name = String(
+          student.name ||
+            student.studentName ||
+            student.displayName ||
+            id ||
+            "",
+        ).trim();
         return { id, name };
       }
 
@@ -2882,10 +2862,11 @@
         });
 
         results.forEach((r) => {
-          const key = getStableStudentKey(r);
-          if (!key) return;
-          const name = getStableStudentName(r) || key;
+          const key =
+            String(r.userId || r.studentName || r.studentId || "").trim() ||
+            String(r.studentName || "Không rõ").trim();
           if (!map.has(key)) {
+            const name = String(r.studentName || key || "Không rõ").trim();
             map.set(key, {
               id: key,
               docId: key,
@@ -3061,9 +3042,14 @@
           <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4"><div class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Cao nhất</div><div class="text-2xl font-black text-gray-800">${Number(student.maxScore || 0).toFixed(1)}</div></div>
         `;
 
-        const studentKey = getStableStudentKey(student);
         const studentResults = (statsDataCache?.results || [])
-          .filter((r) => getStableStudentKey(r) === studentKey)
+          .filter(
+            (r) =>
+              String(r.userId || r.studentName || "").trim() ===
+              String(
+                student.userId || student.docId || student.name || "",
+              ).trim(),
+          )
           .sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
         if (!studentResults.length) {
           empty.classList.remove("hidden");
@@ -3110,9 +3096,8 @@
         const filteredExams = exams.filter((ex) => {
           if (!search) return true;
           const exRes = results.filter((r) => r.examId === ex.id);
-          const studentCount = new Set(
-            exRes.map((r) => getStableStudentKey(r) || r.id || ""),
-          ).size;
+          const studentCount = new Set(exRes.map((r) => r.studentName || ""))
+            .size;
           const hay = [
             ex.title,
             ex.id,
@@ -3140,9 +3125,7 @@
             (a, b) => a + (b.cheatViolations || 0),
             0,
           );
-          const students = new Set(
-            exRes.map((r) => getStableStudentKey(r) || r.id || ""),
-          ).size;
+          const students = new Set(exRes.map((r) => r.studentName || "")).size;
           sumBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-red-500">${cheats}</td></tr>`;
         });
         document.getElementById("stats-summary-empty").style.display =

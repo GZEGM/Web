@@ -775,6 +775,12 @@
         getDoc,
         query,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import {
+        getDatabase,
+        ref,
+        set,
+        remove,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyDp9p5hkQ6fVEou4znk5YZu81VhgZtM7h4",
@@ -789,6 +795,7 @@
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
+      const rtdb = getDatabase(app);
       const basePath = `artifacts/${appId}/public/data`;
 
       window.State = {
@@ -1038,12 +1045,22 @@
             },
             { merge: true },
           );
+          await mirrorDocToRtdb("students", State.user.uid, {
+            userId: State.user.uid,
+            name: safeName,
+            studentName: safeName,
+            lastLoginAt: Date.now(),
+            updatedAt: Date.now(),
+          });
         } catch (e) {}
       }
 
       async function resumeActiveAttemptIfNeeded(targetExamId = null) {
         const active = getMostRecentActiveAttempt();
         if (!active) return false;
+        if (getAttemptRemainingSec(active) <= 0) {
+          return finalizeExpiredAttemptIfNeeded(targetExamId || active.examId);
+        }
         if (targetExamId && active.examId === targetExamId) return false;
         showToast(
           `Đang có bài làm dở ở mã ${active.examId}, hệ thống sẽ mở lại bài đó.`,
@@ -1133,6 +1150,22 @@
             submittedAt: reason === "submitted" ? now : currentAttemptState.submittedAt || null,
             timeSpent: currentAttemptState.timeSpent || null,
           }, { merge: true });
+          await mirrorDocToRtdb("attempts", currentAttemptCloudDocId, {
+            examId: currentExam.id,
+            examTitle: currentExam.title,
+            studentName: State.studentName,
+            userId: State.user?.uid || null,
+            startedAt: currentAttemptState.startedAt,
+            durationSec: currentAttemptState.durationSec,
+            remainingSec,
+            answers: deepClone(answers),
+            attemptQuestions: deepClone(currentExam.questions || []),
+            status: currentAttemptState.status,
+            lastSeenAt: currentAttemptState.lastSeenAt,
+            updatedAt: now,
+            submittedAt: reason === "submitted" ? now : currentAttemptState.submittedAt || null,
+            timeSpent: currentAttemptState.timeSpent || null,
+          });
           currentAttemptState.lastCloudSyncAt = now;
           saveStoredAttempt(currentAttemptState);
         } catch (e) {}
@@ -1173,11 +1206,29 @@
         currentAttemptState.answers = deepClone(answers);
         currentAttemptState.remainingSec = Math.max(0, Number(timeRemaining || 0));
         currentAttemptState.lastSeenAt = Date.now();
+        if (currentAttemptState.remainingSec <= 0 && currentAttemptState.status !== "submitted") {
+          currentAttemptState.status = "expired";
+        }
         saveStoredAttempt(currentAttemptState);
         void syncAttemptToCloud(reason);
       }
 
-
+      async function finalizeExpiredAttemptIfNeeded(targetExamId = null) {
+        const active = getMostRecentActiveAttempt();
+        if (!active || getAttemptRemainingSec(active) > 0) return false;
+        if (targetExamId && active.examId !== targetExamId) return false;
+        const exam = await loadExamById(active.examId);
+        if (!exam) return false;
+        currentExam = { ...exam, questions: deepClone(active.attemptQuestions || exam.questions || []) };
+        answers = deepClone(active.answers || {});
+        currentAttemptState = createAttemptState(currentExam, Number(active.startedAt || Date.now()), active);
+        attemptStartTime = currentAttemptState.startedAt;
+        timeRemaining = 0;
+        renderActiveExam(currentAttemptState);
+        showToast("Đã phát hiện bài làm hết giờ, hệ thống sẽ nộp tự động.", "warning");
+        await submitExam(false);
+        return true;
+      }
 
       function normalizeShortAnswerText(value) {
         return String(value ?? "")
@@ -1354,6 +1405,20 @@
         return { id: snap.id, ...snap.data() };
       }
 
+      function rtdbDoc(name, id) {
+        return ref(rtdb, `${basePath}/${name}/${id}`);
+      }
+      async function mirrorDocToRtdb(name, id, data) {
+        try {
+          await set(rtdbDoc(name, id), { id, ...deepClone(data || {}) });
+        } catch (e) {}
+      }
+      async function removeDocFromRtdb(name, id) {
+        try {
+          await remove(rtdbDoc(name, id));
+        } catch (e) {}
+      }
+
       let currentExam = null;
       let answers = {};
       let timerInterval = null;
@@ -1399,6 +1464,11 @@
             if (n) {
               document.getElementById("student-welcome-name").innerText = n;
               await ensureStudentRecord(n);
+              const autoSubmitted = await finalizeExpiredAttemptIfNeeded(examId || null);
+              if (autoSubmitted) {
+                setLoading(false);
+                return;
+              }
               const resumed = await resumeActiveAttemptIfNeeded(examId || null);
               if (!resumed) {
                 showView("view-home");
@@ -1425,6 +1495,8 @@
         const examId = new URLSearchParams(window.location.search).get(
           "examId",
         );
+        const autoSubmitted = await finalizeExpiredAttemptIfNeeded(examId || null);
+        if (autoSubmitted) return;
         const resumed = await resumeActiveAttemptIfNeeded(examId || null);
         if (resumed) return;
         showView("view-home");
@@ -2076,6 +2148,21 @@
             attemptQuestions: deepClone(ex.questions),
             answers: deepClone(answers),
           });
+          await mirrorDocToRtdb("results", docRef.id, {
+            examId: ex.id,
+            examTitle: ex.title,
+            studentName: State.studentName,
+            userId: State.user?.uid || null,
+            score: computed.score,
+            correctCount: computed.correctCount,
+            wrongCount: computed.wrongCount,
+            totalQuestions: computed.totalQuestions,
+            cheatViolations: cheatCount,
+            timeSpent,
+            submittedAt: Date.now(),
+            attemptQuestions: deepClone(ex.questions),
+            answers: deepClone(answers),
+          });
 
           currentAttemptState = currentAttemptState || createAttemptState(ex, attemptStartTime, {
             answers,
@@ -2167,6 +2254,11 @@
       }
 
       window.addEventListener("beforeunload", () => {
+        if (currentAttemptState && getAttemptRemainingSec(currentAttemptState) <= 0) {
+          currentAttemptState.status = "expired";
+          currentAttemptState.remainingSec = 0;
+          saveStoredAttempt(currentAttemptState);
+        }
         touchAttemptState("heartbeat");
       });
 
