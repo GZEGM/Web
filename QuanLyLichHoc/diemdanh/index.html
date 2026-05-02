@@ -220,45 +220,108 @@
           class="absolute inset-0 overflow-auto p-6 bg-slate-50 hidden"
         >
           <div class="max-w-7xl mx-auto space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
+            >
               <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 class="text-2xl font-black text-slate-800">Trang chủ quản trị</h2>
-                  <p class="text-sm text-slate-500 mt-1">Đi tới nhanh các khu vực quản lý và các đường dẫn công khai.</p>
+                  <h2 class="text-2xl font-black text-slate-800">
+                    Trang chủ quản trị
+                  </h2>
+                  <p class="text-sm text-slate-500 mt-1">
+                    Đi tới nhanh các khu vực quản lý và các đường dẫn công khai.
+                  </p>
                 </div>
                 <div class="flex gap-2 flex-wrap">
-                  <a href="./tkb/" class="px-4 py-2 rounded-xl bg-sky-600 text-white font-bold text-sm hover:bg-sky-700 transition">Mở TKB học sinh</a>
-                  <a href="./diemdanh/" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition">Mở điểm danh</a>
-                  <a href="./xemlai/" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition">Mở xem lại</a>
+                  <a
+                    href="./tkb/"
+                    class="px-4 py-2 rounded-xl bg-sky-600 text-white font-bold text-sm hover:bg-sky-700 transition"
+                    >Mở TKB học sinh</a
+                  >
+                  <a
+                    href="./diemdanh/"
+                    class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition"
+                    >Mở điểm danh</a
+                  >
+                  <a
+                    href="./xemlai/"
+                    class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition"
+                    >Mở xem lại</a
+                  >
                 </div>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              <button onclick="window.switchTab('schedule')" class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4"><i class="fa-solid fa-calendar-week text-xl"></i></div>
+              <button
+                onclick="window.switchTab('schedule')"
+                class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition"
+              >
+                <div
+                  class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4"
+                >
+                  <i class="fa-solid fa-calendar-week text-xl"></i>
+                </div>
                 <div class="font-bold text-slate-800">Thời khóa biểu</div>
-                <div class="text-sm text-slate-500 mt-1">Sắp xếp, chỉnh ngày và số tiết.</div>
+                <div class="text-sm text-slate-500 mt-1">
+                  Sắp xếp, chỉnh ngày và số tiết.
+                </div>
               </button>
-              <button onclick="window.switchTab('attendance')" class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4"><i class="fa-solid fa-check-double text-xl"></i></div>
+              <button
+                onclick="window.switchTab('attendance')"
+                class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition"
+              >
+                <div
+                  class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4"
+                >
+                  <i class="fa-solid fa-check-double text-xl"></i>
+                </div>
                 <div class="font-bold text-slate-800">Điểm danh</div>
-                <div class="text-sm text-slate-500 mt-1">Ghi nhận chuyên cần cho từng tiết.</div>
+                <div class="text-sm text-slate-500 mt-1">
+                  Ghi nhận chuyên cần cho từng tiết.
+                </div>
               </button>
-              <button onclick="window.switchTab('review')" class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4"><i class="fa-solid fa-circle-play text-xl"></i></div>
+              <button
+                onclick="window.switchTab('review')"
+                class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition"
+              >
+                <div
+                  class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4"
+                >
+                  <i class="fa-solid fa-circle-play text-xl"></i>
+                </div>
                 <div class="font-bold text-slate-800">Xem lại bài giảng</div>
-                <div class="text-sm text-slate-500 mt-1">Video bài giảng và tài liệu tải về.</div>
+                <div class="text-sm text-slate-500 mt-1">
+                  Video bài giảng và tài liệu tải về.
+                </div>
               </button>
-              <button onclick="window.switchTab('students')" class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4"><i class="fa-solid fa-user-graduate text-xl"></i></div>
+              <button
+                onclick="window.switchTab('students')"
+                class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition"
+              >
+                <div
+                  class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center mb-4"
+                >
+                  <i class="fa-solid fa-user-graduate text-xl"></i>
+                </div>
                 <div class="font-bold text-slate-800">Học viên</div>
-                <div class="text-sm text-slate-500 mt-1">Quản lý hồ sơ học viên.</div>
+                <div class="text-sm text-slate-500 mt-1">
+                  Quản lý hồ sơ học viên.
+                </div>
               </button>
-              <button onclick="window.switchTab('stats')" class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
+              <button
+                onclick="window.switchTab('stats')"
+                class="text-left bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition"
+              >
+                <div
+                  class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4"
+                >
+                  <i class="fa-solid fa-file-invoice-dollar text-xl"></i>
+                </div>
                 <div class="font-bold text-slate-800">Thống kê học phí</div>
-                <div class="text-sm text-slate-500 mt-1">Tổng hợp chuyên cần và doanh thu.</div>
+                <div class="text-sm text-slate-500 mt-1">
+                  Tổng hợp chuyên cần và doanh thu.
+                </div>
               </button>
             </div>
           </div>
@@ -766,20 +829,25 @@
           </div>
         </div>
 
-
         <!-- VIEW: REVIEW -->
         <div
           id="view-review"
           class="absolute inset-0 overflow-auto p-6 bg-slate-50 hidden"
         >
           <div class="max-w-7xl mx-auto space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div class="p-5 border-b bg-indigo-600 text-white flex flex-wrap justify-between items-center gap-3">
+            <div
+              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+            >
+              <div
+                class="p-5 border-b bg-indigo-600 text-white flex flex-wrap justify-between items-center gap-3"
+              >
                 <div>
                   <h2 class="font-bold flex items-center gap-2 text-lg">
                     <i class="fa-solid fa-circle-play"></i> Xem lại bài giảng
                   </h2>
-                  <p class="text-[11px] opacity-80 uppercase font-bold tracking-widest mt-1">
+                  <p
+                    class="text-[11px] opacity-80 uppercase font-bold tracking-widest mt-1"
+                  >
                     Video bài giảng và tài liệu tải về
                   </p>
                 </div>
@@ -1576,7 +1644,8 @@
       // Kiểm tra quyền admin
       function checkAdminAccess() {
         // Nếu là link public thì bỏ qua
-        if (isStudentView || isAttendancePublicView || isReviewPublicView) return true;
+        if (isStudentView || isAttendancePublicView || isReviewPublicView)
+          return true;
 
         const saved = localStorage.getItem(ADMIN_KEY);
 
@@ -1714,16 +1783,24 @@
 
         if (!initialTabApplied && pageParam !== "attendance") {
           initialTabApplied = true;
-          const allowedPages = ["home", "schedule", "attendance", "students", "stats", "review"];
+          const allowedPages = [
+            "home",
+            "schedule",
+            "attendance",
+            "students",
+            "stats",
+            "review",
+          ];
           const startTab =
             pageParam === "admin"
               ? "home"
               : allowedPages.includes(pageParam)
                 ? pageParam
                 : "home";
-          const visibleTab = isStudentView && !["schedule", "review"].includes(startTab)
-            ? "schedule"
-            : startTab;
+          const visibleTab =
+            isStudentView && !["schedule", "review"].includes(startTab)
+              ? "schedule"
+              : startTab;
           setTimeout(() => window.switchTab(visibleTab), 0);
         }
       }
@@ -1740,7 +1817,9 @@
       function applyViewMode() {
         const tabNav = document.getElementById("tab-nav");
         const headerActions = document.getElementById("header-actions");
-        const scheduleExportBtn = document.getElementById("schedule-export-btn");
+        const scheduleExportBtn = document.getElementById(
+          "schedule-export-btn",
+        );
 
         if (pageParam === "admin") {
           if (tabNav) tabNav.classList.remove("hidden");
@@ -1751,14 +1830,20 @@
         if (headerActions) headerActions.classList.add("hidden");
         if (scheduleExportBtn) scheduleExportBtn.classList.add("hidden");
 
-        ["home", "schedule", "attendance", "students", "stats", "review", "attendance-public"].forEach(
-          (t) => {
-            const view = document.getElementById(`view-${t}`);
-            const tab = document.getElementById(`tab-${t}`);
-            if (view) view.classList.add("hidden");
-            if (tab) tab.classList.add("hidden");
-          },
-        );
+        [
+          "home",
+          "schedule",
+          "attendance",
+          "students",
+          "stats",
+          "review",
+          "attendance-public",
+        ].forEach((t) => {
+          const view = document.getElementById(`view-${t}`);
+          const tab = document.getElementById(`tab-${t}`);
+          if (view) view.classList.add("hidden");
+          if (tab) tab.classList.add("hidden");
+        });
 
         if (pageParam === "schedule") {
           const view = document.getElementById("view-schedule");
@@ -1807,7 +1892,14 @@
         if (pageParam === "schedule" && id !== "schedule") return;
         if (pageParam === "review" && id !== "review") return;
         if (pageParam === "attendance") return;
-        ["home", "schedule", "attendance", "students", "stats", "review"].forEach((t) => {
+        [
+          "home",
+          "schedule",
+          "attendance",
+          "students",
+          "stats",
+          "review",
+        ].forEach((t) => {
           const view = document.getElementById(`view-${t}`);
           const tab = document.getElementById(`tab-${t}`);
           if (view) view.classList.add("hidden");
@@ -1819,8 +1911,9 @@
         const viewEl = document.getElementById(`view-${id}`);
         const tabEl = document.getElementById(`tab-${id}`);
         if (viewEl) viewEl.classList.remove("hidden");
-        if (tabEl) tabEl.className =
-          "tab-active py-4 px-1 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap";
+        if (tabEl)
+          tabEl.className =
+            "tab-active py-4 px-1 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap";
 
         if (id === "attendance") window.renderAttendanceTopics();
         if (id === "stats") window.renderStatsTable();
@@ -2219,7 +2312,6 @@
         return cols;
       }
 
-
       const isAdminMode = !isStudentView && !isAttendancePublicView;
 
       function getReviewSourceLessons(subject) {
@@ -2232,7 +2324,10 @@
         return escapeHtml(str).replaceAll("`", "&#96;");
       }
 
-      function renderMaterialRows(existing = [], listId = "review-materials-list") {
+      function renderMaterialRows(
+        existing = [],
+        listId = "review-materials-list",
+      ) {
         const list = document.getElementById(listId);
         if (!list) return;
         list.innerHTML = "";
@@ -2263,16 +2358,22 @@
         const rows = list ? list.querySelectorAll(".review-material-row") : [];
         if (rows.length <= 1) {
           if (list) list.innerHTML = "";
-          window.addReviewMaterialRow(undefined, list?.id || "review-materials-list");
+          window.addReviewMaterialRow(
+            undefined,
+            list?.id || "review-materials-list",
+          );
           return;
         }
         row?.remove();
       };
 
       function collectReviewMaterials(listId = "review-materials-list") {
-        return Array.from(document.querySelectorAll(`#${listId} .review-material-row`))
+        return Array.from(
+          document.querySelectorAll(`#${listId} .review-material-row`),
+        )
           .map((row) => ({
-            name: row.querySelector(".review-material-name")?.value.trim() || "",
+            name:
+              row.querySelector(".review-material-name")?.value.trim() || "",
             url: row.querySelector(".review-material-url")?.value.trim() || "",
           }))
           .filter((m) => m.name || m.url);
@@ -2292,10 +2393,14 @@
         window.onReviewSubjectChange?.();
         titleEl.value = item?.title || "";
         videoEl.value = item?.videoUrl || "";
-        renderMaterialRows(Array.isArray(item?.materials) ? item.materials : []);
+        renderMaterialRows(
+          Array.isArray(item?.materials) ? item.materials : [],
+        );
         const btn = document.getElementById("review-save-btn");
         if (btn) {
-          btn.textContent = editingReviewId ? "Cập nhật bài giảng" : "Thêm bài giảng";
+          btn.textContent = editingReviewId
+            ? "Cập nhật bài giảng"
+            : "Thêm bài giảng";
         }
       }
 
@@ -2317,20 +2422,23 @@
       }
 
       window.onReviewSubjectChange = function () {
-        const subject = document.getElementById("review-subject")?.value || "Toán";
+        const subject =
+          document.getElementById("review-subject")?.value || "Toán";
         populateReviewSourceLessons(subject);
         const firstLesson = getReviewSourceLessons(subject)[0];
         const titleEl = document.getElementById("review-title");
-        if (titleEl) titleEl.placeholder = firstLesson
-          ? `VD: ${firstLesson.topic}`
-          : "Tên bài giảng";
+        if (titleEl)
+          titleEl.placeholder = firstLesson
+            ? `VD: ${firstLesson.topic}`
+            : "Tên bài giảng";
       };
 
       window.openReviewEditor = function (id = null) {
         const item = id ? appData.reviewLessons.find((x) => x.id === id) : null;
         fillReviewForm(item || null);
         const section = document.getElementById("review-form-section");
-        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (section)
+          section.scrollIntoView({ behavior: "smooth", block: "start" });
       };
 
       window.cancelReviewEdit = function () {
@@ -2339,16 +2447,21 @@
       };
 
       window.saveReviewLesson = function () {
-        const subject = document.getElementById("review-subject")?.value || "Toán";
+        const subject =
+          document.getElementById("review-subject")?.value || "Toán";
         const sourceId = document.getElementById("review-source")?.value || "";
-        const titleRaw = document.getElementById("review-title")?.value.trim() || "";
-        const videoUrl = document.getElementById("review-video")?.value.trim() || "";
+        const titleRaw =
+          document.getElementById("review-title")?.value.trim() || "";
+        const videoUrl =
+          document.getElementById("review-video")?.value.trim() || "";
         const materials = collectReviewMaterials("review-materials-list");
 
         const sourceLesson = appData.schedule.find((x) => x.id === sourceId);
         const resolvedTitle =
           titleRaw ||
-          (sourceLesson ? `${sourceLesson.chapter} - ${sourceLesson.topic}` : "");
+          (sourceLesson
+            ? `${sourceLesson.chapter} - ${sourceLesson.topic}`
+            : "");
         if (!resolvedTitle) {
           showToast("Nhập tên bài giảng hoặc chọn chuyên đề có sẵn.");
           return;
@@ -2359,14 +2472,18 @@
           subject,
           title: resolvedTitle,
           sourceLessonId: sourceId === "__custom__" ? "" : sourceId,
-          sourceLabel: sourceLesson ? `${sourceLesson.chapter} | ${sourceLesson.topic}` : "",
+          sourceLabel: sourceLesson
+            ? `${sourceLesson.chapter} | ${sourceLesson.topic}`
+            : "",
           videoUrl,
           materials,
           updatedAt: new Date().toISOString(),
         };
 
         if (editingReviewId) {
-          const idx = appData.reviewLessons.findIndex((x) => x.id === editingReviewId);
+          const idx = appData.reviewLessons.findIndex(
+            (x) => x.id === editingReviewId,
+          );
           if (idx >= 0) appData.reviewLessons[idx] = payload;
         } else {
           appData.reviewLessons.unshift(payload);
@@ -2381,7 +2498,9 @@
 
       window.delReviewLesson = function (id) {
         if (!confirm("Xóa bài giảng này?")) return;
-        appData.reviewLessons = appData.reviewLessons.filter((x) => x.id !== id);
+        appData.reviewLessons = appData.reviewLessons.filter(
+          (x) => x.id !== id,
+        );
         saveToFirebase();
         renderReviewView();
       };
@@ -2478,16 +2597,23 @@
 
         cards.innerHTML = appData.reviewLessons
           .map((item) => {
-            const materials = Array.isArray(item.materials) ? item.materials : [];
+            const materials = Array.isArray(item.materials)
+              ? item.materials
+              : [];
             const materialHtml = materials.length
-              ? materials.map((m) => `
+              ? materials
+                  .map(
+                    (m) => `
                   <a href="${escapeAttr(m.url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-indigo-200 hover:text-indigo-700">
                     <i class="fa-solid fa-file-arrow-down"></i> ${escapeHtml(m.name || "Tài liệu")}
                   </a>
-                `).join("")
+                `,
+                  )
+                  .join("")
               : '<span class="text-xs text-slate-400 italic">Chưa có tài liệu</span>';
 
-            const adminBtns = isAdminMode ? `
+            const adminBtns = isAdminMode
+              ? `
               <div class="flex gap-2 mt-4">
                 <button onclick="window.openReviewEditor('${item.id}')" class="px-3 py-2 rounded-lg bg-amber-500 text-white text-xs font-bold hover:bg-amber-600">
                   <i class="fa-solid fa-pen-to-square"></i> Sửa
@@ -2496,13 +2622,16 @@
                   <i class="fa-solid fa-trash"></i> Xóa
                 </button>
               </div>
-            ` : '';
+            `
+              : "";
 
-            const videoBtn = item.videoUrl ? `
+            const videoBtn = item.videoUrl
+              ? `
               <button onclick="window.openReviewVideo('${escapeAttr(item.videoUrl)}')" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700">
                 <i class="fa-solid fa-circle-play"></i> Mở video
               </button>
-            ` : '<span class="text-xs text-slate-400 italic">Chưa có link video</span>';
+            `
+              : '<span class="text-xs text-slate-400 italic">Chưa có link video</span>';
 
             return `
               <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -2510,7 +2639,7 @@
                   <div class="min-w-0">
                     <div class="flex items-center gap-2 flex-wrap mb-2">
                       <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black ${item.subject === "Toán" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}">${escapeHtml(item.subject)}</span>
-                      ${item.sourceLabel ? `<span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${escapeHtml(item.sourceLabel)}</span>` : ''}
+                      ${item.sourceLabel ? `<span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${escapeHtml(item.sourceLabel)}</span>` : ""}
                     </div>
                     <h4 class="text-base font-bold text-slate-800 break-words">${escapeHtml(item.title || "")}</h4>
                   </div>
@@ -2527,7 +2656,10 @@
 
         if (isAdminMode) {
           if (editingReviewId) {
-            fillReviewForm(appData.reviewLessons.find((x) => x.id === editingReviewId) || null);
+            fillReviewForm(
+              appData.reviewLessons.find((x) => x.id === editingReviewId) ||
+                null,
+            );
           } else {
             fillReviewForm(null);
           }
@@ -2648,7 +2780,7 @@
               <td class="p-4 border-r text-center text-slate-400 font-bold sticky left-0 bg-white z-10">${idx + 1}</td>
               <td class="p-4 border-r font-bold text-slate-700 sticky left-16 bg-white z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">${escapeHtml(student.name)}<br><span class="text-[9px] font-normal text-slate-400 uppercase tracking-widest">${escapeHtml(student.class || "")}</span></td>
               ${cells}
-              <td class="p-4 text-center font-black ${colorClass} bg-slate-50">${attended}/${cols.length}</td>
+              <td class="p-4 text-center font-black ${colorClass} bg-slate-50">${attended}/${cols.length} (${Math.floor((attended / cols.length) * 100)}%)</td>
             </tr>`;
           })
           .join("");
