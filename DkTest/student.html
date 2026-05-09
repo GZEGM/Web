@@ -3002,19 +3002,32 @@
         const backdrop = document.getElementById("question-panel-backdrop");
 
         // Mặc định tự động ẩn Panel điều hướng trên Mobile để dễ nhìn nội dung
+        // renderActiveExam
         if (window.innerWidth < 200) {
           questionPanelHidden = true;
-          if (panel) {
-            panel.classList.add("mobile-closed");
-            panel.classList.remove("mobile-open");
-          }
-          if (backdrop) {
-            backdrop.classList.add("hidden", "opacity-0");
-          }
+          panel?.classList.add("mobile-closed");
+          panel?.classList.remove("mobile-open");
+          backdrop?.classList.add("hidden", "opacity-0");
         } else {
           questionPanelHidden = false;
-          if (panel)
-            panel.classList.remove("hidden", "mobile-open", "mobile-closed");
+          panel?.classList.remove("hidden", "mobile-open", "mobile-closed");
+        }
+
+        // toggleQuestionPanel
+        if (window.innerWidth < 200) {
+          if (!questionPanelHidden) {
+            panel.classList.remove("mobile-closed");
+            panel.classList.add("mobile-open");
+            backdrop?.classList.remove("hidden");
+            setTimeout(() => backdrop?.classList.remove("opacity-0"), 10);
+          } else {
+            panel.classList.remove("mobile-open");
+            panel.classList.add("mobile-closed");
+            backdrop?.classList.add("opacity-0");
+            setTimeout(() => backdrop?.classList.add("hidden"), 300);
+          }
+        } else {
+          panel.classList.toggle("hidden", questionPanelHidden);
         }
 
         if (timerInterval) clearInterval(timerInterval);
