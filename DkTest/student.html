@@ -142,6 +142,17 @@
           opacity 0.3s ease;
       }
 
+      .exam-font-scale-host {
+        font-size: calc(1rem * var(--exam-font-scale, 1));
+        line-height: 1.6;
+      }
+
+      .exam-font-scale-host .question-text,
+      .exam-font-scale-host .option-content,
+      .exam-font-scale-host .detail-card {
+        font-size: inherit;
+      }
+
       @media (max-width: 200px) {
         body {
           overflow-x: hidden;
@@ -545,6 +556,9 @@
                   Chọn số câu theo từng phần. Nếu để trống, hệ thống dùng mặc
                   định của giáo viên.
                 </p>
+                <p class="text-sm text-blue-700 mt-1">
+                  Nếu để giá trị 0 thì sẽ load toàn bộ câu hỏi phần đó.
+                </p>
               </div>
               <span
                 class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"
@@ -554,7 +568,7 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label class="text-sm font-semibold text-blue-900">
-                MCQ
+                Trắc nghiệm
                 <input
                   id="subexam-mcq-count"
                   type="number"
@@ -564,7 +578,7 @@
                 />
               </label>
               <label class="text-sm font-semibold text-blue-900">
-                TF
+                Đúng sai
                 <input
                   id="subexam-tf-count"
                   type="number"
@@ -689,7 +703,7 @@
               <div class="flex items-center gap-1 bg-gray-100 rounded-full p-1">
                 <button
                   type="button"
-                  onclick="changeExamFontScale(-0.1)"
+                  onclick="window.changeExamFontScale(-0.1)"
                   class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 font-bold transition"
                   title="Giảm cỡ chữ"
                 >
@@ -697,7 +711,7 @@
                 </button>
                 <button
                   type="button"
-                  onclick="resetExamFontScale()"
+                  onclick="window.resetExamFontScale()"
                   class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 text-[10px] font-bold transition"
                   title="Đặt lại cỡ chữ"
                 >
@@ -705,7 +719,7 @@
                 </button>
                 <button
                   type="button"
-                  onclick="changeExamFontScale(0.1)"
+                  onclick="window.changeExamFontScale(0.1)"
                   class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 font-bold transition"
                   title="Tăng cỡ chữ"
                 >
@@ -1805,16 +1819,18 @@
         if (indicator)
           indicator.innerText = `${Math.round(examFontScale * 100)}%`;
       }
-      function changeExamFontScale(delta) {
+      window.changeExamFontScale = function (delta) {
         applyExamFontScale(examFontScale + delta);
-      }
-      function resetExamFontScale() {
+      };
+
+      window.resetExamFontScale = function () {
         applyExamFontScale(1);
-      }
-      function loadSavedExamFontScale() {
+      };
+
+      window.loadSavedExamFontScale = function () {
         const saved = Number(localStorage.getItem(EXAM_FONT_SCALE_KEY) || 1);
         applyExamFontScale(saved);
-      }
+      };
       loadSavedExamFontScale();
 
       function buildSubExamConfigFromExam(exam) {
@@ -2774,7 +2790,8 @@
             if (shortInput && !shortInput.value)
               shortInput.value = String(subCfg.shortCount || 0);
             const useSub = document.getElementById("use-sub-exam");
-            if (useSub) useSub.checked = !!subCfg.enabled;
+            // if (useSub) useSub.checked = !!subCfg.enabled;
+            if (useSub) useSub.checked = false;
           }
 
           if (data.maxAttempts > 0 && userAttemptsCount >= data.maxAttempts) {
