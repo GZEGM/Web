@@ -142,7 +142,7 @@
           opacity 0.3s ease;
       }
 
-      @media (max-width: 200px) {
+      @media (max-width: 768px) {
         body {
           overflow-x: hidden;
         }
@@ -194,100 +194,14 @@
         #modal-math .bg-white,
         #modal-attempt-log .bg-white,
         #modal-report .bg-white {
-          max-width: calc(100vw - 0.75rem) !important;
-          margin: 0.375rem !important;
-          height: calc(100dvh - 0.75rem) !important;
-          min-width: 0 !important;
-          overflow-x: hidden !important;
-        }
-
-        /* Chống tràn bên trong modal detail */
-        #modal-submission-detail .bg-white,
-        #modal-submission-detail .bg-gray-50,
-        #modal-submission-detail .detail-card,
-        #modal-submission-detail .flex,
-        #modal-submission-detail .grid {
-          min-width: 0 !important;
-        }
-
-        #modal-submission-detail .break-words,
-        #modal-submission-detail .text-wrap {
-          overflow-wrap: anywhere !important;
-          word-break: break-word !important;
-        }
-
-        #modal-submission-detail .katex,
-        #modal-submission-detail .katex-display {
-          max-width: 100% !important;
-          overflow-x: auto !important;
-          overflow-y: hidden !important;
+          max-width: calc(100vw - 1rem) !important;
+          margin: 0.5rem !important;
+          height: calc(100dvh - 1rem) !important;
         }
 
         /* Chống đè header trên mobile modal */
         #modal-submission-detail .bg-white.rounded-2xl {
           max-height: 100%;
-        }
-      }
-
-      /* HARD FIX MOBILE OVERFLOW */
-
-      .option-content,
-      .option-content * {
-        min-width: 0 !important;
-        max-width: 100% !important;
-        box-sizing: border-box;
-      }
-
-      .option-content {
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-      }
-
-      /* KaTeX */
-      .option-content .katex-display {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        padding-bottom: 2px;
-      }
-
-      .option-content .katex {
-        white-space: normal !important;
-      }
-
-      /* IMG */
-      .option-content img {
-        max-width: 100% !important;
-        height: auto !important;
-      }
-
-      /* TABLE */
-      .option-content table {
-        display: block;
-        overflow-x: auto;
-        max-width: 100%;
-      }
-
-      /* PRE */
-      .option-content pre {
-        white-space: pre-wrap !important;
-        word-break: break-word !important;
-      }
-
-      /* MOBILE */
-      @media (max-width: 700px) {
-        .detail-card {
-          width: 100% !important;
-          max-width: 100% !important;
-          overflow: hidden !important;
-        }
-
-        .option-content {
-          font-size: 14px;
         }
       }
     </style>
@@ -532,61 +446,6 @@
           </div>
 
           <div
-            id="sub-exam-settings-block"
-            class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-blue-950"
-          >
-            <div class="flex items-center justify-between gap-3 mb-3">
-              <div>
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                  <i class="fa-solid fa-layer-group text-blue-600"></i> Làm đề
-                  con
-                </h3>
-                <p class="text-sm text-blue-700 mt-1">
-                  Chọn số câu theo từng phần. Nếu để trống, hệ thống dùng mặc
-                  định của giáo viên.
-                </p>
-              </div>
-              <span
-                class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"
-              >
-                Tùy chỉnh
-              </span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <label class="text-sm font-semibold text-blue-900">
-                MCQ
-                <input
-                  id="subexam-mcq-count"
-                  type="number"
-                  min="0"
-                  class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
-                  placeholder="0"
-                />
-              </label>
-              <label class="text-sm font-semibold text-blue-900">
-                TF
-                <input
-                  id="subexam-tf-count"
-                  type="number"
-                  min="0"
-                  class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
-                  placeholder="0"
-                />
-              </label>
-              <label class="text-sm font-semibold text-blue-900">
-                Trả lời ngắn
-                <input
-                  id="subexam-short-count"
-                  type="number"
-                  min="0"
-                  class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
-                  placeholder="0"
-                />
-              </label>
-            </div>
-          </div>
-
-          <div
             class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8 text-amber-900"
           >
             <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
@@ -606,27 +465,6 @@
                 >
               </label>
             </div>
-          </div>
-          <div
-            id="sub-exam-toggle-wrap"
-            class="hidden mb-6 text-left md:text-right"
-          >
-            <label
-              class="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 cursor-pointer"
-            >
-              <input
-                id="use-sub-exam"
-                type="checkbox"
-                class="w-5 h-5 accent-blue-600"
-              />
-              <span class="text-sm md:text-base font-bold text-blue-900"
-                >Làm đề con</span
-              >
-            </label>
-            <p class="text-xs text-blue-700 mt-2 md:text-right">
-              Bật lên để hệ thống chọn ngẫu nhiên số câu theo từng phần từ ngân
-              hàng câu hỏi gốc.
-            </p>
           </div>
           <div class="text-center md:text-right">
             <button
@@ -679,38 +517,12 @@
             >
               <i class="fa-regular fa-clock"></i>
             </button>
-            <div class="flex flex-col items-center gap-1">
+            <div class="flex flex-col items-center">
               <div
                 id="taking-timer"
                 class="font-mono text-lg md:text-2xl font-black text-green-600 bg-green-50 px-3 md:px-4 py-1 rounded-lg border border-green-100 shadow-inner transition-colors duration-500"
               >
                 00:00
-              </div>
-              <div class="flex items-center gap-1 bg-gray-100 rounded-full p-1">
-                <button
-                  type="button"
-                  onclick="changeExamFontScale(-0.1)"
-                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 font-bold transition"
-                  title="Giảm cỡ chữ"
-                >
-                  A−
-                </button>
-                <button
-                  type="button"
-                  onclick="resetExamFontScale()"
-                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 text-[10px] font-bold transition"
-                  title="Đặt lại cỡ chữ"
-                >
-                  A
-                </button>
-                <button
-                  type="button"
-                  onclick="changeExamFontScale(0.1)"
-                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 font-bold transition"
-                  title="Tăng cỡ chữ"
-                >
-                  A+
-                </button>
               </div>
             </div>
             <button
@@ -876,14 +688,6 @@
           >
             Xem chi tiết bài làm
           </button>
-
-          <button
-            id="res-report-btn"
-            class="hidden bg-red-100 hover:bg-red-200 text-red-700 px-8 py-3 rounded-xl font-bold transition shadow-sm w-full md:w-auto flex items-center justify-center gap-2"
-          >
-            <i class="fa-solid fa-flag"></i>
-            Báo lỗi đề
-          </button>
         </div>
       </div>
     </main>
@@ -1041,25 +845,25 @@
     <!-- Modal Xem Chi Tiết Bài Làm ĐƯỢC FIX LẠI CHO MOBILE -->
     <div
       id="modal-submission-detail"
-      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden-view p-2 sm:p-4"
+      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden-view p-4"
       onclick="if (event.target === this) closeSubmissionDetail();"
     >
       <div
-        class="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-4xl h-[100dvh] sm:h-[90vh] flex flex-col modal-content-enter overflow-hidden min-w-0"
+        class="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-4xl h-full md:h-[90vh] flex flex-col modal-content-enter overflow-hidden"
       >
-        <div class="p-3 md:p-5 border-b bg-white shrink-0 relative min-w-0">
-          <div class="flex justify-between items-start gap-2 min-w-0">
-            <div
-              class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-w-0 w-full max-w-full"
-            >
+        <!-- Header của Modal Detail (Fix đè nút) -->
+        <div class="p-3 md:p-5 border-b bg-white shrink-0 relative">
+          <div class="flex justify-between items-start gap-2">
+            <div class="flex-1 min-w-0">
               <h3 class="font-bold text-base md:text-xl text-gray-800 truncate">
                 Chi tiết bài làm
               </h3>
               <p
                 id="sd-info"
-                class="text-[11px] md:text-sm text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight min-w-0"
+                class="text-[11px] md:text-sm text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight"
               ></p>
             </div>
+            <!-- Bỏ class absolute top-4 right-4 để không bị lẹm đè lên text -->
             <button
               onclick="closeSubmissionDetail()"
               class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition shrink-0"
@@ -1068,9 +872,9 @@
             </button>
           </div>
 
-          <div class="flex flex-wrap gap-2 mt-3 min-w-0">
+          <div class="flex flex-wrap gap-2 mt-3">
             <div
-              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm shrink-0 min-w-0"
+              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm shrink-0"
             >
               <button
                 id="btn-review-mode-attempt"
@@ -1087,9 +891,8 @@
                 Gốc
               </button>
             </div>
-
             <div
-              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm overflow-x-auto max-w-full min-w-0"
+              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm overflow-x-auto max-w-full"
             >
               <button
                 id="btn-filter-all"
@@ -1116,12 +919,10 @@
           </div>
         </div>
 
-        <div
-          class="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 min-w-0"
-          id="sd-content"
-        ></div>
+        <div class="flex-1 overflow-y-auto p-3 md:p-6" id="sd-content"></div>
       </div>
     </div>
+
     <!-- Modal Bảng Xếp Hạng -->
     <div
       id="modal-leaderboard"
@@ -1147,7 +948,7 @@
             <i class="fa-solid fa-xmark text-lg"></i>
           </button>
         </div>
-        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
           <div
             class="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm"
           >
@@ -1231,10 +1032,6 @@
       const ATTEMPT_HEARTBEAT_MS = 15000;
       let currentAttemptState = null;
       let currentAttemptCloudDocId = null;
-      let attemptSyncInFlight = false;
-      let attemptSyncQueued = false;
-      let attemptSyncTimer = null;
-      let attemptSyncLastSignature = "";
 
       window.showToast = (msg, type = "info") => {
         const container = document.getElementById("toast-container");
@@ -1560,22 +1357,24 @@
 
       async function syncAttemptToCloud(reason = "heartbeat") {
         if (!currentAttemptState || !currentExam || !State.studentName) return;
+        const remainingSec = Math.max(0, Number(timeRemaining || 0));
+        currentAttemptState.remainingSec = remainingSec;
+        currentAttemptState.answers = deepClone(answers);
+        currentAttemptState.status =
+          reason === "submitted" ? "submitted" : "active";
+        currentAttemptState.lastSeenAt = Date.now();
+        saveStoredAttempt(currentAttemptState);
         const now = Date.now();
-        const flushNow = reason === "submitted";
-
-        const runSync = async () => {
-          if (attemptSyncInFlight) {
-            attemptSyncQueued = true;
-            return;
-          }
-          const remainingSec = Math.max(0, Number(timeRemaining || 0));
-          currentAttemptState.remainingSec = remainingSec;
-          currentAttemptState.answers = deepClone(answers);
-          currentAttemptState.status =
-            reason === "submitted" ? "submitted" : "active";
-          currentAttemptState.lastSeenAt = Date.now();
-          saveStoredAttempt(currentAttemptState);
-
+        if (
+          reason !== "submitted" &&
+          reason !== "answer-log" &&
+          currentAttemptState.lastCloudSyncAt &&
+          now - currentAttemptState.lastCloudSyncAt < ATTEMPT_HEARTBEAT_MS
+        ) {
+          return;
+        }
+        currentAttemptCloudDocId = buildAttemptKey(currentExam.id);
+        try {
           const payload = {
             examId: currentExam.id,
             examTitle: currentExam.title,
@@ -1585,97 +1384,29 @@
             durationSec: currentAttemptState.durationSec,
             remainingSec,
             answers: deepClone(answers),
-            attemptQuestions: deepClone(
-              currentAttemptState.attemptQuestions ||
-                currentExam.questions ||
-                [],
-            ),
+            attemptQuestions: deepClone(currentExam.questions || []),
             activityLog: deepClone(currentAttemptState.activityLog || []),
             status: currentAttemptState.status,
             lastSeenAt: currentAttemptState.lastSeenAt,
-            updatedAt: Date.now(),
+            updatedAt: now,
             submittedAt:
               reason === "submitted"
-                ? Date.now()
+                ? now
                 : currentAttemptState.submittedAt || null,
             timeSpent: currentAttemptState.timeSpent || null,
-            isSubExam: !!currentAttemptState.isSubExam,
-            subExamConfig: deepClone(currentAttemptState.subExamConfig || null),
           };
-          const signature = JSON.stringify({
-            answers: payload.answers,
-            remainingSec: payload.remainingSec,
-            status: payload.status,
-            attemptQuestions: payload.attemptQuestions,
-            activityLog: payload.activityLog,
-            isSubExam: payload.isSubExam,
-            subExamConfig: payload.subExamConfig,
-            submittedAt: payload.submittedAt,
-            timeSpent: payload.timeSpent,
-          });
-          if (
-            reason !== "submitted" &&
-            signature === attemptSyncLastSignature
-          ) {
-            return;
-          }
-          attemptSyncInFlight = true;
-          currentAttemptCloudDocId = buildAttemptKey(currentExam.id);
-          try {
-            await setDoc(
-              doc(db, `${basePath}/attempts`, currentAttemptCloudDocId),
-              payload,
-              { merge: true },
-            );
-            await mirrorDocToRtdb(
-              "attempts",
-              currentAttemptCloudDocId,
-              payload,
-            );
-            currentAttemptState.lastCloudSyncAt = Date.now();
-            attemptSyncLastSignature = signature;
-            saveStoredAttempt(currentAttemptState);
-          } catch (e) {
-          } finally {
-            attemptSyncInFlight = false;
-            if (attemptSyncQueued) {
-              attemptSyncQueued = false;
-              if (currentAttemptState && currentExam) {
-                setTimeout(() => void syncAttemptToCloud("heartbeat"), 0);
-              }
-            }
-          }
-        };
-
-        if (flushNow) {
-          if (attemptSyncTimer) {
-            clearTimeout(attemptSyncTimer);
-            attemptSyncTimer = null;
-          }
-          await runSync();
-          return;
-        }
-
-        if (
-          reason !== "submitted" &&
-          reason !== "answer-log" &&
-          currentAttemptState.lastCloudSyncAt &&
-          now - currentAttemptState.lastCloudSyncAt < ATTEMPT_HEARTBEAT_MS
-        ) {
-          return;
-        }
-
-        if (attemptSyncTimer) return;
-        attemptSyncTimer = setTimeout(() => {
-          attemptSyncTimer = null;
-          void runSync();
-        }, 3000);
+          await setDoc(
+            doc(db, `${basePath}/attempts`, currentAttemptCloudDocId),
+            payload,
+            { merge: true },
+          );
+          await mirrorDocToRtdb("attempts", currentAttemptCloudDocId, payload);
+          currentAttemptState.lastCloudSyncAt = now;
+          saveStoredAttempt(currentAttemptState);
+        } catch (e) {}
       }
 
       function createAttemptState(exam, startedAt = Date.now(), source = {}) {
-        const storedQuestions = deepClone(
-          source.attemptQuestions || exam.questions || [],
-        );
         return {
           examId: exam.id,
           examTitle: exam.title,
@@ -1684,9 +1415,9 @@
           startedAt,
           durationSec: Math.max(0, Number((exam.timeLimit || 45) * 60)),
           answers: deepClone(source.answers || {}),
-          attemptQuestions: storedQuestions,
-          isSubExam: !!source.isSubExam,
-          subExamConfig: deepClone(source.subExamConfig || null),
+          attemptQuestions: deepClone(
+            source.attemptQuestions || exam.questions || [],
+          ),
           status: source.status || "active",
           submittedAt: source.submittedAt || null,
           timeSpent: source.timeSpent || null,
@@ -1730,8 +1461,6 @@
         currentExam = {
           ...exam,
           questions: deepClone(active.attemptQuestions || exam.questions || []),
-          isSubExam: !!active.isSubExam,
-          subExamConfig: deepClone(active.subExamConfig || null),
         };
         answers = deepClone(active.answers || {});
         currentAttemptState = createAttemptState(
@@ -1779,93 +1508,6 @@
         return splitAcceptedShortAnswers(question?.exactAnswers).some(
           (candidate) => normalizeShortAnswerText(candidate) === answer,
         );
-      }
-
-      const EXAM_FONT_SCALE_KEY = "student_exam_font_scale_edu";
-      let examFontScale = 1;
-      function clampExamFontScale(value) {
-        const n = Number(value);
-        if (!Number.isFinite(n)) return 1;
-        return Math.min(1.5, Math.max(0.8, Number(n.toFixed(2))));
-      }
-      function applyExamFontScale(value = examFontScale) {
-        examFontScale = clampExamFontScale(value);
-        localStorage.setItem(EXAM_FONT_SCALE_KEY, String(examFontScale));
-        document.documentElement.style.setProperty(
-          "--exam-font-scale",
-          String(examFontScale),
-        );
-        ["taking-canvas-inner", "sd-content"].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.classList.add("exam-font-scale-host");
-          }
-        });
-        const indicator = document.getElementById("font-scale-indicator");
-        if (indicator)
-          indicator.innerText = `${Math.round(examFontScale * 100)}%`;
-      }
-      function changeExamFontScale(delta) {
-        applyExamFontScale(examFontScale + delta);
-      }
-      function resetExamFontScale() {
-        applyExamFontScale(1);
-      }
-      function loadSavedExamFontScale() {
-        const saved = Number(localStorage.getItem(EXAM_FONT_SCALE_KEY) || 1);
-        applyExamFontScale(saved);
-      }
-      loadSavedExamFontScale();
-
-      function buildSubExamConfigFromExam(exam) {
-        const cfg = exam?.subExamConfig || {};
-        return {
-          enabled: !!exam?.allowSubExam,
-          mcqCount: Math.max(0, Number(cfg.mcqCount || 0)),
-          tfCount: Math.max(0, Number(cfg.tfCount || 0)),
-          shortCount: Math.max(0, Number(cfg.shortCount || 0)),
-        };
-      }
-      function normalizeSubExamCount(value) {
-        const n = Number.parseInt(value, 10);
-        return Number.isFinite(n) && n > 0 ? n : 0;
-      }
-      function pickRandomQuestions(list, count) {
-        const source = shuffleArray(Array.isArray(list) ? list : []);
-        return source.slice(0, Math.max(0, count));
-      }
-      function buildSubExamAttemptQuestions(
-        exam,
-        config = {},
-        allowOverride = false,
-      ) {
-        const questions = deepClone(exam?.questions || []);
-        const mcq = questions.filter((q) => q.type === "mcq");
-        const tf = questions.filter((q) => q.type === "tf");
-        const short = questions.filter((q) => q.type === "short");
-        const other = questions.filter(
-          (q) => !["mcq", "tf", "short"].includes(q.type),
-        );
-        const nextConfig = {
-          enabled: !!config.enabled,
-          mcqCount: Math.max(0, Number(config.mcqCount || 0)),
-          tfCount: Math.max(0, Number(config.tfCount || 0)),
-          shortCount: Math.max(0, Number(config.shortCount || 0)),
-        };
-        if (!nextConfig.enabled) {
-          return { questions, config: nextConfig, isSubExam: false };
-        }
-        const picked = [
-          ...pickRandomQuestions(mcq, nextConfig.mcqCount || mcq.length),
-          ...pickRandomQuestions(tf, nextConfig.tfCount || tf.length),
-          ...pickRandomQuestions(short, nextConfig.shortCount || short.length),
-          ...other,
-        ];
-        return {
-          questions: shuffleArray(picked),
-          config: nextConfig,
-          isSubExam: true,
-        };
       }
 
       function shuffleArray(arr) {
@@ -2331,7 +1973,6 @@
             show: true,
             showDetails: false,
           };
-          const titleLabel = `${window.renderTextToHtml(eInfo.title)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}`;
           const tr = document.createElement("tr");
           tr.className = "hover:bg-gray-50 transition";
           const actionButtons = [];
@@ -2349,11 +1990,12 @@
               `<button onclick="viewSubmissionDetail('${r.id}', '${r.examId}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Chi tiết</button>`,
             );
 
+          // Nút Báo cáo
           actionButtons.push(
-            `<button onclick="openReportModal('${r.examId}', '${r.id}', '${window.renderTextToHtml(eInfo.title).replace(/'/g, "\'")}')" class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-flag"></i></button>`,
+            `<button onclick="openReportModal('${r.examId}', '${r.id}', '${window.renderTextToHtml(eInfo.title).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-flag"></i></button>`,
           );
 
-          tr.innerHTML = `<td class="px-5 py-4 font-medium text-gray-900 min-w-[150px]">${titleLabel}</td>
+          tr.innerHTML = `<td class="px-5 py-4 font-medium text-gray-900 min-w-[150px]">${window.renderTextToHtml(eInfo.title)}</td>
             <td class="px-5 py-4 font-bold ${eInfo.show ? "text-green-700" : "text-gray-400"}">${eInfo.show ? Number(r.score || 0).toFixed(1) + " đ" : '<i class="fa-solid fa-eye-slash"></i> Ẩn'}</td>
             <td class="px-5 py-4 text-sm text-gray-500 min-w-[120px]">${toVnTime(r.submittedAt)}<br><span class="text-xs">Time: ${formatDuration(r.timeSpent || 0)}</span></td>
             <td class="px-5 py-4 flex flex-wrap gap-2">${actionButtons.join("")}</td>`;
@@ -2446,13 +2088,11 @@
         }
         return [...best.values()];
       }
+
       function renderSubmissionDetailView(exam, res, mode = "attempt") {
         const container = document.getElementById("sd-content");
         if (!container) return;
-
         container.innerHTML = "";
-        container.classList.add("exam-font-scale-host");
-
         const questions =
           mode === "original"
             ? deepClone(exam.questions || [])
@@ -2462,7 +2102,6 @@
           const stuAns = res.answers?.[q.id];
           const review =
             q.type === "mcq" ? getMcqReviewMeta(q, res, mode) : null;
-
           const isCorrect =
             q.type === "mcq"
               ? Number(review?.selectedIndex) === Number(review?.correctIndex)
@@ -2481,18 +2120,10 @@
 
           const qDiv = document.createElement("div");
           qDiv.className =
-            "detail-card mb-6 md:mb-8 p-4 md:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm min-w-0 overflow-hidden";
-
-          let html = `
-      <div class="font-bold text-base md:text-lg mb-4 text-gray-800 break-words leading-7 min-w-0">
-        <span class="inline-flex items-center bg-gray-100 text-gray-600 px-3 py-1 rounded-lg mr-2 whitespace-nowrap">Câu ${i + 1}</span>
-        <span class="break-words">${window.renderTextToHtml(q.text)}</span>
-      </div>
-    `;
-
-          if (q.imageUrl) {
+            "mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm";
+          let html = `<div class="font-bold text-lg mb-4 text-gray-800"><span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg mr-2">Câu ${i + 1}</span> ${window.renderTextToHtml(q.text)}</div>`;
+          if (q.imageUrl)
             html += `<img src="${q.imageUrl}" class="image-preview mb-4"/>`;
-          }
 
           if (q.type === "mcq") {
             review.options.forEach((opt, oI) => {
@@ -2514,65 +2145,45 @@
               html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
             }
           } else if (q.type === "tf") {
-            html += `<div class="space-y-3 min-w-0">`;
-            (q.statements || []).forEach((s, idx) => {
-              const stu = stuAns?.[s.id];
-              const ok = stu === s.isTrue;
-              html += `
-          <div class="p-3 rounded-xl border ${ok ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"} min-w-0 overflow-hidden">
-            <div class="font-semibold text-gray-800 break-words">${idx + 1}. ${window.renderTextToHtml(s.text)}</div>
-            <div class="mt-2 text-sm ${ok ? "text-green-700" : "text-red-700"} break-words">
-              HS chọn: <b>${stu === true ? "Đúng" : stu === false ? "Sai" : "Bỏ trống"}</b>
-              <span class="mx-2 text-gray-300">|</span>
-              Đáp án: <b>${s.isTrue ? "Đúng" : "Sai"}</b>
-            </div>
-          </div>
-        `;
+            q.statements.forEach((s, sI) => {
+              const sAns = stuAns?.[s.id];
+              const rowCorrect = sAns === s.isTrue;
+              const bg =
+                sAns === undefined
+                  ? "bg-gray-50"
+                  : rowCorrect
+                    ? "bg-green-50 border-green-400 text-green-800"
+                    : "bg-red-50 border-red-400 text-red-800";
+              html += `<div class="p-3 border rounded-lg mb-2 flex justify-between ${bg}"><span>${String.fromCharCode(97 + sI)}) ${window.renderTextToHtml(s.text)}</span> <span class="font-bold shrink-0">HS Chọn: ${sAns === undefined ? "Trống" : sAns ? "Đúng" : "Sai"} (Chuẩn: ${s.isTrue ? "Đúng" : "Sai"})</span></div>`;
             });
             if (q.explanation) {
               html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
             }
           } else if (q.type === "short") {
             const stTxt = String(stuAns || "");
-            const exact = q.exactAnswers || "—";
-            html += `
-        <div class="grid gap-3 md:grid-cols-2 min-w-0">
-          <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 min-w-0 overflow-hidden">
-            <div class="text-xs font-bold text-gray-400 mb-2">HS đã chọn</div>
-            <div class="break-words min-w-0">${window.renderTextToHtml(stTxt) || '<i class="text-gray-400">Bỏ trống</i>'}</div>
-          </div>
-          <div class="p-4 rounded-xl border border-green-200 bg-green-50 min-w-0 overflow-hidden">
-            <div class="text-xs font-bold text-green-600 mb-2">Đáp án đúng</div>
-            <div class="text-green-800 font-bold break-words min-w-0">${window.renderTextToHtml(exact)}</div>
-          </div>
-        </div>
-      `;
-            html += `
-        <div class="mt-3 text-sm text-gray-600 break-words">
-          <b>HS đã chọn:</b> ${window.renderTextToHtml(stTxt || "Bỏ trống")}
-          <span class="mx-2 text-gray-300">|</span>
-          <b>Đáp án đúng:</b> ${window.renderTextToHtml(exact || "—")}
-        </div>
-      `;
+            const exactList = splitAcceptedShortAnswers(q.exactAnswers);
+            const exact = exactList.join(" | ");
+            html += `<div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-gray-50 border rounded-lg"><div class="text-xs text-gray-500 font-bold mb-1">HỌC SINH NHẬP</div><div class="${isCorrect ? "text-green-600" : "text-red-600"} font-bold">${window.renderTextToHtml(stTxt) || '<i class="text-gray-400">Bỏ trống</i>'}</div></div>
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg"><div class="text-xs text-green-600 font-bold mb-1">ĐÁP ÁN ĐÚNG</div><div class="text-green-800 font-bold">${window.renderTextToHtml(exact)}</div></div>
+                 </div>`;
+            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${window.renderTextToHtml(stTxt || "Bỏ trống")} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${window.renderTextToHtml(exact || "—")}</div>`;
             if (q.explanation) {
-              html += `
-          <div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50 min-w-0 overflow-hidden">
-            <div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div>
-            <div class="text-blue-900 break-words min-w-0">${window.renderTextToHtml(q.explanation)}</div>
-          </div>
-        `;
+              html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
             }
           }
 
           qDiv.innerHTML = html;
           container.appendChild(qDiv);
         });
-
+        // if (Array.isArray(res.activityLog) && res.activityLog.length) {
+        //   container.innerHTML += `<div class="mt-8 p-5 bg-slate-50 border border-gray-200 rounded-2xl"><div class="flex items-center justify-between mb-4"><h4 class="font-bold text-gray-800">Nhật ký làm bài</h4><span class="text-xs text-gray-500">${res.activityLog.length} lần</span></div>${renderAttemptLogEntries(res.activityLog)}</div>`;
+        // }
         typesetMath();
         updateReviewModeButtons(mode);
         updateSubmissionFilterButtons(currentSubmissionFilter);
-        applyExamFontScale(examFontScale);
       }
+
       window.setSubmissionReviewMode = (mode) => {
         if (!currentSubmissionContext) return;
         currentSubmissionReviewMode =
@@ -2751,32 +2362,6 @@
           document.getElementById("intro-attempts").innerHTML =
             `${userAttemptsCount} / ${data.maxAttempts || "∞"}`;
 
-          const subExamBlock = document.getElementById(
-            "sub-exam-settings-block",
-          );
-          const subExamToggleWrap = document.getElementById(
-            "sub-exam-toggle-wrap",
-          );
-          const allowSubExam = !!data.allowSubExam;
-          const subCfg = buildSubExamConfigFromExam(data);
-          if (subExamBlock)
-            subExamBlock.classList.toggle("hidden", !allowSubExam);
-          if (subExamToggleWrap)
-            subExamToggleWrap.classList.toggle("hidden", !allowSubExam);
-          if (allowSubExam) {
-            const mcqInput = document.getElementById("subexam-mcq-count");
-            const tfInput = document.getElementById("subexam-tf-count");
-            const shortInput = document.getElementById("subexam-short-count");
-            if (mcqInput && !mcqInput.value)
-              mcqInput.value = String(subCfg.mcqCount || 0);
-            if (tfInput && !tfInput.value)
-              tfInput.value = String(subCfg.tfCount || 0);
-            if (shortInput && !shortInput.value)
-              shortInput.value = String(subCfg.shortCount || 0);
-            const useSub = document.getElementById("use-sub-exam");
-            if (useSub) useSub.checked = !!subCfg.enabled;
-          }
-
           if (data.maxAttempts > 0 && userAttemptsCount >= data.maxAttempts) {
             btnStart.disabled = true;
             btnStart.innerHTML = `<i class="fa-solid fa-ban"></i> Đã hết lượt làm bài`;
@@ -2824,7 +2409,7 @@
                     : idx === 2
                       ? "bg-orange-100 text-orange-600"
                       : "bg-gray-50 text-gray-500";
-              lbBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 text-center"><span class="w-6 h-6 inline-flex items-center justify-center rounded-full font-bold text-xs ${badge}">${idx + 1}</span></td><td class="px-4 py-2 font-medium min-w-[100px]">${window.renderTextToHtml(r.studentName)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-4 py-2 font-bold text-green-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">${formatDuration(r.timeSpent || 0)}</td></tr>`;
+              lbBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 text-center"><span class="w-6 h-6 inline-flex items-center justify-center rounded-full font-bold text-xs ${badge}">${idx + 1}</span></td><td class="px-4 py-2 font-medium min-w-[100px]">${window.renderTextToHtml(r.studentName)}</td><td class="px-4 py-2 font-bold text-green-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">${formatDuration(r.timeSpent || 0)}</td></tr>`;
             });
           } else {
             document.getElementById("th-score").classList.add("hidden");
@@ -2880,16 +2465,6 @@
 
       async function resumeSavedAttempt(savedAttempt) {
         if (!currentExam || !savedAttempt) return;
-        currentExam = {
-          ...currentExam,
-          questions: deepClone(
-            savedAttempt.attemptQuestions || currentExam.questions || [],
-          ),
-          isSubExam: !!savedAttempt.isSubExam,
-          subExamConfig: deepClone(
-            savedAttempt.subExamConfig || currentExam.subExamConfig || null,
-          ),
-        };
         currentAttemptState = createAttemptState(
           currentExam,
           Number(savedAttempt.startedAt || Date.now()),
@@ -2925,43 +2500,10 @@
           return;
         }
 
-        const allowSub = !!currentExam.allowSubExam;
-        const useSub = !!document.getElementById("use-sub-exam")?.checked;
-        const subExamConfig =
-          allowSub && useSub
-            ? {
-                enabled: true,
-                mcqCount: normalizeSubExamCount(
-                  document.getElementById("subexam-mcq-count")?.value,
-                ),
-                tfCount: normalizeSubExamCount(
-                  document.getElementById("subexam-tf-count")?.value,
-                ),
-                shortCount: normalizeSubExamCount(
-                  document.getElementById("subexam-short-count")?.value,
-                ),
-              }
-            : { enabled: false, mcqCount: 0, tfCount: 0, shortCount: 0 };
-        const attemptPack = buildSubExamAttemptQuestions(
-          currentExam,
-          subExamConfig,
-          true,
-        );
-        const attemptExam = {
-          ...currentExam,
-          questions: deepClone(
-            attemptPack.questions || currentExam.questions || [],
-          ),
-          isSubExam: !!attemptPack.isSubExam,
-          subExamConfig: deepClone(attemptPack.config || subExamConfig || null),
-        };
-        currentExam = attemptExam;
-        currentAttemptState = createAttemptState(attemptExam, Date.now(), {
+        currentAttemptState = createAttemptState(currentExam, Date.now(), {
           answers: {},
-          attemptQuestions: attemptExam.questions,
+          attemptQuestions: currentExam.questions,
           activityLog: [],
-          isSubExam: attemptExam.isSubExam,
-          subExamConfig: attemptExam.subExamConfig,
         });
         attemptStartTime = currentAttemptState.startedAt;
         renderActiveExam(currentAttemptState);
@@ -3082,7 +2624,6 @@
         });
         typesetMath();
         syncAnswerUiState();
-        applyExamFontScale(examFontScale);
       }
 
       function updateTimerUI() {
@@ -3206,8 +2747,6 @@
             attemptQuestions: deepClone(ex.questions),
             activityLog: deepClone(currentAttemptState?.activityLog || []),
             answers: deepClone(answers),
-            isSubExam: !!ex.isSubExam,
-            subExamConfig: deepClone(ex.subExamConfig || null),
           };
           await setDoc(docRef, payload);
           await mirrorDocToRtdb("results", docRef.id, payload);
@@ -3246,20 +2785,12 @@
 
           if (ex.showDetails === true) {
             const btnDetail = document.getElementById("res-detail-btn");
-            const btnReport = document.getElementById("res-report-btn");
-
             btnDetail.classList.remove("hidden");
             btnDetail.onclick = () => viewSubmissionDetail(docRef.id, ex.id);
-
-            if (btnReport) {
-              btnReport.classList.remove("hidden");
-              btnReport.onclick = () =>
-                openReportModal(ex.id, docRef.id, ex.title);
-            }
           } else {
             document.getElementById("res-detail-btn").classList.add("hidden");
-            document.getElementById("res-report-btn")?.classList.add("hidden");
           }
+
           showView("view-exam-result");
           setLoading(false);
         } catch (e) {

@@ -688,27 +688,6 @@
                   >Cho xem chi tiết bài</label
                 >
               </div>
-              <div
-                class="flex items-center gap-2 bg-violet-50 px-3 py-1.5 rounded-lg border border-violet-200"
-              >
-                <input
-                  type="checkbox"
-                  id="ce-allow-subexam"
-                  class="w-4 h-4 text-violet-600 rounded cursor-pointer"
-                />
-                <label
-                  for="ce-allow-subexam"
-                  class="text-sm font-semibold text-violet-700 cursor-pointer"
-                  >Cho phép tạo đề con</label
-                >
-                <button
-                  type="button"
-                  onclick="openSubExamSettingsModal()"
-                  class="ml-1 px-3 py-1.5 rounded-lg bg-white border border-violet-200 text-violet-700 text-xs font-bold hover:bg-violet-100 transition"
-                >
-                  Cài đặt
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -975,73 +954,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div
-      id="modal-subexam-settings"
-      class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[114] hidden-view flex items-center justify-center p-4"
-      onclick="if (event.target === this) closeSubExamSettingsModal();"
-    >
-      <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-lg modal-content-enter overflow-hidden border border-gray-200"
-      >
-        <div
-          class="p-5 border-b bg-white flex items-start justify-between gap-4"
-        >
-          <div>
-            <h3 class="font-bold text-xl text-gray-800">Cài đặt đề con</h3>
-            <p class="text-sm text-gray-500 mt-1">
-              Thiết lập số câu random theo từng mục.
-            </p>
-          </div>
-          <button
-            onclick="closeSubExamSettingsModal()"
-            class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
-          >
-            <i class="fa-solid fa-xmark text-xl"></i>
-          </button>
-        </div>
-        <div class="p-5 space-y-4 bg-slate-50">
-          <label class="block text-sm font-semibold text-gray-700"
-            >Số câu MCQ<input
-              id="subexam-mcq-default"
-              type="number"
-              min="0"
-              class="mt-1 w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-              placeholder="0 là lấy hết"
-          /></label>
-          <label class="block text-sm font-semibold text-gray-700"
-            >Số câu TF<input
-              id="subexam-tf-default"
-              type="number"
-              min="0"
-              class="mt-1 w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-              placeholder="0 là lấy hết"
-          /></label>
-          <label class="block text-sm font-semibold text-gray-700"
-            >Số câu Trả lời ngắn<input
-              id="subexam-short-default"
-              type="number"
-              min="0"
-              class="mt-1 w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-              placeholder="0 là lấy hết"
-          /></label>
-        </div>
-        <div class="p-5 border-t bg-white flex justify-end gap-2">
-          <button
-            onclick="closeSubExamSettingsModal()"
-            class="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition"
-          >
-            Hủy
-          </button>
-          <button
-            onclick="saveSubExamSettings()"
-            class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition"
-          >
-            Lưu cài đặt
-          </button>
         </div>
       </div>
     </div>
@@ -2700,12 +2612,6 @@
       window.createQuestionSearch = "";
       window.createEditMode =
         localStorage.getItem("create_edit_mode") || "visual";
-      let subExamDraftConfig = {
-        enabled: false,
-        mcqCount: 0,
-        tfCount: 0,
-        shortCount: 0,
-      };
 
       function updateCreateModeButtons(mode) {
         const v = document.getElementById("btn-create-mode-visual");
@@ -2727,72 +2633,11 @@
         renderEditorQuestions();
       };
 
-      function getSubExamUiConfig() {
-        return {
-          enabled: !!document.getElementById("ce-allow-subexam")?.checked,
-          mcqCount: Math.max(
-            0,
-            Number(document.getElementById("subexam-mcq-default")?.value || 0),
-          ),
-          tfCount: Math.max(
-            0,
-            Number(document.getElementById("subexam-tf-default")?.value || 0),
-          ),
-          shortCount: Math.max(
-            0,
-            Number(
-              document.getElementById("subexam-short-default")?.value || 0,
-            ),
-          ),
-        };
-      }
-
-      function applySubExamUiConfig(cfg = {}) {
-        subExamDraftConfig = {
-          enabled: !!cfg.enabled,
-          mcqCount: Math.max(0, Number(cfg.mcqCount || 0)),
-          tfCount: Math.max(0, Number(cfg.tfCount || 0)),
-          shortCount: Math.max(0, Number(cfg.shortCount || 0)),
-        };
-        const allow = document.getElementById("ce-allow-subexam");
-        if (allow) allow.checked = !!subExamDraftConfig.enabled;
-        const mcq = document.getElementById("subexam-mcq-default");
-        const tf = document.getElementById("subexam-tf-default");
-        const short = document.getElementById("subexam-short-default");
-        if (mcq) mcq.value = String(subExamDraftConfig.mcqCount || 0);
-        if (tf) tf.value = String(subExamDraftConfig.tfCount || 0);
-        if (short) short.value = String(subExamDraftConfig.shortCount || 0);
-      }
-
-      window.openSubExamSettingsModal = () => {
-        const allow = !!document.getElementById("ce-allow-subexam")?.checked;
-        if (!allow) {
-          showToast("Hãy bật cho phép tạo đề con trước.", "warning");
-          return;
-        }
-        applySubExamUiConfig(subExamDraftConfig);
-        document
-          .getElementById("modal-subexam-settings")
-          ?.classList.remove("hidden-view");
-      };
-      window.closeSubExamSettingsModal = () =>
-        document
-          .getElementById("modal-subexam-settings")
-          ?.classList.add("hidden-view");
-      window.saveSubExamSettings = () => {
-        subExamDraftConfig = getSubExamUiConfig();
-        document
-          .getElementById("modal-subexam-settings")
-          ?.classList.add("hidden-view");
-        showToast("Đã lưu cài đặt đề con.", "success");
-      };
-
       window.openDashboard = () => {
         if (window.statsRefreshInterval) {
           clearInterval(window.statsRefreshInterval);
           window.statsRefreshInterval = null;
         }
-        stopStatsRealtimeListeners();
         history.replaceState({}, "", "admin.html");
         showView("view-dashboard");
         loadAdminDashboard();
@@ -3137,13 +2982,6 @@
           showResults: true,
           showDetails: false,
           maxAttempts: 1,
-          allowSubExam: false,
-          subExamConfig: {
-            enabled: false,
-            mcqCount: 0,
-            tfCount: 0,
-            shortCount: 0,
-          },
           questions: [],
         };
         updateCreateModeButtons(createEditMode);
@@ -3158,15 +2996,6 @@
         document.getElementById("ce-show-results").checked = true;
         document.getElementById("ce-show-details").checked = false;
         document.getElementById("ce-attempts").value = "1";
-        applySubExamUiConfig({
-          enabled: false,
-          mcqCount: 0,
-          tfCount: 0,
-          shortCount: 0,
-        });
-        document
-          .getElementById("modal-subexam-settings")
-          ?.classList.add("hidden-view");
         renderEditorQuestions();
       }
 
@@ -3187,13 +3016,6 @@
           showResults: ex.showResults !== false,
           showDetails: ex.showDetails === true,
           maxAttempts: ex.maxAttempts ?? 1,
-          allowSubExam: !!ex.allowSubExam,
-          subExamConfig: {
-            enabled: !!ex.allowSubExam,
-            mcqCount: Math.max(0, Number(ex.subExamConfig?.mcqCount || 0)),
-            tfCount: Math.max(0, Number(ex.subExamConfig?.tfCount || 0)),
-            shortCount: Math.max(0, Number(ex.subExamConfig?.shortCount || 0)),
-          },
           questions: deepClone(ex.questions || []),
         };
         document.getElementById("ce-title").value = examDraft.title;
@@ -3205,7 +3027,6 @@
         document.getElementById("ce-show-details").checked =
           examDraft.showDetails;
         document.getElementById("ce-attempts").value = examDraft.maxAttempts;
-        applySubExamUiConfig(examDraft.subExamConfig);
         renderEditorQuestions();
         setLoading(false);
       }
@@ -3436,7 +3257,6 @@
           '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang lưu...';
         btn.disabled = true;
         try {
-          const subCfg = getSubExamUiConfig();
           const payload = {
             title,
             timeLimit,
@@ -3446,13 +3266,6 @@
             showDetails: document.getElementById("ce-show-details").checked,
             maxAttempts:
               parseInt(document.getElementById("ce-attempts").value) || 0,
-            allowSubExam: !!subCfg.enabled,
-            subExamConfig: {
-              enabled: !!subCfg.enabled,
-              mcqCount: Math.max(0, Number(subCfg.mcqCount || 0)),
-              tfCount: Math.max(0, Number(subCfg.tfCount || 0)),
-              shortCount: Math.max(0, Number(subCfg.shortCount || 0)),
-            },
             questions: normalizeQuestionsForSave(examDraft.questions),
             createdBy: State.user?.uid || null,
             updatedAt: Date.now(),
@@ -3491,77 +3304,48 @@
       function buildLatexExport(exportData) {
         const esc = (s) =>
           String(s || "")
-            .replaceAll("\\", "\\textbackslash{}")
-            .replace(/([#$%&~_^{}])/g, "\\$1");
-        const lines = [];
-        lines.push("\\documentclass[12pt,a4paper]{article}");
-        lines.push("\\usepackage[utf8]{inputenc}");
-        lines.push("\\usepackage[T5]{fontenc}");
-        lines.push("\\usepackage[vietnamese]{babel}");
-        lines.push("\\usepackage{amsmath,amssymb,enumitem,geometry}");
-        lines.push("\\geometry{margin=2cm}");
-        lines.push("\\begin{document}");
-        lines.push(
-          `\\begin{center}\\LARGE\\textbf{${esc(exportData.title || "Đề thi")}}\\end{center}`,
-        );
-        lines.push(
-          `\\noindent\\textbf{Thời gian:} ${esc(exportData.timeLimit || 45)} phút\\\\`,
-        );
-        lines.push(
-          `\\noindent\\textbf{Số câu:} ${(exportData.questions || []).length}`,
-        );
-        lines.push("\\begin{enumerate}");
-        (exportData.questions || []).forEach((q) => {
-          const qLines = [];
-          qLines.push(`\\item ${esc(q.text || "")}`);
+            .replace(/\\/g, "\\textbackslash{}")
+            .replace(/([#$%&~_^{}])/g, "\$1");
+        const qLatex = (q) => {
+          let body = `\item ${esc(q.text || "")}`;
           if (q.explanation)
-            qLines.push(`\\textit{Giải thích: ${esc(q.explanation)}}`);
-          if (q.imageUrl) qLines.push(`\\textit{[Ảnh có trong bản gốc]}`);
+            body += `\\textit{Giải thích: ${esc(q.explanation)}}`;
+          if (q.imageUrl) body += `\\textit{[Ảnh được đính kèm trong bản gốc]}`;
           if (q.type === "mcq") {
-            qLines.push("\\begin{enumerate}[A.]");
+            body += "\n\begin{enumerate}[A.]";
             (q.options || []).forEach((opt) => {
-              qLines.push(`\\item ${esc(opt)}`);
+              body += `\item ${esc(opt || "")}`;
             });
-            qLines.push("\\end{enumerate}");
+            body += "\end{enumerate}";
           } else if (q.type === "tf") {
-            qLines.push("\\begin{enumerate}[a)]");
-            (q.statements || []).forEach((s) => {
-              qLines.push(`\\item ${esc(s.text || "")}`);
+            body += "\n\begin{itemize}";
+            (q.statements || []).forEach((s, i) => {
+              body += `\item ${String.fromCharCode(97 + i)}) ${esc(s?.text || "")}`;
             });
-            qLines.push("\\end{enumerate}");
+            body += "\end{itemize}";
           } else if (q.type === "short") {
-            qLines.push(
-              `\\textit{Đáp án: ${esc((q.exactAnswers || []).join(" | "))}}`,
-            );
+            body += `\\textbf{Đáp án:} ${esc((splitAcceptedShortAnswers(q.exactAnswers) || []).join(" | "))}`;
           }
-          lines.push(qLines.join("\n"));
-        });
-        lines.push("\\end{enumerate}");
-        if (
-          Array.isArray(exportData.questions) &&
-          exportData.questions.length
-        ) {
-          lines.push("\\newpage");
-          lines.push("\\section*{Đáp án}");
-          lines.push("\\begin{enumerate}");
-          exportData.questions.forEach((q) => {
-            let a = "";
-            if (q.type === "mcq")
-              a = ["A", "B", "C", "D"][Number(q.correctIndex) || 0] || "A";
-            else if (q.type === "tf")
-              a = (q.statements || [])
-                .map(
-                  (s, i) =>
-                    `${String.fromCharCode(97 + i)}) ${s && s.isTrue ? "Đúng" : "Sai"}`,
-                )
-                .join("; ");
-            else if (q.type === "short") a = (q.exactAnswers || []).join(" | ");
-            lines.push(`\\item ${esc(a || "-")}`);
-          });
-          lines.push("\\end{enumerate}");
-        }
-        lines.push("\\end{document}");
-        return lines.join("\n");
+          return body;
+        };
+        return [
+          "\\documentclass[12pt]{article}",
+          "\\usepackage[utf8]{inputenc}",
+          "\\usepackage[T5]{fontenc}",
+          "\\usepackage[vietnamese]{babel}",
+          "\\usepackage{enumitem}",
+          "\\usepackage{geometry}",
+          "\\geometry{margin=2cm}",
+          "\\begin{document}",
+          "\\begin{center}",
+          `{\\LARGE ${esc(exportData.title || "ĐỀ KIỂM TRA")}}\\`,
+          `{\\small Thời gian: ${esc(exportData.timeLimit || 45)} phút}`,
+          "\\end{center}",
+          "\\begin{enumerate}",
+          ...(exportData.questions || []).map(qLatex),
+          "\end{enumerate}",
+          "\end{document}",
+        ].join("\n");
       }
 
       async function exportExamAsWord(exportData) {
@@ -3872,34 +3656,24 @@
         refreshStatsUi();
       }
 
-      let statsRefreshInFlight = false;
       async function loadComprehensiveStats(silent = false) {
         if (!silent) setLoading(true);
         if (window.statsRefreshInterval) {
           clearInterval(window.statsRefreshInterval);
           window.statsRefreshInterval = null;
         }
-        if (statsRefreshInFlight) {
-          if (!silent) setLoading(false);
-          return;
-        }
-        statsRefreshInFlight = true;
-        try {
-          await refreshStatsCache(true);
-          startStatsRealtimeListeners();
-          window.statsRefreshInterval = setInterval(() => {
-            if (
-              !document
-                .getElementById("view-stats")
-                ?.classList.contains("hidden-view")
-            ) {
-              void refreshStatsCache(true);
-            }
-          }, 15000);
-        } finally {
-          statsRefreshInFlight = false;
-          if (!silent) setLoading(false);
-        }
+        await refreshStatsCache(true);
+        startStatsRealtimeListeners();
+        window.statsRefreshInterval = setInterval(() => {
+          if (
+            !document
+              .getElementById("view-stats")
+              ?.classList.contains("hidden-view")
+          ) {
+            void refreshStatsCache(true);
+          }
+        }, 4000);
+        if (!silent) setLoading(false);
       }
 
       function getExamLiveSnapshot(examId) {
@@ -4317,7 +4091,7 @@
           const students = new Set(
             exRes.map((r) => getStableStudentKey(r) || r.id || ""),
           ).size;
-          sumBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}${ex.allowSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-red-500">${cheats}</td></tr>`;
+          sumBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-red-500">${cheats}</td></tr>`;
         });
         document.getElementById("stats-summary-empty").style.display =
           filteredExams.length ? "none" : "block";
@@ -4333,7 +4107,7 @@
           const max = snap.maxScore;
           const min = snap.minScore;
           const cheats = snap.cheatCount;
-          exBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}${ex.allowSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 text-xs">${ex.id}</td><td class="px-6 py-4">${ex.questions?.length || 0}</td><td class="px-6 py-4 font-bold text-emerald-600">${snap.activeCount}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-amber-600 font-bold">${min}</td><td class="px-6 py-4 text-red-500">${cheats}</td><td class="px-6 py-4"><button onclick="viewExamStatsDetail('${ex.id}')" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200">Chi tiết</button></td></tr>`;
+          exBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}</td><td class="px-6 py-4 text-xs">${ex.id}</td><td class="px-6 py-4">${ex.questions?.length || 0}</td><td class="px-6 py-4 font-bold text-emerald-600">${snap.activeCount}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-amber-600 font-bold">${min}</td><td class="px-6 py-4 text-red-500">${cheats}</td><td class="px-6 py-4"><button onclick="viewExamStatsDetail('${ex.id}')" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200">Chi tiết</button></td></tr>`;
         });
         document.getElementById("stats-exams-empty").style.display =
           filteredExams.length ? "none" : "block";
@@ -4389,7 +4163,7 @@
             exams.find((e) => e.id === r.examId)?.title ||
             r.examTitle ||
             "Không rõ";
-          subBody.innerHTML += `<tr class="hover:bg-gray-50 transition"><td class="px-6 py-4 font-medium text-gray-900">${escapeHtml(r.studentName || "Không rõ")}</td><td class="px-6 py-4">${escapeHtml(title)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 font-bold text-blue-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-6 py-4">${r.correctCount || 0}/${r.totalQuestions || 0}</td><td class="px-6 py-4 text-sm">${toVnTime(r.submittedAt)}<br><span class="text-xs text-gray-400">Time: ${formatDuration(r.timeSpent || 0)}</span></td><td class="px-6 py-4"><div class="flex flex-wrap gap-2"><button onclick="viewSubmissionDetail('${r.id}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-bold hover:bg-blue-200">Chi tiết</button><button onclick="regradeSubmission('${r.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button></div></td></tr>`;
+          subBody.innerHTML += `<tr class="hover:bg-gray-50 transition"><td class="px-6 py-4 font-medium text-gray-900">${escapeHtml(r.studentName || "Không rõ")}</td><td class="px-6 py-4">${escapeHtml(title)}</td><td class="px-6 py-4 font-bold text-blue-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-6 py-4">${r.correctCount || 0}/${r.totalQuestions || 0}</td><td class="px-6 py-4 text-sm">${toVnTime(r.submittedAt)}<br><span class="text-xs text-gray-400">Time: ${formatDuration(r.timeSpent || 0)}</span></td><td class="px-6 py-4"><div class="flex flex-wrap gap-2"><button onclick="viewSubmissionDetail('${r.id}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-bold hover:bg-blue-200">Chi tiết</button><button onclick="regradeSubmission('${r.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button></div></td></tr>`;
         });
         document.getElementById("stats-submissions-empty").style.display =
           sortedResults.length ? "none" : "block";
@@ -4403,7 +4177,7 @@
             exams.find((e) => e.id === r.examId)?.title ||
             r.examTitle ||
             "Không rõ";
-          chBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-bold text-red-600">${escapeHtml(r.studentName)}</td><td class="px-6 py-4">${escapeHtml(title)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 text-red-600 font-bold">${r.cheatViolations} lần</td><td class="px-6 py-4">${Number(r.score || 0).toFixed(1)}</td><td class="px-6 py-4 text-sm">${toVnTime(r.submittedAt)}</td></tr>`;
+          chBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-bold text-red-600">${escapeHtml(r.studentName)}</td><td class="px-6 py-4">${escapeHtml(title)}</td><td class="px-6 py-4 text-red-600 font-bold">${r.cheatViolations} lần</td><td class="px-6 py-4">${Number(r.score || 0).toFixed(1)}</td><td class="px-6 py-4 text-sm">${toVnTime(r.submittedAt)}</td></tr>`;
         });
         document.getElementById("stats-cheats-empty").style.display =
           cheats.length ? "none" : "block";
