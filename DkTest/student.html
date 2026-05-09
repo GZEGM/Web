@@ -137,11 +137,18 @@
         top: 0;
       }
       #question-panel {
-        transition:
-          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-          opacity 0.3s ease;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+        height: 100dvh;
       }
-
+      #question-panel-backdrop {
+        pointer-events: none;
+      }
+      #question-panel.mobile-open {
+        pointer-events: auto;
+      }
       .exam-font-scale-host {
         font-size: calc(1rem * var(--exam-font-scale, 1));
         line-height: 1.6;
@@ -168,6 +175,10 @@
           transform: translateX(-105%);
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.24);
           padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+        }
+        body.taking-exam-mode
+          .flex-1.overflow-hidden.flex.flex-col.md\:flex-row.relative {
+          min-height: 0;
         }
         body.taking-exam-mode #question-panel.mobile-open {
           transform: translateX(0);
@@ -668,7 +679,7 @@
 
         <!-- Sửa py-10 thành py-3 md:py-4 để đỡ tốn diện tích top -->
         <div
-          class="bg-white border-b shadow-sm px-3 md:px-4 py-3 md:py-4 sticky top-0 z-30 shrink-0 flex justify-between items-center gap-2"
+          class="bg-white border-b shadow-sm px-3 md:px-4 py-6 md:py-4 sticky top-0 z-30 shrink-0 flex justify-between items-center gap-2"
         >
           <div class="flex-1 min-w-0 mr-2 md:mr-4">
             <h3
@@ -754,7 +765,7 @@
               <!-- Nút đóng trên mobile -->
               <button
                 onclick="toggleQuestionPanel()"
-                class="md:hidden w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"
+                class="md:hidden w-8 h-8 rounded-full bg-gray-100 hify-center text-gray-600 over:bg-gray-200 flex items-center justtransition"
               >
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -2707,7 +2718,7 @@
         const backdrop = document.getElementById("question-panel-backdrop");
         if (!panel) return;
 
-        if (window.innerWidth < 768) {
+        if (window.innerWidth < 200) {
           if (!questionPanelHidden) {
             // Mở Panel
             panel.classList.remove("mobile-closed");
@@ -2991,7 +3002,7 @@
         const backdrop = document.getElementById("question-panel-backdrop");
 
         // Mặc định tự động ẩn Panel điều hướng trên Mobile để dễ nhìn nội dung
-        if (window.innerWidth < 768) {
+        if (window.innerWidth < 200) {
           questionPanelHidden = true;
           if (panel) {
             panel.classList.add("mobile-closed");
@@ -3019,6 +3030,7 @@
               attemptQuestions: ex.questions,
             });
         }
+
         updateTimerUI();
         syncAnswerUiState();
         timerInterval = setInterval(() => {
@@ -3052,7 +3064,7 @@
               .getElementById(`q-${q.id}`)
               .scrollIntoView({ behavior: "smooth", block: "center" });
             // Tự động đóng panel trên mobile sau khi click chọn câu hỏi
-            if (window.innerWidth < 768 && !questionPanelHidden)
+            if (window.innerWidth < 200 && !questionPanelHidden)
               toggleQuestionPanel();
           };
           nav.appendChild(btn);
@@ -3101,6 +3113,13 @@
         syncAnswerUiState();
         applyExamFontScale(examFontScale);
       }
+
+      window.addEventListener("load", () => {
+        if (window.innerWidth < 768) {
+          questionPanelHidden = true;
+          // updateQuestionPanelVisibility();
+        }
+      });
 
       function updateTimerUI() {
         const t = timeRemaining;
