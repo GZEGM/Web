@@ -1256,6 +1256,12 @@
               <i class="fa-solid fa-rotate-right mr-1"></i> Chấm điểm lại
             </button>
             <button
+              onclick="regradeAllExamSubmissions(currentExamStatsDetailId)"
+              class="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition"
+            >
+              <i class="fa-solid fa-rotate-right mr-1"></i> Chấm lại
+            </button>
+            <button
               onclick="openManualGradeModal()"
               class="px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition"
             >
@@ -1317,6 +1323,12 @@
                 Lưu tên
               </button>
             </div>
+            <button
+              onclick="window.deleteStudentCascade()"
+              class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition"
+            >
+              <i class="fa-solid fa-user-xmark mr-1"></i> Xóa học sinh
+            </button>
             <button
               onclick="closeStudentDetail()"
               class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
@@ -4184,6 +4196,283 @@
         setLoading(false);
       }
 
+      window.deleteSubmissionCascade = async function (resultId) {
+        if (!resultId) return;
+
+        const resDoc = await getDoc(examDoc("results", resultId));
+
+        const res = resDoc.exists()
+          ? { id: resDoc.id, ...resDoc.data() }
+          : statsDataCache?.results?.find((r) => r.id === resultId) || null;
+
+        if (!res) {
+          showToast("Không tìm thấy bài nộp để xóa", "error");
+          return;
+        }
+
+        const ok = await customConfirm(
+          `Xóa bài nộp của ${res.studentName || "học sinh này"}?`,
+        );
+
+        if (!ok) return;
+
+        setLoading(true);
+
+        try {
+          const studentKey = getStableStudentKey(res);
+          const studentName = String(res.studentName || "").trim();
+          const examId = String(res.examId || "").trim();
+
+          const relatedAttempts = (statsDataCache?.attempts || []).filter(
+            (a) => {
+              if (!a) return false;
+
+              if (String(a.id || "") === resultId) return true;
+
+              if (String(a.examId || "") !== examId) return false;
+
+              const aKey = getStableStudentKey(a);
+              const aName = String(a.studentName || "").trim();
+
+              return (
+                (studentKey && aKey === studentKey) ||
+                (studentName && aName === studentName)
+              );
+            },
+          );
+
+          await deleteDoc(examDoc("results", resultId));
+          await removeDocFromRtdb("results", resultId);
+
+          for (const a of relatedAttempts) {
+            if (String(a.id || "") === resultId) continue;
+
+            await deleteDoc(examDoc("attempts", a.id));
+            await removeDocFromRtdb("attempts", a.id);
+          }
+
+          showToast("Đã xóa bài nộp", "success");
+
+          await refreshStatsCache(true);
+
+          if (currentViewingResultId === resultId) {
+            closeSubmissionDetail();
+          }
+
+          if (currentExamStatsDetailId) {
+            openExamStatsDetail(currentExamStatsDetailId);
+          }
+        } catch (e) {
+          showToast("Xóa bài nộp thất bại: " + e.message, "error");
+        }
+
+        setLoading(false);
+      };
+      window.deleteStudentCascade = async function (
+        studentLike = currentStudentContext,
+      ) {
+        const student = studentLike || null;
+
+        if (!student) {
+          showToast("Không xác định được học sinh", "error");
+          return;
+        }
+
+        const studentDocId = String(
+          student.docId || student.userId || student.id || "",
+        ).trim();
+
+        const studentKey = getStableStudentKey(student);
+
+        const studentName = String(
+          student.name || student.studentName || "",
+        ).trim();
+
+        const ok = await customConfirm(
+          `Xóa học sinh ${student.name || student.studentName || "này"} và toàn bộ dữ liệu liên quan?`,
+        );
+
+        if (!ok) return;
+
+        setLoading(true);
+
+        try {
+          const relatedResults = (statsDataCache?.results || []).filter((r) => {
+            const rKey = getStableStudentKey(r);
+            const rName = String(r.studentName || "").trim();
+            const rUid = String(r.userId || "").trim();
+
+            return (
+              (studentKey && rKey === studentKey) ||
+              (studentDocId &&
+                (rUid === studentDocId ||
+                  String(r.id || "") === studentDocId)) ||
+              (studentName && rName === studentName)
+            );
+          });
+
+          const relatedAttempts = (statsDataCache?.attempts || []).filter(
+            (a) => {
+              const aKey = getStableStudentKey(a);
+              const aName = String(a.studentName || "").trim();
+              const aUid = String(a.userId || "").trim();
+
+              return (
+                (studentKey && aKey === studentKey) ||
+                (studentDocId &&
+                  (aUid === studentDocId ||
+                    String(a.id || "") === studentDocId)) ||
+                (studentName && aName === studentName)
+              );
+            },
+          );
+
+          if (studentDocId) {
+            await deleteDoc(examDoc("students", studentDocId));
+            await removeDocFromRtdb("students", studentDocId);
+          }
+
+          for (const r of relatedResults) {
+            await deleteDoc(examDoc("results", r.id));
+            await removeDocFromRtdb("results", r.id);
+          }
+
+          for (const a of relatedAttempts) {
+            await deleteDoc(examDoc("attempts", a.id));
+            await removeDocFromRtdb("attempts", a.id);
+          }
+
+          showToast(
+            `Đã xóa học sinh và ${relatedResults.length} bài nộp`,
+            "success",
+          );
+
+          closeStudentDetail();
+
+          await refreshStatsCache(true);
+        } catch (e) {
+          showToast("Xóa học sinh thất bại: " + e.message, "error");
+        }
+
+        setLoading(false);
+      };
+
+      window.regradeAllExamSubmissions = async function (examId) {
+        if (!examId) return;
+
+        const snap = getExamLiveSnapshot(examId);
+
+        if (!snap.resultCount) {
+          showToast("Bài thi này chưa có bài nộp để chấm lại", "warning");
+          return;
+        }
+
+        const ok = await customConfirm(
+          `Chấm lại toàn bộ ${snap.resultCount} bài nộp của bài thi này?`,
+        );
+
+        if (!ok) return;
+
+        setLoading(true);
+
+        try {
+          const liveExam = (await loadExamById(examId)) || snap.exam;
+
+          if (!liveExam) {
+            showToast(
+              "Không tìm thấy bài gốc trên server để chấm lại",
+              "error",
+            );
+
+            setLoading(false);
+            return;
+          }
+
+          let success = 0;
+          let failed = 0;
+
+          for (const res of snap.results) {
+            try {
+              const recalculated = recomputeResultScore(liveExam, res);
+
+              const historyEntry = {
+                id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                at: Date.now(),
+                type: "bulk-regrade",
+                sourceExamUpdatedAt: Number(
+                  liveExam.updatedAt || liveExam.createdAt || Date.now(),
+                ),
+                scoreBefore: Number(res.score || 0),
+                scoreAfter: recalculated.score,
+                correctBefore: Number(res.correctCount || 0),
+                correctAfter: recalculated.correctCount,
+                wrongBefore: Number(res.wrongCount || 0),
+                wrongAfter: recalculated.wrongCount,
+                changes: recalculated.questionChanges,
+              };
+
+              const nextHistory = Array.isArray(res.gradeHistory)
+                ? [...res.gradeHistory, historyEntry]
+                : [historyEntry];
+
+              const syncedAttemptQuestions = syncAttemptQuestionsToOriginalExam(
+                liveExam,
+                res,
+              );
+
+              await updateDoc(examDoc("results", res.id), {
+                score: recalculated.score,
+                correctCount: recalculated.correctCount,
+                wrongCount: recalculated.wrongCount,
+                totalQuestions: recalculated.totalQuestions,
+                regradedAt: Date.now(),
+                gradeHistory: nextHistory,
+                attemptQuestions: syncedAttemptQuestions,
+              });
+
+              await mirrorDocToRtdb("results", res.id, {
+                ...res,
+                score: recalculated.score,
+                correctCount: recalculated.correctCount,
+                wrongCount: recalculated.wrongCount,
+                totalQuestions: recalculated.totalQuestions,
+                regradedAt: Date.now(),
+                gradeHistory: nextHistory,
+                attemptQuestions: syncedAttemptQuestions,
+              });
+
+              Object.assign(res, {
+                score: recalculated.score,
+                correctCount: recalculated.correctCount,
+                wrongCount: recalculated.wrongCount,
+                totalQuestions: recalculated.totalQuestions,
+                regradedAt: Date.now(),
+                gradeHistory: nextHistory,
+                attemptQuestions: syncedAttemptQuestions,
+              });
+
+              success += 1;
+            } catch (err) {
+              failed += 1;
+            }
+          }
+
+          showToast(
+            `Đã chấm lại ${success}/${snap.resultCount} bài nộp${failed ? `, lỗi ${failed}` : ""}`,
+            failed ? "warning" : "success",
+          );
+
+          await refreshStatsCache(true);
+
+          if (currentExamStatsDetailId === examId) {
+            openExamStatsDetail(examId);
+          }
+        } catch (e) {
+          showToast("Chấm lại hàng loạt thất bại: " + e.message, "error");
+        }
+
+        setLoading(false);
+      };
       function openStudentDetail(studentId) {
         const resolvedId = decodeURIComponent(String(studentId || "").trim());
         const students = buildStudentDirectory();
@@ -4249,7 +4538,7 @@
                 ?.title ||
               r.examTitle ||
               "Không rõ";
-            body.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-3 font-medium">${escapeHtml(title)}</td><td class="px-4 py-3 font-bold text-blue-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-4 py-3">${r.correctCount || 0}/${r.totalQuestions || 0}</td><td class="px-4 py-3 text-sm">${toVnTime(r.submittedAt)}<br><span class="text-xs text-gray-400">${formatDuration(r.timeSpent || 0)}</span></td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button onclick="viewSubmissionDetail('${r.id}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-blue-200">Xem</button><button onclick="regradeSubmission('${r.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button></div></td></tr>`;
+            body.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-3 font-medium">${escapeHtml(title)}</td><td class="px-4 py-3 font-bold text-blue-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-4 py-3">${r.correctCount || 0}/${r.totalQuestions || 0}</td><td class="px-4 py-3 text-sm">${toVnTime(r.submittedAt)}<br><span class="text-xs text-gray-400">${formatDuration(r.timeSpent || 0)}</span></td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button onclick="viewSubmissionDetail('${r.id}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-blue-200">Xem</button><button onclick="regradeSubmission('${r.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button><button onclick="deleteSubmissionCascade('${r.id}')" class="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-red-200"><i class="fa-solid fa-trash mr-1"></i>Xóa</button></div></td></tr>`;
           });
         }
 
@@ -4333,7 +4622,7 @@
           const max = snap.maxScore;
           const min = snap.minScore;
           const cheats = snap.cheatCount;
-          exBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}${ex.allowSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 text-xs">${ex.id}</td><td class="px-6 py-4">${ex.questions?.length || 0}</td><td class="px-6 py-4 font-bold text-emerald-600">${snap.activeCount}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-amber-600 font-bold">${min}</td><td class="px-6 py-4 text-red-500">${cheats}</td><td class="px-6 py-4"><button onclick="viewExamStatsDetail('${ex.id}')" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200">Chi tiết</button></td></tr>`;
+          exBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(ex.title)}${ex.allowSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 text-xs">${ex.id}</td><td class="px-6 py-4">${ex.questions?.length || 0}</td><td class="px-6 py-4 font-bold text-emerald-600">${snap.activeCount}</td><td class="px-6 py-4">${subs}</td><td class="px-6 py-4">${students}</td><td class="px-6 py-4 text-blue-600 font-bold">${avg}</td><td class="px-6 py-4 text-green-600 font-bold">${max}</td><td class="px-6 py-4 text-amber-600 font-bold">${min}</td><td class="px-6 py-4 text-red-500">${cheats}</td><td class="px-6 py-4"><button onclick="viewExamStatsDetail('${ex.id}')" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200">Chi tiết</button><button onclick="regradeAllExamSubmissions('${ex.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button></td></tr>`;
         });
         document.getElementById("stats-exams-empty").style.display =
           filteredExams.length ? "none" : "block";
@@ -4366,7 +4655,58 @@
           const sid = encodeURIComponent(
             String(student.docId || student.userId || student.id || ""),
           );
-          stBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">${escapeHtml(student.name || "Không rõ")}</td><td class="px-6 py-4 text-xs text-gray-500">${escapeHtml(student.docId || student.userId || student.id || "")}</td><td class="px-6 py-4">${student.submissions}</td><td class="px-6 py-4">${student.examSet.size}</td><td class="px-6 py-4 font-bold text-blue-600">${avg}</td><td class="px-6 py-4 font-bold text-green-600">${Number(student.maxScore || 0).toFixed(1)}</td><td class="px-6 py-4"><div class="flex flex-wrap gap-2"><button onclick="openStudentDetail('${sid}')" class="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm font-bold hover:bg-purple-200">Chi tiết</button><button onclick="openStudentDetail('${sid}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-bold hover:bg-blue-200">Đổi tên</button></div></td></tr>`;
+          stBody.innerHTML += `
+<tr class="hover:bg-gray-50">
+
+  <td class="px-6 py-4 font-medium">
+    ${escapeHtml(student.name || "Không rõ")}
+  </td>
+
+  <td class="px-6 py-4 text-xs text-gray-500">
+    ${escapeHtml(student.docId || student.userId || student.id || "")}
+  </td>
+
+  <td class="px-6 py-4">
+    ${student.submissions}
+  </td>
+
+  <td class="px-6 py-4">
+    ${student.examSet.size}
+  </td>
+
+  <td class="px-6 py-4 font-bold text-blue-600">
+    ${avg}
+  </td>
+
+  <td class="px-6 py-4 font-bold text-green-600">
+    ${Number(student.maxScore || 0).toFixed(1)}
+  </td>
+
+  <td class="px-6 py-4">
+    <div class="flex flex-wrap gap-2">
+
+      <button
+        onclick="openStudentDetail('${sid}')"
+        class="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm font-bold hover:bg-purple-200"
+      >
+        Chi tiết
+      </button>
+
+   
+
+      <button
+        onclick="window.deleteStudentCascade('${sid}')"
+        class="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-bold hover:bg-red-200"
+      >
+        <i class="fa-solid fa-trash mr-1"></i>
+        Xóa
+      </button>
+
+    </div>
+  </td>
+
+</tr>
+`;
         });
         document.getElementById("stats-students-empty").style.display =
           studentRows.length ? "none" : "block";
@@ -4389,7 +4729,7 @@
             exams.find((e) => e.id === r.examId)?.title ||
             r.examTitle ||
             "Không rõ";
-          subBody.innerHTML += `<tr class="hover:bg-gray-50 transition"><td class="px-6 py-4 font-medium text-gray-900">${escapeHtml(r.studentName || "Không rõ")}</td><td class="px-6 py-4">${escapeHtml(title)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 font-bold text-blue-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-6 py-4">${r.correctCount || 0}/${r.totalQuestions || 0}</td><td class="px-6 py-4 text-sm">${toVnTime(r.submittedAt)}<br><span class="text-xs text-gray-400">Time: ${formatDuration(r.timeSpent || 0)}</span></td><td class="px-6 py-4"><div class="flex flex-wrap gap-2"><button onclick="viewSubmissionDetail('${r.id}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-bold hover:bg-blue-200">Chi tiết</button><button onclick="regradeSubmission('${r.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button></div></td></tr>`;
+          subBody.innerHTML += `<tr class="hover:bg-gray-50 transition"><td class="px-6 py-4 font-medium text-gray-900">${escapeHtml(r.studentName || "Không rõ")}</td><td class="px-6 py-4">${escapeHtml(title)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-6 py-4 font-bold text-blue-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-6 py-4">${r.correctCount || 0}/${r.totalQuestions || 0}</td><td class="px-6 py-4 text-sm">${toVnTime(r.submittedAt)}<br><span class="text-xs text-gray-400">Time: ${formatDuration(r.timeSpent || 0)}</span></td><td class="px-6 py-4"><div class="flex flex-wrap gap-2"><button onclick="viewSubmissionDetail('${r.id}')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-bold hover:bg-blue-200">Chi tiết</button><button onclick="regradeSubmission('${r.id}')" class="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm font-bold hover:bg-amber-200"><i class="fa-solid fa-rotate-right mr-1"></i>Chấm lại</button><button onclick="deleteSubmissionCascade('${r.id}')" class="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-bold hover:bg-red-200"><i class="fa-solid fa-trash mr-1"></i>Xóa</button></div></td></tr>`;
         });
         document.getElementById("stats-submissions-empty").style.display =
           sortedResults.length ? "none" : "block";
