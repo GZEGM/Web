@@ -3323,6 +3323,12 @@
 
       function renderEditorQuestions() {
         const container = document.getElementById("ce-questions-canvas");
+        if (!container) return;
+
+        // Giữ vị trí cuộn trước khi render lại
+        const prevScrollTop = container.scrollTop;
+        const prevScrollLeft = container.scrollLeft;
+
         const qs = examDraft.questions || [];
         const search = String(window.createQuestionSearch || "")
           .trim()
@@ -3349,6 +3355,7 @@
             ? "none"
             : "block"
           : "block";
+
         document.getElementById("empty-exam-state").innerHTML =
           qs.length && !filtered.length
             ? `<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl"><i class="fa-solid fa-magnifying-glass"></i></div><p class="text-xl font-medium text-gray-500">Không có câu hỏi phù hợp</p><p class="text-sm mt-2">Thử đổi từ khóa tìm kiếm</p>`
@@ -3364,36 +3371,39 @@
           const div = document.createElement("div");
           div.className =
             "bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6 relative group transition-all hover:shadow-md";
+
           let h = `
-            <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-              <button onclick="triggerImageUpload('${q.id}')" class="text-gray-400 hover:text-blue-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Thêm Ảnh"><i id="img-btn-icon-${q.id}" class="fa-regular fa-image"></i></button>
-              <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-            </div>
-            <div class="flex gap-4 mb-4">
-              <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
-              <div class="flex-1">
-          `;
+      <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+        <button onclick="triggerImageUpload('${q.id}')" class="text-gray-400 hover:text-blue-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Thêm Ảnh"><i id="img-btn-icon-${q.id}" class="fa-regular fa-image"></i></button>
+        <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <div class="flex gap-4 mb-4">
+        <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
+        <div class="flex-1">
+    `;
 
           if (createEditMode === "latex") {
             h += `
-                <textarea
-                  class="search-input source-editor font-mono text-sm leading-6"
-                  placeholder="Nhập câu hỏi bằng LaTeX hoặc dấu nhanh như sqrt(x), x^2..."
-                  oninput="updText('${q.id}', this.value); this.value = this.value;"
-                  onblur="updText('${q.id}', this.value)"
-                >${escapeHtml(q.text || "")}</textarea>
-                <div class="inline-preview">${window.renderTextToWysiwyg(q.text)}</div>
-              </div>
-            </div>`;
+        <textarea
+          class="search-input source-editor font-mono text-sm leading-6"
+          placeholder="Nhập câu hỏi bằng LaTeX hoặc dấu nhanh như sqrt(x), x^2..."
+          oninput="updText('${q.id}', this.value); this.value = this.value;"
+          onblur="updText('${q.id}', this.value)"
+        >${escapeHtml(q.text || "")}</textarea>
+        <div class="inline-preview">${window.renderTextToWysiwyg(q.text)}</div>
+      </div>
+    </div>`;
           } else {
             h += `
-                <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
-              </div>
-            </div>`;
+        <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
+      </div>
+    </div>`;
           }
 
-          if (q.imageUrl)
+          if (q.imageUrl) {
             h += `<div class="pl-14 mb-4 relative inline-block group/img"><img src="${q.imageUrl}" class="image-preview" style="${q.imageWidth ? `width:${q.imageWidth}px;max-width:100%;` : "max-width:100%;"}${q.imageHeight ? `height:${q.imageHeight}px;object-fit:contain;` : ""}" /><button onclick="removeImage('${q.id}')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover/img:opacity-100 transition"><i class="fa-solid fa-xmark"></i></button></div>`;
+          }
+
           h += `<div class="pl-14 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3"><label class="text-xs font-semibold text-gray-500">Rộng ảnh (px)<input type="number" min="40" step="10" value="${q.imageWidth || ""}" oninput="setImageSize('${q.id}', 'width', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></label><label class="text-xs font-semibold text-gray-500">Cao ảnh (px)<input type="number" min="40" step="10" value="${q.imageHeight || ""}" oninput="setImageSize('${q.id}', 'height', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></label><label class="text-xs font-semibold text-gray-500">Giải thích<input type="text" value="${escapeHtml(q.explanation || "")}" oninput="updExp('${q.id}', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Giải thích: ..."></label></div>`;
 
           if (q.type === "mcq") {
@@ -3402,13 +3412,13 @@
               const isC = Number(q.correctIndex) === oI;
               if (createEditMode === "latex") {
                 h += `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition">
-                  <input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">
-                  <span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI]}.</span>
-                  <div class="flex-1">
-                    <textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea>
-                    <div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>
-                  </div>
-                </div>`;
+            <input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">
+            <span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI]}.</span>
+            <div class="flex-1">
+              <textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea>
+              <div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>
+            </div>
+          </div>`;
               } else {
                 h += `<div class="flex items-center gap-3 bg-gray-50 rounded-lg p-2 pr-4 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition"><input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer ml-2"><span class="font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span><div contenteditable="true" onblur="updOpt('${q.id}', ${oI}, window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm ${isC ? "font-semibold text-green-700" : ""}">${window.renderTextToWysiwyg(opt)}</div></div>`;
               }
@@ -3431,10 +3441,18 @@
               h += `<div class="pl-14 mt-3"><div contenteditable="true" onblur="updSh('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 outline-none focus:border-purple-500 text-purple-700 font-mono text-sm bg-purple-50/30" placeholder="Nhập đáp án chính xác...">${window.renderTextToWysiwyg((q.exactAnswers || []).join(" | "))}</div></div>`;
             }
           }
+
           div.innerHTML = h;
           container.appendChild(div);
         });
+
         typesetMath();
+
+        // Trả lại vị trí cuộn sau khi render
+        requestAnimationFrame(() => {
+          container.scrollTop = prevScrollTop;
+          container.scrollLeft = prevScrollLeft;
+        });
       }
       window.renderEditorQuestions = renderEditorQuestions;
 
