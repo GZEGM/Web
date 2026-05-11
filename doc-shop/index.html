@@ -71,6 +71,16 @@
           transform: translateY(0);
         }
       }
+      @keyframes popup {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
       .glass {
         background: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(10px);
@@ -504,7 +514,7 @@
             <div
               class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6"
             >
-              <h3 class="font-bold text-gray-800 mb-4">Đăng tài liệu mới</h3>
+              <h3 id="admin-doc-form-title" class="font-bold text-gray-800 mb-4">Đăng tài liệu mới</h3>
               <form
                 id="admin-doc-form"
                 class="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -528,21 +538,13 @@
                     class="w-full px-3 py-2 border rounded-lg text-sm"
                   ></textarea>
                 </div>
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">Phân loại</label
-                  ><input
-                    type="text"
-                    id="adoc-subject"
-                    placeholder="VD: Toán 12, Hóa hữu cơ..."
-                    class="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-                <div class="md:col-span-2">
+<div class="md:col-span-2">
                   <div class="flex items-center justify-between mb-2">
-                    <label class="block text-xs text-gray-500">Phân loại nhiều</label>
+                    <label class="block text-xs text-gray-500">Tên phân loại</label>
                     <button type="button" id="add-doc-category-row" class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-600 text-xs font-medium"><i class="fas fa-plus"></i> Thêm phân loại</button>
                   </div>
                   <div id="adoc-categories-list" class="space-y-2"></div>
+                  <datalist id="doc-category-options"></datalist>
                   <p class="mt-2 text-xs text-gray-400">Mỗi tài liệu có thể gắn nhiều phân loại, dùng để lọc và hiển thị trên banner.</p>
                 </div>
                 <div>
@@ -616,6 +618,7 @@
                   </button>
                   <button
                     type="submit"
+                    id="admin-doc-submit-btn"
                     class="bg-primary-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-700"
                   >
                     Đăng tài liệu
@@ -781,7 +784,7 @@
       class="fixed bottom-24 right-5 z-40 w-[min(92vw,380px)] max-h-[70vh] hidden"
     >
       <div
-        class="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+        class="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col min-h-0"
       >
         <div
           class="p-4 bg-primary-600 text-white flex items-center justify-between"
@@ -798,7 +801,7 @@
         </div>
         <div
           id="chatbot-messages"
-          class="p-4 space-y-3 overflow-y-auto bg-gray-50 flex-1"
+          class="p-4 space-y-3 overflow-y-auto bg-gray-50 flex-1 min-h-0 max-h-[48vh]"
         ></div>
         <div class="p-3 border-t border-gray-100 bg-white">
           <div class="flex gap-2">
@@ -917,6 +920,12 @@
       const db = getDatabase(app);
       const keyDb = getDatabase(keyApp);
 
+const CHATBOT_API_KEY = window.CHATBOT_API_KEY || window.OPENAI_API_KEY || "";
+const CHATBOT_API_MODEL = window.CHATBOT_API_MODEL || "gpt-4o-mini";
+
+let activeDocViewTracker = null;
+let chatbotHistory = [];
+
       let currentUser = null;
       let userData = null;
       let dbUnsubscribers = [];
@@ -992,6 +1001,122 @@
           return [doc.keyword.trim()];
         }
         return [];
+      };
+
+      const getKnownCategories = () => {
+        const set = new Set();
+        getKeywordEntries().forEach((kw) => {
+          const name = getKeywordName(kw);
+          if (name) set.add(name);
+        });
+        Object.values(globalData.docs || {}).forEach((doc) => {
+          normalizeDocKeywords(doc).forEach((tag) => {
+            if (tag) set.add(tag);
+          });
+        });
+        return Array.from(set).sort((a, b) => a.localeCompare(b, "vi"));
+      };
+
+      const refreshDocCategorySuggestions = () => {
+        const list = document.getElementById("doc-category-options");
+        if (!list) return;
+        const categories = getKnownCategories();
+        list.innerHTML = categories
+          .map((name) => `<option value="${safe(name)}"></option>`)
+          .join("");
+      };
+
+      const startDocViewTracker = (docId) => {
+        stopDocViewTracker();
+        if (!currentUser || !docId) return;
+
+        const session = {
+          docId,
+          moved: false,
+          counted: false,
+          timer: null,
+          markMoved: () => {
+            session.moved = true;
+          },
+        };
+
+        const onMove = () => session.markMoved();
+        const cleanupListeners = () => {
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("scroll", onMove);
+          window.removeEventListener("touchmove", onMove);
+          window.removeEventListener("pointermove", onMove);
+        };
+
+        session.timer = setTimeout(async () => {
+          if (session.counted) return;
+          session.counted = true;
+          cleanupListeners();
+
+          if (
+            !session.moved ||
+            currentDocId !== docId ||
+            document.getElementById("view-doc-detail")?.classList.contains("hidden")
+          ) {
+            return;
+          }
+
+          const doc = globalData.docs?.[docId];
+          if (!doc) return;
+          const nextViews = Number(doc.views || 0) + 1;
+          try {
+            await update(ref(db, dbPath("documents", docId)), {
+              views: nextViews,
+              updatedAt: Date.now(),
+            });
+          } catch {}
+        }, 3000);
+
+        window.addEventListener("mousemove", onMove, { passive: true });
+        window.addEventListener("scroll", onMove, { passive: true });
+        window.addEventListener("touchmove", onMove, { passive: true });
+        window.addEventListener("pointermove", onMove, { passive: true });
+
+        activeDocViewTracker = {
+          docId,
+          timer: session.timer,
+          cleanup: () => {
+            clearTimeout(session.timer);
+            cleanupListeners();
+          },
+        };
+      };
+
+      const stopDocViewTracker = () => {
+        if (!activeDocViewTracker) return;
+        activeDocViewTracker.cleanup();
+        activeDocViewTracker = null;
+      };
+
+      window.setDocTagFilter = (tag) => {
+        currentFilter = String(tag || "");
+        const homeBtn = document.getElementById("nav-btn-home");
+        if (homeBtn) homeBtn.click();
+        renderHome(document.getElementById("global-search")?.value?.toLowerCase() || "");
+      };
+
+      window.trackDocumentLinkClick = (docId, url, label = "", source = "link") => {
+        if (!currentUser || !docId || !url) return true;
+        const doc = globalData.docs?.[docId] || {};
+        logKeyUsage({
+          userId: currentUser.uid,
+          userName: userData?.name || currentUser.email || currentUser.uid,
+          email: userData?.email || currentUser.email || "",
+          docId,
+          docTitle: doc.title || "",
+          purchaseId: "",
+          key: source === "key" ? String(label || url) : "",
+          action: source === "key" ? "open_key" : "open_link",
+          keyPoolId: doc.keyPoolId || "",
+          linkLabel: label || "",
+          linkUrl: url || "",
+        });
+        return true;
       };
 
       const getDocCategoriesFromForm = () =>
@@ -1126,8 +1251,17 @@
           const row = document.createElement("div");
           row.className = "grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 category-row";
           row.innerHTML = `
-            <input type="text" class="doc-category-input w-full px-3 py-2 border rounded-lg text-sm" placeholder="VD: Toán 12, Đề thi, Hóa hữu cơ..." value="${safe(name || "")}" />
-            <button type="button" class="remove-category-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm"><i class="fas fa-trash"></i></button>
+            <input
+              type="text"
+              list="doc-category-options"
+              autocomplete="off"
+              class="doc-category-input w-full px-3 py-2 border rounded-lg text-sm"
+              placeholder="VD: Toán 12, Đề thi, Hóa hữu cơ..."
+              value="${safe(name || "")}"
+            />
+            <button type="button" class="remove-category-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm">
+              <i class="fas fa-trash"></i>
+            </button>
           `;
           row.querySelector(".remove-category-row").addEventListener("click", () => {
             if (container.querySelectorAll(".category-row").length <= 1) {
@@ -1137,6 +1271,8 @@
             }
             row.remove();
           });
+          row.querySelector(".doc-category-input")?.addEventListener("focus", refreshDocCategorySuggestions);
+          row.querySelector(".doc-category-input")?.addEventListener("click", refreshDocCategorySuggestions);
           container.appendChild(row);
         });
         const addBtn = document.getElementById("add-doc-category-row");
@@ -1146,13 +1282,24 @@
             const row = document.createElement("div");
             row.className = "grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 category-row";
             row.innerHTML = `
-              <input type="text" class="doc-category-input w-full px-3 py-2 border rounded-lg text-sm" placeholder="VD: Toán 12, Đề thi, Hóa hữu cơ..." />
-              <button type="button" class="remove-category-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm"><i class="fas fa-trash"></i></button>
+              <input
+                type="text"
+                list="doc-category-options"
+                autocomplete="off"
+                class="doc-category-input w-full px-3 py-2 border rounded-lg text-sm"
+                placeholder="VD: Toán 12, Đề thi, Hóa hữu cơ..."
+              />
+              <button type="button" class="remove-category-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm">
+                <i class="fas fa-trash"></i>
+              </button>
             `;
             row.querySelector(".remove-category-row").addEventListener("click", () => row.remove());
+            row.querySelector(".doc-category-input")?.addEventListener("focus", refreshDocCategorySuggestions);
+            row.querySelector(".doc-category-input")?.addEventListener("click", refreshDocCategorySuggestions);
             container.appendChild(row);
           });
         }
+        refreshDocCategorySuggestions();
       };
 
       const fillDocLinkRows = (links = []) => {
@@ -1840,42 +1987,42 @@ const openFormModal = (
         section.classList.remove("hidden");
 
         track.innerHTML = featured.slice(0, 6).map((doc) => {
-          const labels = normalizeDocKeywords(doc).slice(0, 3);
+          const labels = normalizeDocKeywords(doc).slice(0, 2);
           return `
             <article class="snap-start shrink-0 w-full">
-              <div class="grid md:grid-cols-[1.15fr_0.85fr] gap-0 min-h-[22rem]">
-                <div class="p-8 md:p-12 flex flex-col justify-between text-white">
+              <div class="grid md:grid-cols-[1.05fr_0.95fr] gap-0 min-h-[16rem]">
+                <div class="p-5 md:p-8 flex flex-col justify-between text-white">
                   <div>
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 text-xs font-medium mb-4">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 text-[11px] font-medium mb-3">
                       <i class="fas fa-star"></i> Nổi bật hàng đầu
                     </div>
-                    <h3 class="text-3xl md:text-4xl font-bold leading-tight mb-4">${safe(doc.title || "Tài liệu nổi bật")}</h3>
-                    <p class="text-white/85 text-sm md:text-base leading-relaxed max-w-2xl mb-5">${safe(doc.description || "Tài liệu được admin ghim lên top để người dùng xem nhanh hơn.")}</p>
-                    <div class="flex flex-wrap gap-2 mb-6">
-                      <span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs">${safe(doc.category || doc.subject || "Phân loại")}</span>
-                      <span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs">Lớp ${safe(doc.grade || "Chung")}</span>
-                      ${labels.map((k) => `<span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs">${safe(k)}</span>`).join("")}
+                    <h3 class="text-2xl md:text-3xl font-bold leading-tight mb-3">${safe(doc.title || "Tài liệu nổi bật")}</h3>
+                    <p class="text-white/80 text-sm leading-relaxed max-w-2xl mb-4 line-clamp-3">${safe(doc.description || "Tài liệu được admin ghim lên top để người dùng xem nhanh hơn.")}</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                      <span class="px-3 py-1 rounded-full bg-white/10 text-white text-[11px]">${safe(doc.category || doc.subject || "Phân loại")}</span>
+                      <span class="px-3 py-1 rounded-full bg-white/10 text-white text-[11px]">Lớp ${safe(doc.grade || "Chung")}</span>
+                      ${labels.map((k) => `<span class="px-3 py-1 rounded-full bg-white/10 text-white text-[11px]">${safe(k)}</span>`).join("")}
                     </div>
                   </div>
                   <div class="flex items-center gap-3 flex-wrap">
                     <div class="text-white/90">
-                      <div class="text-xs uppercase tracking-[0.2em] text-white/60">Giá</div>
-                      <div class="text-2xl font-bold">${Number(doc.price || 0) === 0 ? "Miễn phí" : formatVND(doc.price)}</div>
+                      <div class="text-[10px] uppercase tracking-[0.2em] text-white/60">Giá</div>
+                      <div class="text-xl font-bold">${Number(doc.price || 0) === 0 ? "Miễn phí" : formatVND(doc.price)}</div>
                     </div>
-                    <button onclick="nav('doc-detail', '${doc.id}')" class="ml-auto bg-white text-primary-700 px-5 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition">
+                    <button onclick="nav('doc-detail', '${doc.id}')" class="ml-auto bg-white text-primary-700 px-4 py-2 rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transition">
                       Xem chi tiết
                     </button>
                   </div>
                 </div>
-                <div class="relative min-h-[22rem]">
+                <div class="relative min-h-[16rem]">
                   <img src="${safe(doc.thumbnail || "https://placehold.co/900x600/e2e8f0/64748b?text=Tài+Liệu+Nổi+Bật")}" class="absolute inset-0 w-full h-full object-cover">
                   <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
-                  <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
-                    <div class="bg-white/90 backdrop-blur px-4 py-2 rounded-2xl text-gray-800 shadow-lg">
-                      <div class="text-xs text-gray-500">Lượt mua</div>
-                      <div class="font-bold text-lg">${Number(doc.buys || 0)}</div>
+                  <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-3">
+                    <div class="bg-white/90 backdrop-blur px-3 py-2 rounded-xl text-gray-800 shadow-lg">
+                      <div class="text-[10px] text-gray-500">Lượt mua</div>
+                      <div class="font-bold text-base">${Number(doc.buys || 0)}</div>
                     </div>
-                    <button onclick="shareDoc('${doc.id}')" class="bg-white/90 backdrop-blur px-4 py-2 rounded-2xl text-gray-800 shadow-lg hover:bg-white">
+                    <button onclick="shareDoc('${doc.id}')" class="bg-white/90 backdrop-blur px-3 py-2 rounded-xl text-gray-800 shadow-lg hover:bg-white">
                       <i class="fas fa-share-nodes"></i>
                     </button>
                   </div>
@@ -1896,17 +2043,19 @@ const openFormModal = (
 
         let currentIndex = 0;
         const slidesEls = () => Array.from(track.children);
-        const updateDots = () => {
+        const updateDots = (activeIndex = currentIndex) => {
           Array.from(dots.children).forEach((dot, idx) => {
-            dot.className = `w-2.5 h-2.5 rounded-full transition ${idx === currentIndex ? "bg-primary-600" : "bg-gray-300"}`;
+            dot.className = `w-2.5 h-2.5 rounded-full transition ${idx === activeIndex ? "bg-primary-600" : "bg-gray-300"}`;
           });
         };
         const scrollFeaturedTo = (index) => {
           const els = slidesEls();
           if (!els.length) return;
           currentIndex = (index + els.length) % els.length;
-          els[currentIndex].scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-          updateDots();
+          const target = els[currentIndex];
+          const left = Math.max(target.offsetLeft - track.offsetLeft, 0);
+          track.scrollTo({ left, behavior: "smooth" });
+          updateDots(currentIndex);
         };
         if (prevBtn) prevBtn.onclick = () => scrollFeaturedTo(currentIndex - 1);
         if (nextBtn) nextBtn.onclick = () => scrollFeaturedTo(currentIndex + 1);
@@ -1933,7 +2082,7 @@ const openFormModal = (
           });
           if (best !== currentIndex) {
             currentIndex = best;
-            updateDots();
+            updateDots(currentIndex);
           }
         }, { passive: true });
         scrollFeaturedTo(0);
@@ -1981,16 +2130,21 @@ const renderHome = (searchQuery = "") => {
               ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Miễn phí</span>`
               : `<span class="font-bold text-primary-600">${formatVND(doc.price)}</span>`;
             const docKeywords = normalizeDocKeywords(doc);
+            const purchasedBadge = hasAccessToDoc(doc.id)
+              ? '<span class="absolute top-2 left-2 bg-green-600 text-white text-[10px] px-2 py-1 rounded-full shadow">Đã mua</span>'
+              : "";
             grid.innerHTML += `
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition cursor-pointer flex flex-col h-full" onclick="nav('doc-detail', '${doc.id}')">
           <div class="h-40 bg-gray-200 relative">
             <img src="${safe(doc.thumbnail || "https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu")}" class="w-full h-full object-cover">
+            ${purchasedBadge}
             <div class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-semibold shadow">${safe(doc.category || doc.subject || "Khác")}</div>
+            <div class="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-[11px]"><i class="fas fa-eye"></i> ${Number(doc.views || 0)} lượt xem</div>
           </div>
           <div class="p-4 flex flex-col flex-1">
             <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">${safe(doc.title || "")}</h3>
             <p class="text-xs text-gray-500 mb-3">Lớp: ${safe(doc.grade || "Chung")} • ${Number(doc.buys || 0)} lượt mua</p>
-            ${docKeywords.length ? `<div class="flex flex-wrap gap-1 mb-2">${docKeywords.slice(0, 3).map((k) => `<span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600">${safe(k)}</span>`).join("")}</div>` : ""}
+            ${docKeywords.length ? `<div class="flex flex-wrap gap-1 mb-2">${docKeywords.slice(0, 3).map((k) => `<button type="button" onclick="event.stopPropagation(); setDocTagFilter('${jsQuote(k)})" class="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-600">${safe(k)}</button>`).join("")}</div>` : ""}
             <div class="mt-auto pt-3 border-t border-gray-50 flex justify-between items-center">
               ${priceTag}
               <button class="text-primary-600 bg-primary-50 w-8 h-8 rounded-full flex items-center justify-center hover:bg-primary-100"><i class="fas fa-arrow-right"></i></button>
@@ -2072,6 +2226,9 @@ const renderHome = (searchQuery = "") => {
         }
       };
       const renderDocDetail = (docId) => {
+        const hasActiveTrackerForDoc = activeDocViewTracker?.docId === docId;
+        if (!hasActiveTrackerForDoc) stopDocViewTracker();
+        currentDocId = docId;
         const doc = globalData.docs[docId];
         const container = document.getElementById("doc-detail-content");
         if (!doc) {
@@ -2094,25 +2251,29 @@ const renderHome = (searchQuery = "") => {
           (purchase?.assignedKey
             ? buildKeyRedeemUrl(purchase.assignedKey)
             : null);
+        const makeLinkRow = (url, label, className, sourceType = "link") => `
+            <div class="flex gap-2">
+              <a
+                href="${safe(url)}"
+                target="_blank"
+                rel="noopener noreferrer"
+                onclick="return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(url)}, ${jsQuote(label || "")}, ${jsQuote(sourceType)})"
+                class="flex-1 text-center ${className} py-3 rounded-xl font-medium shadow-lg"
+              >
+                ${safe(label || "Mở tài liệu")}
+              </a>
+              <button
+                onclick="copyDocLink(${jsQuote(url)}); return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(url)}, ${jsQuote(label || "")}, ${jsQuote(sourceType)})"
+                class="px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
+              >
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+          `;
+
         const redeemButton = purchase?.redeemUrl
           ? `
-      <div class="flex gap-2">
-        <a
-          href="${safe(purchase.redeemUrl)}"
-          target="_blank"
-          class="flex-1 text-center bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 shadow-lg"
-        >
-          <i class="fas fa-key"></i>
-          Mở Key Truy Cập
-        </a>
-
-        <button
-          onclick="copyDocLink(${jsQuote(purchase.redeemUrl)})"
-          class="px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
-        >
-          <i class="fas fa-copy"></i>
-        </button>
-      </div>
+      ${makeLinkRow(purchase.redeemUrl, "Mở Key Truy Cập", "bg-blue-600 text-white hover:bg-blue-700", "key")}
     `
           : "";
 
@@ -2123,24 +2284,7 @@ const renderHome = (searchQuery = "") => {
     links.length
       ? links
           .map(
-            (l) => `
-            <div class="flex gap-2">
-              <a
-                href="${safe(l.url)}"
-                target="_blank"
-                class="flex-1 text-center bg-green-600 text-white py-3 rounded-xl font-medium hover:bg-green-700 shadow-lg"
-              >
-                ${safe(l.label || "Mở tài liệu")}
-              </a>
-
-              <button
-                onclick="copyDocLink(${jsQuote(l.url)})"
-                class="px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
-              >
-                <i class="fas fa-copy"></i>
-              </button>
-            </div>
-          `,
+            (l) => makeLinkRow(l.url, l.label || "Mở tài liệu", "bg-green-600 text-white hover:bg-green-700"),
           )
           .join("")
       : hasKeyPool
@@ -2158,16 +2302,13 @@ const renderHome = (searchQuery = "") => {
 `;
         const accessBlock = (() => {
           if (Number(doc.price) === 0 || purchased) {
-            const keyButton =
-              purchase?.assignedKey && doc.keyPoolId
-                ? `<button onclick="openPurchaseKeyLink(${jsQuote(docId)})" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm"><i class="fas fa-link"></i> Mở link key</button>`
-                : "";
             return `
   <div class="bg-green-50 border border-green-200 p-4 rounded-xl mt-4 space-y-3">
 
-    <p class="text-green-700 font-bold">
+    <p class="text-green-700 font-bold flex items-center gap-2">
       <i class="fas fa-check-circle"></i>
       Bạn đã có quyền truy cập tài liệu này
+      <span class="text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700">Đã mua</span>
     </p>
 
     ${
@@ -2178,6 +2319,8 @@ const renderHome = (searchQuery = "") => {
             <a
               href="${safe(finalRedeemUrl)}"
               target="_blank"
+              rel="noopener noreferrer"
+              onclick="return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(finalRedeemUrl)}, ${jsQuote("Mở Key Truy Cập")}, ${jsQuote("key")})"
               class="flex-1 text-center bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 shadow-lg"
             >
               <i class="fas fa-key"></i>
@@ -2185,7 +2328,7 @@ const renderHome = (searchQuery = "") => {
             </a>
 
             <button
-              onclick='copyDocLink(${jsQuote(finalRedeemUrl)})'
+              onclick="return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(finalRedeemUrl)}, ${jsQuote("Mở Key Truy Cập")}, ${jsQuote("key")})"
               class="px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
             >
               <i class="fas fa-copy"></i>
@@ -2269,21 +2412,31 @@ const renderHome = (searchQuery = "") => {
       <div class="flex flex-col md:flex-row">
         <div class="md:w-2/5 relative">
           <img src="${safe(doc.thumbnail || "https://placehold.co/600x800/e2e8f0/64748b?text=Hi")}" class="w-full h-full object-cover min-h-[300px]">
-          ${doc.previewLink ? `<a href="${safe(doc.previewLink)}" target="_blank" class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur text-gray-800 py-2 rounded-lg text-center font-medium shadow hover:bg-white transition"><i class="fas fa-eye"></i> Xem trước</a>` : ""}
+          ${doc.previewLink ? `<a href="${safe(doc.previewLink)}" target="_blank" rel="noopener noreferrer" class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur text-gray-800 py-2 rounded-lg text-center font-medium shadow hover:bg-white transition"><i class="fas fa-eye"></i> Xem trước</a>` : ""}
         </div>
         <div class="p-6 md:p-8 md:w-3/5 flex flex-col">
-          <div class="flex gap-2 mb-3 flex-wrap">
-            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">${safe(doc.category || doc.subject || "Phân loại")}</span>
-            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">Lớp ${safe(doc.grade || "Chung")}</span>
-            ${normalizeDocKeywords(doc).map((k) => `<span class="bg-primary-50 text-primary-600 px-3 py-1 rounded-full text-xs font-semibold">${safe(k)}</span>`).join("")}
+          <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div class="flex gap-2 flex-wrap">
+              <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">${safe(doc.category || doc.subject || "Phân loại")}</span>
+              <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">Lớp ${safe(doc.grade || "Chung")}</span>
+              ${hasAccessToDoc(docId) ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Đã mua</span>' : ""}
+            </div>
+            <div class="text-xs text-gray-500 flex items-center gap-3">
+              <span><i class="fas fa-eye"></i> ${Number(doc.views || 0)} lượt xem</span>
+              <span><i class="fas fa-shopping-bag"></i> ${Number(doc.buys || 0)} lượt mua</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-3">
+            ${normalizeDocKeywords(doc).map((k) => `<button type="button" onclick='setDocTagFilter(${jsQuote(k)})' class="bg-primary-50 text-primary-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-primary-100">${safe(k)}</button>`).join("")}
           </div>
           <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">${safe(doc.title || "")}</h2>
-          <p class="text-gray-500 text-sm mb-6 flex gap-4 flex-wrap"><span><i class="fas fa-shopping-bag"></i> ${Number(doc.buys || 0)} lượt mua</span> <span><i class="fas fa-clock"></i> ${formatDate(doc.createdAt)}</span></p>
+          <p class="text-gray-500 text-sm mb-6 flex gap-4 flex-wrap"><span><i class="fas fa-shopping-bag"></i> ${Number(doc.buys || 0)} lượt mua</span> <span><i class="fas fa-eye"></i> ${Number(doc.views || 0)} lượt xem</span> <span><i class="fas fa-clock"></i> ${formatDate(doc.createdAt)}</span></p>
           <h3 class="font-bold text-gray-800 mb-2">Mô tả chi tiết</h3>
           <p class="text-gray-600 text-sm leading-relaxed mb-6 flex-1 whitespace-pre-wrap">${safe(doc.description || "Chưa có mô tả chi tiết cho tài liệu này.")}</p>
           ${accessBlock}
         </div>
       </div>`;
+        if (!hasActiveTrackerForDoc) startDocViewTracker(docId);
       };
 
       window.shareDoc = async (docId) => {
@@ -2577,19 +2730,97 @@ const renderHome = (searchQuery = "") => {
         </tr>`;
         });
       };
+function showConfirmPopup(message, confirmText = "Xác nhận") {
+  return new Promise((resolve) => {
+    const old = document.getElementById("custom-confirm-popup");
+    if (old) old.remove();
 
+    const overlay = document.createElement("div");
+    overlay.id = "custom-confirm-popup";
+    overlay.className =
+      "fixed inset-0 z-[99999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4";
+
+    overlay.innerHTML = `
+      <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-[popup_.2s_ease]">
+        <div class="p-6">
+          <div class="w-14 h-14 mx-auto rounded-full bg-primary-100 flex items-center justify-center mb-4">
+            <i class="fa-solid fa-triangle-exclamation text-primary-600 text-2xl"></i>
+          </div>
+
+          <h3 class="text-xl font-bold text-center text-gray-800 mb-2">
+            Xác nhận thao tác
+          </h3>
+
+          <p class="text-sm text-gray-600 text-center leading-6">
+            ${safe(message)}
+          </p>
+
+          <div class="flex gap-3 mt-6">
+            <button
+              id="confirm-cancel-btn"
+              class="flex-1 h-11 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition"
+            >
+              Hủy
+            </button>
+
+            <button
+              id="confirm-ok-btn"
+              class="flex-1 h-11 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-semibold shadow-lg shadow-primary-200 transition"
+            >
+              ${safe(confirmText)}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = (value) => {
+      overlay.style.opacity = "0";
+      overlay.querySelector("div").style.transform = "scale(.95)";
+
+      setTimeout(() => {
+        overlay.remove();
+        resolve(value);
+      }, 150);
+    };
+
+    document
+      .getElementById("confirm-cancel-btn")
+      .addEventListener("click", () => close(false));
+
+    document
+      .getElementById("confirm-ok-btn")
+      .addEventListener("click", () => close(true));
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+  });
+}
       async function processDeposit(amount) {
         if (!currentUser)
           throw new Error("Bạn cần đăng nhập trước khi nạp tiền.");
         if (!Number.isFinite(amount) || amount <= 0)
           throw new Error("Số tiền nạp không hợp lệ.");
 
-        for (let i = 1; i <= 3; i++) {
-          const ok = window.confirm(
-            `Xác nhận nạp ${formatVND(amount)}? (lần ${i}/3)`,
-          );
-          if (!ok) throw new Error("Đã hủy yêu cầu nạp.");
-        }
+        const confirmQuestions = [
+  `Bạn xác nhận muốn nạp ${formatVND(amount)}?`,
+  `Bạn nhập ${formatVND(amount)} thì admin sẽ thu bạn đúng ${formatVND(amount)}.`,
+  `Sau khi gửi yêu cầu nạp bạn sẽ không thể hoàn tác. Tiếp tục?`,
+];
+
+for (let i = 0; i < confirmQuestions.length; i++) {
+  const ok = await showConfirmPopup(
+    confirmQuestions[i],
+    `Xác nhận (${i + 1}/3)`,
+  );
+
+  if (!ok) {
+    throw new Error("Đã hủy yêu cầu nạp.");
+  }
+}
 
         const txRef = push(ref(db, dbPath("transactions")));
         const txId = txRef.key;
@@ -2650,51 +2881,26 @@ const renderHome = (searchQuery = "") => {
               .map(
                 (l) => `
                   <div class="flex gap-2">
-                    <a href="${safe(l.url)}" target="_blank" class="flex-1 text-center w-full bg-green-50 text-green-700 py-2 rounded-lg font-medium text-sm hover:bg-green-100">${safe(l.label || "Mở tài liệu")}</a>
-                    <button onclick="copyDocLink(${jsQuote(l.url)})" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200" title="Copy link"><i class="fas fa-copy"></i></button>
+                    <a href="${safe(l.url)}" target="_blank" rel="noopener noreferrer" onclick="return trackDocumentLinkClick(${jsQuote(pur.documentId)}, ${jsQuote(l.url)}, ${jsQuote(l.label || "Mở tài liệu")}, ${jsQuote(pur.assignedKey ? "key" : "link")})" class="flex-1 text-center w-full bg-green-50 text-green-700 py-2 rounded-lg font-medium text-sm hover:bg-green-100">${safe(l.label || "Mở tài liệu")}</a>
+                    <button onclick="copyDocLink(${jsQuote(l.url)}); return trackDocumentLinkClick(${jsQuote(pur.documentId)}, ${jsQuote(l.url)}, ${jsQuote(l.label || "Mở tài liệu")}, ${jsQuote(pur.assignedKey ? "key" : "link")})" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200" title="Copy link"><i class="fas fa-copy"></i></button>
                   </div>`,
               )
               .join("");
             grid.innerHTML += `
   <div class="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden flex flex-col h-full">
-    
-    <div class="h-32 bg-gray-200 relative">
-      <img 
-        src="${safe(doc.thumbnail || "https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu")}" 
-        class="w-full h-full object-cover"
-      >
-
-      <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold shadow">
-        <i class="fas fa-check"></i> Đã mua
+    <div class="h-36 bg-gray-200 relative">
+      <img src="${safe(doc.thumbnail || "https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu")}" class="w-full h-full object-cover">
+      <span class="absolute top-2 left-2 bg-green-600 text-white text-[10px] px-2 py-1 rounded-full shadow">Đã mua</span>
+      <div class="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-[11px]">
+        <i class="fas fa-eye"></i> ${Number(doc.views || 0)} lượt xem
       </div>
     </div>
-
     <div class="p-4 flex flex-col flex-1">
-
-      <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">
-        ${safe(doc.title || "")}
-      </h3>
-
-      <p class="text-xs text-gray-500 mb-3">
-        Mua lúc: ${formatDate(pur.purchasedAt)}
-      </p>
-
-      <div class="mt-auto pt-3 border-t border-gray-50 flex flex-col gap-2">
-
-        ${links}
-
-        <button
-          onclick='openReportDoc(${JSON.stringify(doc.id)})'
-          class="text-center w-full bg-red-50 text-red-600 py-2 rounded-lg font-medium text-sm hover:bg-red-100"
-        >
-          <i class="fas fa-bug"></i>
-          Báo lỗi truy cập
-        </button>
-
-      </div>
+      <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">${safe(doc.title || "")}</h3>
+      <p class="text-xs text-gray-500 mb-3">${safe(doc.category || doc.subject || "")} • ${Number(doc.buys || 0)} lượt mua</p>
+      <div class="space-y-2">${links || '<div class="text-xs text-gray-500">Chưa có link hiển thị.</div>'}</div>
     </div>
-  </div>
-`;
+  </div>`;
           });
       };
 
@@ -2987,7 +3193,7 @@ const renderHome = (searchQuery = "") => {
         body.innerHTML = filtered.slice(0, 50).map((log) => {
           const u = globalData.users[log.userId] || {};
           const d = globalData.docs[log.docId] || {};
-          const actionLabel = log.action === "open_key" ? "Click / mở key" : log.action === "issued" ? "Đã cấp key" : safe(log.action || "Log");
+          const actionLabel = log.action === "open_key" ? "Click key" : log.action === "open_link" ? "Click link" : log.action === "view_doc" ? "Xem tài liệu" : log.action === "issued" ? "Đã cấp key" : safe(log.action || "Log");
           return `
               <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3 text-xs">${formatDate(log.createdAt)}</td>
@@ -3019,8 +3225,7 @@ const renderHome = (searchQuery = "") => {
         if (!card) {
           card = document.createElement("div");
           card.id = "key-pool-manager";
-          card.className =
-            "bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6";
+          card.className = "bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6";
           card.innerHTML = `
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
         <div>
@@ -3052,61 +3257,42 @@ KEY3"></textarea>
     `;
           host.insertBefore(card, host.firstChild);
 
-          card
-            .querySelector("#key-pool-form")
-            .addEventListener("submit", async (e) => {
-              e.preventDefault();
+          card.querySelector("#key-pool-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+              const name = document.getElementById("key-pool-name").value.trim();
+              const poolId = document.getElementById("key-pool-id").value.trim();
+              const keys = String(document.getElementById("key-pool-keys").value || "")
+                .split(/\n+/)
+                .map((s) => s.trim())
+                .filter(Boolean);
 
-              try {
-                const name = document
-                  .getElementById("key-pool-name")
-                  .value.trim();
-                const poolId = document
-                  .getElementById("key-pool-id")
-                  .value.trim();
-                const keys = String(
-                  document.getElementById("key-pool-keys").value || "",
-                )
-                  .split(/\n+/)
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-
-                if (!poolId || !name || keys.length === 0) {
-                  showModal(
-                    "Thiếu dữ liệu",
-                    "Vui lòng nhập tên, mã pool và ít nhất một key.",
-                    "warning",
-                  );
-                  return;
-                }
-
-                await set(ref(keyDb, keyDbPath("uniqueKeyPools", poolId)), {
-                  id: poolId,
-                  name,
-                  keys,
-                  count: keys.length,
-                  createdAt: Date.now(),
-                  updatedAt: Date.now(),
-                });
-
-                document.getElementById("key-pool-name").value = "";
-                document.getElementById("key-pool-id").value = "";
-                document.getElementById("key-pool-keys").value = "";
-                showModal("Thành công", "Đã lưu kho link gốc.", "success");
-                renderKeyPoolManager();
-              } catch (err) {
-                console.error("Save key pool failed:", err);
-                showModal(
-                  "Không thể lưu kho key",
-                  "Firebase đang từ chối quyền truy cập vào kho key.",
-                  "warning",
-                );
+              if (!poolId || !name || keys.length === 0) {
+                showModal("Thiếu dữ liệu", "Vui lòng nhập tên, mã pool và ít nhất một key.", "warning");
+                return;
               }
-            });
 
-          card
-            .querySelector("#refresh-key-pools-btn")
-            .addEventListener("click", renderKeyPoolManager);
+              await set(ref(keyDb, keyDbPath("uniqueKeyPools", poolId)), {
+                id: poolId,
+                name,
+                keys,
+                count: keys.length,
+                createdAt: globalData.keyPools?.[poolId]?.createdAt || Date.now(),
+                updatedAt: Date.now(),
+              });
+
+              document.getElementById("key-pool-name").value = "";
+              document.getElementById("key-pool-id").value = "";
+              document.getElementById("key-pool-keys").value = "";
+              showModal("Thành công", "Đã lưu kho link gốc.", "success");
+              renderKeyPoolManager();
+            } catch (err) {
+              console.error("Save key pool failed:", err);
+              showModal("Không thể lưu kho key", "Firebase đang từ chối quyền truy cập vào kho key.", "warning");
+            }
+          });
+
+          card.querySelector("#refresh-key-pools-btn").addEventListener("click", renderKeyPoolManager);
         }
 
         const list = document.getElementById("key-pools-list");
@@ -3117,54 +3303,46 @@ KEY3"></textarea>
           const pools = snap.val() || {};
           globalData.keyPools = pools;
 
-          const entries = Object.entries(pools).sort(
-            (a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0),
-          );
+          const entries = Object.entries(pools).sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
 
           if (!entries.length) {
-            list.innerHTML =
-              '<div class="text-center text-gray-500 text-sm py-6 border border-dashed rounded-xl">Chưa có link gốc nào.</div>';
+            list.innerHTML = '<div class="text-center text-gray-500 text-sm py-6 border border-dashed rounded-xl">Chưa có link gốc nào.</div>';
             return;
           }
 
-          list.innerHTML = entries
-            .map(
-              ([id, pool]) => `
+          list.innerHTML = entries.map(([id, pool]) => `
         <div class="border rounded-xl p-4 bg-gray-50 flex flex-col gap-2">
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="font-semibold text-gray-800">${safe(pool.name || id)}</p>
               <p class="text-xs text-gray-500 font-mono">${safe(id)}</p>
             </div>
-            <span class="text-xs bg-white px-2 py-1 rounded-full text-gray-600 border">${
-              Array.isArray(pool.keys) ? pool.keys.length : pool.count || 0
-            } key</span>
+            <span class="text-xs bg-white px-2 py-1 rounded-full text-gray-600 border">${Array.isArray(pool.keys) ? pool.keys.length : pool.count || 0} key</span>
           </div>
-          <div class="flex gap-2">
-            <button
-  type="button"
-  data-pool="${safe(id)}"
-  class="select-pool-btn px-3 py-2 rounded-lg bg-primary-600 text-white text-xs font-medium"
->
-  Chọn vào tài liệu
-</button>
-
-<button
-  type="button"
-  data-copy="${safe(id)}"
-  class="copy-pool-btn px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium"
->
-  Copy mã
-</button>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-pool="${safe(id)}" class="select-pool-btn px-3 py-2 rounded-lg bg-primary-600 text-white text-xs font-medium">Chọn vào tài liệu</button>
+            <button type="button" data-edit="${safe(id)}" class="edit-pool-btn px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">Sửa</button>
+            <button type="button" data-delete="${safe(id)}" class="delete-pool-btn px-3 py-2 rounded-lg bg-red-50 text-red-600 text-xs font-medium">Xóa</button>
+            <button type="button" data-copy="${safe(id)}" class="copy-pool-btn px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">Copy mã</button>
           </div>
         </div>
-      `,
-            )
-            .join("");
+      `).join("");
+
           list.querySelectorAll(".select-pool-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
-              document.getElementById("adoc-key-pool").value =
-                btn.dataset.pool || "";
+              document.getElementById("adoc-key-pool").value = btn.dataset.pool || "";
+            });
+          });
+
+          list.querySelectorAll(".edit-pool-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              window.editKeyPool(btn.dataset.edit || "");
+            });
+          });
+
+          list.querySelectorAll(".delete-pool-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              window.deleteKeyPool(btn.dataset.delete || "");
             });
           });
 
@@ -3172,7 +3350,6 @@ KEY3"></textarea>
             btn.addEventListener("click", async () => {
               try {
                 await navigator.clipboard.writeText(btn.dataset.copy || "");
-
                 showModal("Đã copy", "Đã sao chép mã pool.", "success");
               } catch {
                 showModal("Lỗi", "Không thể copy mã pool.", "error");
@@ -3182,10 +3359,82 @@ KEY3"></textarea>
         } catch (err) {
           console.error("Load key pools failed:", err);
           globalData.keyPools = globalData.keyPools || {};
-          list.innerHTML =
-            '<div class="text-center text-red-500 text-sm py-6 border border-dashed rounded-xl">Không thể tải kho key do Firebase từ chối quyền truy cập.</div>';
+          list.innerHTML = '<div class="text-center text-red-500 text-sm py-6 border border-dashed rounded-xl">Không thể tải kho key do Firebase từ chối quyền truy cập.</div>';
         }
       };
+
+      window.editKeyPool = (poolId) => {
+        const pool = globalData.keyPools?.[poolId];
+        if (!pool) return;
+
+        openFormModal(
+          "Chỉnh sửa kho key",
+          `
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Mã pool</label>
+        <input class="w-full px-3 py-2 border rounded-lg bg-gray-50" value="${safe(poolId)}" readonly>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Tên hiển thị</label>
+        <input id="edit-key-pool-name" class="w-full px-3 py-2 border rounded-lg" value="${safe(pool.name || poolId)}">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Key gốc (mỗi dòng 1 key hoặc URL)</label>
+        <textarea id="edit-key-pool-keys" rows="5" class="w-full px-3 py-2 border rounded-lg">${Array.isArray(pool.keys) ? pool.keys.map((k) => String(k || "")).join("") : ""}</textarea>
+      </div>
+    `,
+          async () => {
+            const name = document.getElementById("edit-key-pool-name")?.value?.trim();
+            const keys = String(document.getElementById("edit-key-pool-keys")?.value || "")
+              .split(/\n+/)
+              .map((s) => s.trim())
+              .filter(Boolean);
+            if (!name || !keys.length) {
+              showModal("Thiếu dữ liệu", "Vui lòng nhập tên và ít nhất một key.", "warning");
+              return;
+            }
+            await set(ref(keyDb, keyDbPath("uniqueKeyPools", poolId)), {
+              id: poolId,
+              name,
+              keys,
+              count: keys.length,
+              createdAt: pool.createdAt || Date.now(),
+              updatedAt: Date.now(),
+            });
+            closeModal();
+            renderKeyPoolManager();
+          },
+          "Lưu",
+        );
+      };
+
+      window.deleteKeyPool = async (poolId) => {
+        const pool = globalData.keyPools?.[poolId];
+        if (!pool) return;
+        const confirmed = await askConfirm(
+          "Xóa kho key",
+          `Xóa kho key "${pool.name || poolId}" sẽ xóa toàn bộ key gốc và key allocations của kho này.`,
+          "Xóa",
+        );
+        if (!confirmed) return;
+
+        await remove(ref(keyDb, keyDbPath("uniqueKeyPools", poolId)));
+        await remove(ref(keyDb, keyDbPath("keyAllocations", poolId)));
+
+        const docs = Object.entries(globalData.docs || {})
+          .map(([id, doc]) => ({ id, ...doc }))
+          .filter((doc) => doc.keyPoolId === poolId);
+
+        for (const doc of docs) {
+          try {
+            await update(ref(db, dbPath("documents", doc.id)), { keyPoolId: "" });
+          } catch {}
+        }
+
+        showModal("Đã xóa", "Đã xóa kho key.", "success");
+        renderKeyPoolManager();
+      };
+
       const updateAdminStats = () => {
         const users = Object.values(globalData.users || {});
         const docs = Object.values(globalData.docs || {});
@@ -3206,7 +3455,7 @@ KEY3"></textarea>
         ).length;
         document.getElementById("stat-pending-tx").innerText = pending;
         const statClicks = document.getElementById("stat-key-clicks");
-        if (statClicks) statClicks.innerText = logs.filter((l) => l.action === "open_key").length;
+        if (statClicks) statClicks.innerText = logs.filter((l) => ["open_key", "open_link"].includes(l.action)).length;
       };
 
       const nav = (window.nav = (viewId, params = null) => {
@@ -3231,6 +3480,7 @@ KEY3"></textarea>
             "text-primary-600",
             "font-semibold",
           );
+        stopDocViewTracker();
         if (viewId === "home") renderHome();
         if (viewId === "doc-detail" && params) { currentDocId = params; renderDocDetail(params); }
         if (viewId === "wallet") renderWallet();
@@ -3266,6 +3516,7 @@ KEY3"></textarea>
           onValue(ref(db, dbPath("documents")), (snap) => {
             globalData.docs = snap.val() || {};
             if (!document.getElementById("view-home").classList.contains("hidden")) renderHome();
+            refreshDocCategorySuggestions();
             if (!document.getElementById("view-doc-detail").classList.contains("hidden") && currentDocId) renderDocDetail(currentDocId);
             if (!document.getElementById("view-purchased").classList.contains("hidden")) renderPurchased();
             if (!document.getElementById("view-admin").classList.contains("hidden")) renderAdminDocs();
@@ -3303,6 +3554,7 @@ KEY3"></textarea>
             renderKeywordFilters();
             if (!document.getElementById("view-admin").classList.contains("hidden")) renderKeywordManager();
             if (!document.getElementById("view-home").classList.contains("hidden")) renderHome();
+            refreshDocCategorySuggestions();
           }),
         );
 
@@ -3436,38 +3688,63 @@ KEY3"></textarea>
         }
       };
 
+      const setAdminDocFormMode = (isEditing, docTitle = "") => {
+        const titleEl = document.getElementById("admin-doc-form-title");
+        const submitBtn = document.getElementById("admin-doc-submit-btn");
+        if (titleEl) {
+          titleEl.textContent = isEditing
+            ? `Chỉnh sửa tài liệu${docTitle ? `: ${docTitle}` : ""}`
+            : "Đăng tài liệu mới";
+        }
+        if (submitBtn) {
+          submitBtn.textContent = isEditing ? "Chỉnh tài liệu" : "Đăng tài liệu";
+        }
+      };
+
+      const resetAdminDocForm = () => {
+        const form = document.getElementById("admin-doc-form");
+        if (form) form.reset();
+        const thumb = document.getElementById("adoc-thumb");
+        const preview = document.getElementById("adoc-preview");
+        if (thumb) thumb.value = "";
+        if (preview) preview.value = "";
+        fillDocLinkRows([]);
+        fillDocCategoryRows([]);
+        setAdminDocFormMode(false);
+        editingDocId = null;
+      };
+
       window.editDoc = (id) => {
         const doc = globalData.docs[id];
         if (!doc) return;
         editingDocId = id;
-        openFormModal(
-          "Sửa tài liệu",
-          `
-      <div><label class="block text-xs text-gray-500 mb-1">Tên tài liệu</label><input name="title" class="w-full px-3 py-2 border rounded-lg" value="${safe(doc.title || "")}"></div>
-      <div><label class="block text-xs text-gray-500 mb-1">Mô tả</label><textarea name="description" rows="3" class="w-full px-3 py-2 border rounded-lg">${safe(doc.description || "")}</textarea></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs text-gray-500 mb-1">Môn</label><input name="subject" class="w-full px-3 py-2 border rounded-lg" value="${safe(doc.subject || "")}"></div>
-        <div><label class="block text-xs text-gray-500 mb-1">Lớp</label><input name="grade" class="w-full px-3 py-2 border rounded-lg" value="${safe(doc.grade || "")}"></div>
-      </div>
-      <div><label class="block text-xs text-gray-500 mb-1">Giá</label><input name="price" type="number" class="w-full px-3 py-2 border rounded-lg" value="${Number(doc.price || 0)}"></div>
-      <div><label class="block text-xs text-gray-500 mb-1">Links (mỗi dòng: tên | url)</label><textarea name="links" rows="4" class="w-full px-3 py-2 border rounded-lg">${(doc.links || []).map((l) => `${l.label || ""} | ${l.url || ""}`).join("\n")}</textarea></div>
-      <div><label class="block text-xs text-gray-500 mb-1">Key pool</label><input name="keyPoolId" class="w-full px-3 py-2 border rounded-lg" value="${safe(doc.keyPoolId || "")}"></div>
-    `,
-          async (fd) => {
-            const payload = {
-              title: fd.get("title"),
-              description: fd.get("description"),
-              subject: fd.get("subject"),
-              grade: fd.get("grade"),
-              price: Number(fd.get("price") || 0),
-              links: parseLinksInput(fd.get("links")),
-              keyPoolId: fd.get("keyPoolId"),
-            };
-            await update(ref(db, dbPath("documents", id)), payload);
-            closeModal();
-          },
-          "Lưu",
+        setAdminDocFormMode(true, doc.title || "");
+
+        const setValue = (selector, value) => {
+          const el = document.querySelector(selector);
+          if (el) el.value = value ?? "";
+        };
+
+        setValue("#adoc-title", doc.title || "");
+        setValue("#adoc-desc", doc.description || "");
+        setValue("#adoc-grade", doc.grade || "");
+        setValue("#adoc-price", Number(doc.price || 0));
+        setValue("#adoc-thumb", doc.thumbnail || "");
+        setValue("#adoc-preview", doc.previewLink || "");
+        setValue("#adoc-key-pool", doc.keyPoolId || "");
+
+        fillDocCategoryRows(
+          Array.isArray(doc.keywords) && doc.keywords.length
+            ? doc.keywords
+            : [doc.category || doc.subject || ""],
         );
+        fillDocLinkRows(Array.isArray(doc.links) && doc.links.length ? doc.links : []);
+        refreshDocCategorySuggestions();
+
+        const formWrap = document.getElementById("admin-doc-form")?.closest(".bg-white");
+        if (formWrap) {
+          formWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       };
 
       window.editTx = async (txId) => {
@@ -3681,8 +3958,11 @@ KEY3"></textarea>
         .addEventListener("submit", async (e) => {
           e.preventDefault();
           try {
-            let thumbnail = document.getElementById("adoc-thumb").value;
-            let previewLink = document.getElementById("adoc-preview").value;
+            const isEditing = !!editingDocId;
+            const existingDoc = isEditing ? (globalData.docs[editingDocId] || {}) : {};
+
+            let thumbnail = document.getElementById("adoc-thumb").value || existingDoc.thumbnail || "";
+            let previewLink = document.getElementById("adoc-preview").value || existingDoc.previewLink || "";
             const thumbFile =
               document.getElementById("adoc-thumb-file").files[0];
             const previewFile =
@@ -3699,41 +3979,66 @@ KEY3"></textarea>
               );
             const links = getDocLinksFromForm();
             const categories = getDocCategoriesFromForm();
-            const subject = categories[0] || document.getElementById("adoc-subject")?.value || "Khác";
-            const docPayload = {
-              title: document.getElementById("adoc-title").value,
-              description: document.getElementById("adoc-desc").value,
-              subject,
-              category: subject,
-              keywords: categories,
-              grade: document.getElementById("adoc-grade").value || "Chung",
-              price: Number(document.getElementById("adoc-price").value || 0),
-              thumbnail,
-              previewLink,
-              links,
-              keyPoolId: document.getElementById("adoc-key-pool").value.trim(),
-              status: "active",
-              createdBy: currentUser.uid,
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-              views: 0,
-              buys: 0,
-              featured: false,
-              featuredOrder: 0,
-            };
-            if (editingDocId) {
-              await update(
-                ref(db, dbPath("documents", editingDocId)),
-                docPayload,
-              );
-              editingDocId = null;
+            const subject =
+              categories[0] ||
+              document.getElementById("adoc-subject")?.value ||
+              existingDoc.subject ||
+              existingDoc.category ||
+              "Khác";
+
+            if (isEditing) {
+              await update(ref(db, dbPath("documents", editingDocId)), {
+                title: String(document.getElementById("adoc-title").value || "").trim(),
+                description: String(document.getElementById("adoc-desc").value || "").trim(),
+                subject,
+                category: subject,
+                keywords: categories,
+                grade: String(document.getElementById("adoc-grade").value || "").trim() || "Chung",
+                price: Number(document.getElementById("adoc-price").value || 0),
+                thumbnail,
+                previewLink,
+                links,
+                keyPoolId: String(document.getElementById("adoc-key-pool").value || "").trim(),
+                status: existingDoc.status || "active",
+                createdBy: existingDoc.createdBy || currentUser.uid,
+                createdAt: existingDoc.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                views: Number(existingDoc.views || 0),
+                buys: Number(existingDoc.buys || 0),
+                featured: !!existingDoc.featured,
+                featuredOrder: Number(existingDoc.featuredOrder || 0),
+              });
             } else {
+              const docPayload = {
+                title: String(document.getElementById("adoc-title").value || "").trim(),
+                description: String(document.getElementById("adoc-desc").value || "").trim(),
+                subject,
+                category: subject,
+                keywords: categories,
+                grade: String(document.getElementById("adoc-grade").value || "").trim() || "Chung",
+                price: Number(document.getElementById("adoc-price").value || 0),
+                thumbnail,
+                previewLink,
+                links,
+                keyPoolId: String(document.getElementById("adoc-key-pool").value || "").trim(),
+                status: "active",
+                createdBy: currentUser.uid,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                views: 0,
+                buys: 0,
+                featured: false,
+                featuredOrder: 0,
+              };
               await set(push(ref(db, dbPath("documents"))), docPayload);
             }
-            e.target.reset();
-            fillDocLinkRows([]);
-            fillDocCategoryRows([]);
-            showModal("Thành công", "Lưu tài liệu thành công", "success");
+
+            resetAdminDocForm();
+            showModal(
+              "Thành công",
+              isEditing ? "Đã cập nhật tài liệu." : "Lưu tài liệu thành công",
+              "success",
+            );
             if (!document.getElementById("view-admin").classList.contains("hidden")) {
               renderAdminDocs();
               renderAdminTx();
@@ -3860,7 +4165,7 @@ KEY3"></textarea>
 
       const botHints = ["Nạp tiền", "Mua tài liệu", "Lỗi key", "Chia sẻ link"];
 
-      const keyPattern = /\b[A-Z0-9]{6,}\b/i;
+      const keyPattern = /[A-Z0-9]{6,}/i;
 
       const appendBotMessage = (text, from = "bot") => {
         const box = document.getElementById("chatbot-messages");
@@ -3871,7 +4176,9 @@ KEY3"></textarea>
             : "bg-primary-600 text-white rounded-2xl p-3 text-sm ml-auto max-w-[85%] whitespace-pre-wrap";
         div.textContent = text;
         box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+        requestAnimationFrame(() => {
+          box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+        });
       };
 
       const appendBotSuggestions = () => {
@@ -3882,10 +4189,7 @@ KEY3"></textarea>
         wrap.className =
           "bg-white rounded-2xl p-3 text-sm shadow-sm border border-gray-100";
         wrap.innerHTML = `
-  <p class="text-xs text-gray-500 mb-2">
-    Gợi ý nhanh
-  </p>
-
+  <p class="text-xs text-gray-500 mb-2">Gợi ý nhanh</p>
   <div class="flex flex-wrap gap-2">
     ${botHints
       .map(
@@ -3893,10 +4197,7 @@ KEY3"></textarea>
           <button
             type="button"
             class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs hover:bg-gray-200"
-            onclick='
-              document.getElementById("chatbot-input").value = ${JSON.stringify(hint)};
-              document.getElementById("chatbot-send").click();
-            '
+            onclick='document.getElementById("chatbot-input").value = ${JSON.stringify(hint)}; document.getElementById("chatbot-send").click();'
           >
             ${safe(hint)}
           </button>
@@ -3927,29 +4228,20 @@ KEY3"></textarea>
         }
         if (/lỗi key|reissue|cấp lại key|đổi key|key lỗi/i.test(lower)) {
           const foundKey = q.match(keyPattern)?.[0];
-          if (!currentUser)
-            return "Bạn cần đăng nhập để mình kiểm tra và cấp lại key.";
-          if (!foundKey)
-            return "Hãy gửi kèm key bị lỗi để mình kiểm tra và cấp lại key mới.";
+          if (!currentUser) return "Bạn cần đăng nhập để mình kiểm tra và cấp lại key.";
+          if (!foundKey) return "Hãy gửi kèm key bị lỗi để mình kiểm tra và cấp lại key mới.";
           const purchases = Object.entries(globalData.purchases || {})
             .map(([id, val]) => ({ id, ...val }))
             .filter((p) => p.userId === currentUser.uid);
           const purchase = purchases.find(
             (p) =>
-              String(p.assignedKey || "").toLowerCase() ===
-              String(foundKey).toLowerCase(),
+              String(p.assignedKey || "").toLowerCase() === String(foundKey).toLowerCase(),
           );
-          if (!purchase)
-            return "Mình chưa tìm thấy key đó trong đơn hàng của bạn.";
+          if (!purchase) return "Mình chưa tìm thấy key đó trong đơn hàng của bạn.";
           const doc = globalData.docs[purchase.documentId];
-          if (!doc?.keyPoolId)
-            return "Tài liệu này chưa cấu hình kho link gốc để cấp lại key.";
+          if (!doc?.keyPoolId) return "Tài liệu này chưa cấu hình kho link gốc để cấp lại key.";
           const oldKey = purchase.assignedKey;
-          const newKey = await allocateKeyFromPool(
-            doc.keyPoolId,
-            purchase.documentId,
-            currentUser.uid,
-          );
+          const newKey = await allocateKeyFromPool(doc.keyPoolId, purchase.documentId, currentUser.uid);
           if (!newKey) return "Kho key gốc hiện không còn key trống.";
           await update(ref(db, dbPath("purchases", purchase.id)), {
             assignedKey: newKey,
@@ -3957,14 +4249,8 @@ KEY3"></textarea>
           });
           if (oldKey) {
             await update(
-              ref(
-                keyDb,
-                `${keyDbPath("keyAllocations", doc.keyPoolId)}/${oldKey}`,
-              ),
-              {
-                status: "replaced",
-                replacedAt: Date.now(),
-              },
+              ref(keyDb, `${keyDbPath("keyAllocations", doc.keyPoolId)}/${oldKey}`),
+              { status: "replaced", replacedAt: Date.now() },
             );
           }
           await notifyDiscord(`🔁 **Cấp lại key tự động**
@@ -3988,51 +4274,77 @@ KEY3"></textarea>
         return `Mình có thể giúp bạn về nạp tiền, mua tài liệu, báo lỗi key, chia sẻ link, hoặc tìm tài liệu theo tên. Nếu bạn gửi key bị lỗi, mình sẽ kiểm tra và cấp lại key mới khi đủ điều kiện.`;
       };
 
+      const callBotApi = async (msg) => {
+        if (!CHATBOT_API_KEY) return null;
+        const systemPrompt = {
+          role: "system",
+          content:
+            "Bạn là trợ lý ngắn gọn, thân thiện cho một web bán tài liệu. Trả lời bằng tiếng Việt, ưu tiên hướng dẫn thao tác rõ ràng, không bịa đặt, không dài dòng.",
+        };
+
+        try {
+          const res = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CHATBOT_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: CHATBOT_API_MODEL,
+              messages: [systemPrompt, ...chatbotHistory.slice(-10), { role: "user", content: msg }],
+              temperature: 0.4,
+            }),
+          });
+
+          const data = await res.json();
+          const content = data?.choices?.[0]?.message?.content?.trim() || data?.error?.message || "";
+          return content || null;
+        } catch {
+          return null;
+        }
+      };
+
+      const answerBotSmart = async (msg) => {
+        const apiReply = await callBotApi(msg);
+        if (apiReply) return apiReply;
+        return answerBot(msg);
+      };
+
       const sendBot = async () => {
         const input = document.getElementById("chatbot-input");
         const msg = input.value.trim();
         if (!msg) return;
         appendBotMessage(msg, "me");
+        chatbotHistory.push({ role: "user", content: msg });
         input.value = "";
         appendBotMessage("Đang kiểm tra...");
         const box = document.getElementById("chatbot-messages");
         const typing = box.lastElementChild;
         try {
-          const reply = await answerBot(msg);
-          if (typing && typing.textContent === "Đang kiểm tra...")
-            typing.remove();
+          const reply = await answerBotSmart(msg);
+          if (typing && typing.textContent === "Đang kiểm tra...") typing.remove();
           appendBotMessage(reply, "bot");
+          chatbotHistory.push({ role: "assistant", content: reply });
         } catch (err) {
-          if (typing && typing.textContent === "Đang kiểm tra...")
-            typing.remove();
-          appendBotMessage(
-            "Mình gặp lỗi khi xử lý câu hỏi này. Hãy thử lại nhé.",
-          );
+          if (typing && typing.textContent === "Đang kiểm tra...") typing.remove();
+          appendBotMessage("Mình gặp lỗi khi xử lý câu hỏi này. Hãy thử lại nhé.");
         }
       };
 
-      document
-        .getElementById("chatbot-launcher")
-        .addEventListener("click", () => {
-          document.getElementById("chatbot-panel").classList.toggle("hidden");
-          if (!document.getElementById("chatbot-messages").childElementCount) {
-            appendBotMessage("Xin chào! Mình là trợ lý DkDocShop.");
-            appendBotSuggestions();
-          }
-        });
-      document
-        .getElementById("chatbot-close")
-        .addEventListener("click", () =>
-          document.getElementById("chatbot-panel").classList.add("hidden"),
-        );
-      document
-        .getElementById("chatbot-send")
-        .addEventListener("click", sendBot);
-      document
-        .getElementById("chatbot-input")
-        .addEventListener("keydown", (e) => {
-          if (e.key === "Enter") sendBot();
-        });
+      document.getElementById("chatbot-launcher").addEventListener("click", () => {
+        document.getElementById("chatbot-panel").classList.toggle("hidden");
+        if (!document.getElementById("chatbot-messages").childElementCount) {
+          appendBotMessage("Xin chào! Mình là trợ lý DkDocShop.");
+          appendBotSuggestions();
+        }
+      });
+      document.getElementById("chatbot-close").addEventListener("click", () =>
+        document.getElementById("chatbot-panel").classList.add("hidden"),
+      );
+      document.getElementById("chatbot-send").addEventListener("click", sendBot);
+      document.getElementById("chatbot-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendBot();
+      });
 
       window.editUser = window.editUser;
       window.deleteDoc = window.deleteDoc;
@@ -4102,8 +4414,7 @@ KEY3"></textarea>
 
       document.addEventListener("DOMContentLoaded", () => {
         bindAdminDocCloneButton();
-        fillDocLinkRows([]);
-        fillDocCategoryRows([]);
+        resetAdminDocForm();
         const params = new URLSearchParams(location.search);
         if (params.get("doc")) {
           setTimeout(() => nav("doc-detail", params.get("doc")), 100);
