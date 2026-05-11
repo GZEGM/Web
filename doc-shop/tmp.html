@@ -227,29 +227,65 @@
           >
             <h2 class="text-2xl font-bold text-gray-800">Khám phá tài liệu</h2>
             <div
-              id="keyword-filter-bar"
               class="flex gap-2 w-full md:w-auto overflow-x-auto hide-scroll pb-2"
-            ></div>
-          </div>
-          
-        <div id="featured-docs-section" class="mb-8 hidden">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h3 class="text-xl font-bold text-gray-800">Tài liệu nổi bật</h3>
-              <p class="text-sm text-gray-500">Các tài liệu được admin ghim lên top.</p>
+            >
+              <button
+                class="filter-btn active px-4 py-2 rounded-full bg-primary-50 text-primary-600 font-medium text-sm whitespace-nowrap"
+                data-filter="all"
+              >
+                Tất cả
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="free"
+              >
+                Miễn phí
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Toán"
+              >
+                Toán
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Lý"
+              >
+                Lý
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Hóa"
+              >
+                Hóa
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Sinh"
+              >
+                Sử
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Tin"
+              >
+                Tin
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Anh"
+              >
+                Anh
+              </button>
+              <button
+                class="filter-btn px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap"
+                data-filter="Sử"
+              >
+                Sử
+              </button>
             </div>
-            <div class="flex items-center gap-2">
-              <button type="button" id="featured-docs-prev" class="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50"><i class="fas fa-chevron-left"></i></button>
-              <button type="button" id="featured-docs-next" class="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50"><i class="fas fa-chevron-right"></i></button>
-            </div>
           </div>
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-primary-700 shadow-2xl">
-            <div id="featured-docs-track" class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scroll"></div>
-          </div>
-          <div id="featured-docs-dots" class="flex justify-center gap-2 mt-4"></div>
-        </div>
-
-        <div
+          <div
             id="docs-grid"
             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
@@ -435,66 +471,90 @@
             class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4"
           >
             <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
-            <div class="flex flex-col md:items-end gap-3 w-full md:w-auto">
-              <div class="flex gap-2 bg-white p-1 rounded-lg shadow-sm border border-gray-100 w-full md:w-auto overflow-x-auto">
-                <button class="admin-tab-btn active px-4 py-2 rounded-md text-sm font-medium bg-primary-50 text-primary-600" data-target="admin-overview">Tổng quan</button>
-                <button class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50" data-target="admin-docs">Tài liệu</button>
-                <button class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50" data-target="admin-users">Người dùng</button>
-                <button class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50" data-target="admin-tx">Giao dịch</button>
-                <button class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50" data-target="admin-reports">Báo cáo</button>
-              </div>
-              <div class="w-full md:w-96">
-                <div class="relative">
-                  <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                  <input id="admin-search-input" type="text" placeholder="Tìm kiếm trong tab admin hiện tại..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                </div>
-              </div>
+            <div
+              class="flex gap-2 bg-white p-1 rounded-lg shadow-sm border border-gray-100"
+            >
+              <button
+                class="admin-tab-btn active px-4 py-2 rounded-md text-sm font-medium bg-primary-50 text-primary-600"
+                data-target="admin-overview"
+              >
+                Tổng quan
+              </button>
+              <button
+                class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50"
+                data-target="admin-docs"
+              >
+                Tài liệu
+              </button>
+              <button
+                class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50"
+                data-target="admin-users"
+              >
+                Người dùng
+              </button>
+              <button
+                class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50"
+                data-target="admin-tx"
+              >
+                Giao dịch
+              </button>
+              <button
+                class="admin-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50"
+                data-target="admin-reports"
+              >
+                Báo cáo
+              </button>
             </div>
           </div>
 
           <!-- Admin: Overview -->
           <div id="admin-overview" class="admin-panel block">
             <div
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
             >
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div
+                class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+              >
                 <p class="text-gray-500 text-sm">Tổng người dùng</p>
-                <h3 class="text-2xl font-bold text-gray-800 mt-1" id="stat-users">0</h3>
+                <h3
+                  class="text-2xl font-bold text-gray-800 mt-1"
+                  id="stat-users"
+                >
+                  0
+                </h3>
               </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div
+                class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+              >
                 <p class="text-gray-500 text-sm">Tổng tài liệu</p>
-                <h3 class="text-2xl font-bold text-gray-800 mt-1" id="stat-docs">0</h3>
+                <h3
+                  class="text-2xl font-bold text-gray-800 mt-1"
+                  id="stat-docs"
+                >
+                  0
+                </h3>
               </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div
+                class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+              >
                 <p class="text-gray-500 text-sm">Tổng doanh thu</p>
-                <h3 class="text-2xl font-bold text-primary-600 mt-1" id="stat-revenue">0đ</h3>
+                <h3
+                  class="text-2xl font-bold text-primary-600 mt-1"
+                  id="stat-revenue"
+                >
+                  0đ
+                </h3>
               </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div
+                class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
+              >
                 <p class="text-gray-500 text-sm">Nạp chờ duyệt</p>
-                <h3 class="text-2xl font-bold text-orange-500 mt-1" id="stat-pending-tx">0</h3>
-              </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-gray-500 text-sm">Lượt click key</p>
-                <h3 class="text-2xl font-bold text-blue-600 mt-1" id="stat-key-clicks">0</h3>
-              </div>
-            </div>
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
-                <h3 class="font-bold text-gray-800">Thống kê click / sử dụng key</h3>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                  <thead class="bg-gray-50 text-gray-600">
-                    <tr>
-                      <th class="px-4 py-3">Thời gian</th>
-                      <th class="px-4 py-3">User</th>
-                      <th class="px-4 py-3">Tài liệu</th>
-                      <th class="px-4 py-3">Loại</th>
-                      <th class="px-4 py-3">Key</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-key-logs-body" class="divide-y divide-gray-100"></tbody>
-                </table>
+                <h3
+                  class="text-2xl font-bold text-orange-500 mt-1"
+                  id="stat-pending-tx"
+                >
+                  0
+                </h3>
               </div>
             </div>
           </div>
@@ -529,21 +589,13 @@
                   ></textarea>
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500 mb-1">Phân loại</label
+                  <label class="block text-xs text-gray-500 mb-1">Môn học</label
                   ><input
                     type="text"
                     id="adoc-subject"
-                    placeholder="VD: Toán 12, Hóa hữu cơ..."
+                    placeholder="Toán, Văn, Anh..."
                     class="w-full px-3 py-2 border rounded-lg text-sm"
                   />
-                </div>
-                <div class="md:col-span-2">
-                  <div class="flex items-center justify-between mb-2">
-                    <label class="block text-xs text-gray-500">Phân loại nhiều</label>
-                    <button type="button" id="add-doc-category-row" class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-600 text-xs font-medium"><i class="fas fa-plus"></i> Thêm phân loại</button>
-                  </div>
-                  <div id="adoc-categories-list" class="space-y-2"></div>
-                  <p class="mt-2 text-xs text-gray-400">Mỗi tài liệu có thể gắn nhiều phân loại, dùng để lọc và hiển thị trên banner.</p>
                 </div>
                 <div>
                   <label class="block text-xs text-gray-500 mb-1"
@@ -589,12 +641,15 @@
                   />
                   <input type="hidden" id="adoc-preview" />
                 </div>
-                <div class="md:col-span-2">
-                  <div class="flex items-center justify-between mb-2">
-                    <label class="block text-xs text-gray-500">Link tài liệu</label>
-                    <button type="button" id="add-doc-link-row" class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-600 text-xs font-medium"><i class="fas fa-plus"></i> Thêm link</button>
-                  </div>
-                  <div id="adoc-links-list" class="space-y-2"></div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1"
+                    >Link tài liệu (mỗi dòng: Tên | URL)</label
+                  ><textarea
+                    id="adoc-links"
+                    rows="4"
+                    placeholder="Bản 1 | https://...\nBản 2 | https://..."
+                    class="w-full px-3 py-2 border rounded-lg text-sm"
+                  ></textarea>
                 </div>
                 <div>
                   <label class="block text-xs text-gray-500 mb-1"
@@ -606,14 +661,7 @@
                     class="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
-                <div class="md:col-span-2 flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    id="clone-admin-form"
-                    class="bg-gray-100 text-gray-700 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-200"
-                  >
-                    Clone bản nhập
-                  </button>
+                <div class="md:col-span-2 flex justify-end">
                   <button
                     type="submit"
                     class="bg-primary-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-primary-700"
@@ -634,7 +682,7 @@
                   <thead class="bg-gray-50">
                     <tr>
                       <th class="px-4 py-3">Tài liệu</th>
-                      <th class="px-4 py-3">Phân loại / Từ khóa</th>
+                      <th class="px-4 py-3">Môn/Lớp</th>
                       <th class="px-4 py-3">Giá</th>
                       <th class="px-4 py-3">Lượt mua</th>
                       <th class="px-4 py-3">Hành động</th>
@@ -654,20 +702,16 @@
             id="admin-users"
             class="admin-panel hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
           >
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+            <div class="px-6 py-4 border-b border-gray-100">
               <h3 class="font-bold text-gray-800">Kiểm duyệt người dùng</h3>
-              <div class="text-xs text-gray-500">Tìm theo tên, email, lớp, trường</div>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-4 py-3">User</th>
-                    <th class="px-4 py-3">Avatar</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Lớp/Trường</th>
-                    <th class="px-4 py-3">Ví</th>
-                    <th class="px-4 py-3">Còn thiếu</th>
                     <th class="px-4 py-3">Trạng thái</th>
                     <th class="px-4 py-3">Hành động</th>
                   </tr>
@@ -681,55 +725,32 @@
           </div>
 
           <!-- Admin: Transactions -->
-          <div id="admin-tx" class="admin-panel hidden space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div class="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                <h3 class="font-bold text-gray-800">Giao dịch</h3>
-                <div class="flex gap-2 bg-gray-50 p-1 rounded-lg border border-gray-100">
-                  <button type="button" class="tx-tab-btn active px-4 py-2 rounded-md text-sm font-medium bg-primary-50 text-primary-600" data-target="admin-tx-deposit">Nạp tiền</button>
-                  <button type="button" class="tx-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100" data-target="admin-tx-consume">Tiêu dùng</button>
-                </div>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-4 py-3">Mã/Ngày</th>
-                      <th class="px-4 py-3">User</th>
-                      <th class="px-4 py-3">Số tiền</th>
-                      <th class="px-4 py-3">Trạng thái</th>
-                      <th class="px-4 py-3">Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-tx-deposit" class="divide-y divide-gray-100"></tbody>
-                </table>
-              </div>
+          <div
+            id="admin-tx"
+            class="admin-panel hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+          >
+            <div class="px-6 py-4 border-b border-gray-100">
+              <h3 class="font-bold text-gray-800">Duyệt nạp tiền</h3>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hidden">
-              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
-                <h3 class="font-bold text-gray-800">Tiêu dùng</h3>
-                <div class="flex gap-2 bg-gray-50 p-1 rounded-lg border border-gray-100">
-                  <button type="button" class="tx-tab-btn px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100" data-target="admin-tx-deposit">Nạp tiền</button>
-                  <button type="button" class="tx-tab-btn active px-4 py-2 rounded-md text-sm font-medium bg-primary-50 text-primary-600" data-target="admin-tx-consume">Tiêu dùng</button>
-                </div>
-                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Mua tài liệu</span>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-4 py-3">Mã/Ngày</th>
-                      <th class="px-4 py-3">User</th>
-                      <th class="px-4 py-3">Tài liệu</th>
-                      <th class="px-4 py-3">Số tiền</th>
-                      <th class="px-4 py-3">Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-tx-consume" class="divide-y divide-gray-100"></tbody>
-                </table>
-              </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-3">Mã/Ngày</th>
+                    <th class="px-4 py-3">User ID</th>
+                    <th class="px-4 py-3">Số tiền nạp</th>
+                    <th class="px-4 py-3">Trạng thái</th>
+                    <th class="px-4 py-3">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="admin-tx-body"
+                  class="divide-y divide-gray-100"
+                ></tbody>
+              </table>
             </div>
           </div>
+        </div>
 
         <!-- Admin: Reports -->
         <div
@@ -928,16 +949,14 @@
         reports: {},
         keyAllocations: {},
         keyPools: {},
-        keywords: {},
-        keyUsageLogs: {},
       };
       let currentFilter = "all";
-      let adminTxFilter = "deposit";
-      let adminSearchTerm = "";
-      let pendingDocId = null;
       let editingDocId = null;
       let editingUserId = null;
-      let currentDocId = null;
+
+      // console.log(keyFirebaseConfig);
+      // console.log(keyApp);
+      // console.log(keyDb);
 
       const dbPath = (collection, docId = null) => {
         let path = `artifacts/${appId}/public/data/${collection}`;
@@ -968,246 +987,6 @@
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;");
 
-      const slugify = (text) =>
-        String(text || "")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "");
-
-      const normalizeDocKeywords = (doc) => {
-        if (Array.isArray(doc?.keywords)) {
-          return doc.keywords
-            .map((k) => String(k || "").trim())
-            .filter(Boolean);
-        }
-        if (typeof doc?.keywords === "string") {
-          return String(doc.keywords)
-            .split(/[,;\n]+/)
-            .map((k) => k.trim())
-            .filter(Boolean);
-        }
-        if (typeof doc?.keyword === "string" && doc.keyword.trim()) {
-          return [doc.keyword.trim()];
-        }
-        return [];
-      };
-
-      const getDocCategoriesFromForm = () =>
-        Array.from(document.querySelectorAll("#adoc-categories-list .category-row"))
-          .map((row) => row.querySelector(".doc-category-input")?.value?.trim() || "")
-          .filter(Boolean);
-
-      const getFeaturedDocs = () =>
-        Object.entries(globalData.docs || {})
-          .map(([id, data]) => ({ id, ...data }))
-          .filter((doc) => doc.status === "active" && doc.featured)
-          .sort((a, b) => {
-            const featuredDelta = Number(!!b.featured) - Number(!!a.featured);
-            if (featuredDelta !== 0) return featuredDelta;
-            const orderDelta = Number(b.featuredOrder || 0) - Number(a.featuredOrder || 0);
-            if (orderDelta !== 0) return orderDelta;
-            return (b.createdAt || 0) - (a.createdAt || 0);
-          });
-
-      const getKeywordName = (item) =>
-        String(item?.name ?? item?.label ?? item ?? "").trim();
-
-      const getKeywordEntries = () => {
-        const raw = globalData.keywords || {};
-        if (Array.isArray(raw)) {
-          return raw
-            .map((item) =>
-              typeof item === "string"
-                ? { id: slugify(item), name: item, createdAt: 0, updatedAt: 0 }
-                : item,
-            )
-            .filter((item) => getKeywordName(item))
-            .sort((a, b) =>
-              String(a.name || "").localeCompare(String(b.name || ""), "vi"),
-            );
-        }
-        return Object.entries(raw)
-          .map(([id, val]) => ({
-            id,
-            ...(val || {}),
-            name: getKeywordName(val) || id,
-          }))
-          .filter((item) => getKeywordName(item))
-          .sort((a, b) =>
-            String(a.name || "").localeCompare(String(b.name || ""), "vi"),
-          );
-      };
-
-      const requiresProfileCompletion = () =>
-        !!currentUser &&
-        !!userData &&
-        (!String(userData.name || "").trim() ||
-          !String(userData.class || "").trim() ||
-          !userData.profileCompleted);
-
-      const ensureProfilePrompt = () => {
-        if (!currentUser || !requiresProfileCompletion()) return;
-        showModal(
-          "Hoàn tất hồ sơ",
-          "Vui lòng nhập Họ tên và Lớp để mở khóa toàn bộ chức năng.",
-          "warning",
-          `<button onclick="closeModal(); nav('profile')" class="px-6 py-2 bg-primary-600 text-white rounded-xl font-medium">Điền hồ sơ ngay</button>`,
-        );
-        if (
-          document.getElementById("view-profile") &&
-          document.getElementById("view-profile").classList.contains("hidden")
-        ) {
-          nav("profile");
-        }
-      };
-
-      const renderKeywordFilters = () => {
-        const host = document.getElementById("keyword-filter-bar");
-        if (!host) return;
-        const keywords = getKeywordEntries();
-        const activeClass =
-          "px-4 py-2 rounded-full bg-primary-50 text-primary-600 font-medium text-sm whitespace-nowrap";
-        const inactiveClass =
-          "px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm whitespace-nowrap";
-        const makeBtn = (label, filter) => `
-          <button
-            class="filter-btn ${currentFilter === filter ? activeClass : inactiveClass}"
-            data-filter="${safe(filter)}"
-          >
-            ${safe(label)}
-          </button>
-        `;
-        host.innerHTML = [
-          makeBtn("Tất cả", "all"),
-          makeBtn("Miễn phí", "free"),
-          ...keywords.map((kw) => makeBtn(kw.name || kw.id, kw.name || kw.id)),
-        ].join("");
-        host.querySelectorAll(".filter-btn").forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            document.querySelectorAll(".filter-btn").forEach((b) => {
-              b.classList.remove(
-                "bg-primary-50",
-                "text-primary-600",
-                "font-semibold",
-                "border-transparent",
-              );
-              b.classList.add("bg-white", "text-gray-600");
-            });
-            e.currentTarget.classList.remove("bg-white", "text-gray-600");
-            e.currentTarget.classList.add(
-              "bg-primary-50",
-              "text-primary-600",
-              "border-transparent",
-            );
-            currentFilter = e.currentTarget.dataset.filter;
-            renderHome(
-              document.getElementById("global-search")?.value?.toLowerCase() || "",
-            );
-          });
-        });
-      };
-
-      const getDocLinksFromForm = () =>
-        Array.from(document.querySelectorAll("#adoc-links-list .link-row"))
-          .map((row) => ({
-            label: row.querySelector(".doc-link-label")?.value?.trim() || "",
-            url: row.querySelector(".doc-link-url")?.value?.trim() || "",
-          }))
-          .filter((item) => item.url);
-
-      const fillDocCategoryRows = (categories = []) => {
-        const container = document.getElementById("adoc-categories-list");
-        if (!container) return;
-        container.innerHTML = "";
-        const source = Array.isArray(categories) && categories.length ? categories : [""];
-        source.forEach((name) => {
-          const row = document.createElement("div");
-          row.className = "grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 category-row";
-          row.innerHTML = `
-            <input type="text" class="doc-category-input w-full px-3 py-2 border rounded-lg text-sm" placeholder="VD: Toán 12, Đề thi, Hóa hữu cơ..." value="${safe(name || "")}" />
-            <button type="button" class="remove-category-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-          `;
-          row.querySelector(".remove-category-row").addEventListener("click", () => {
-            if (container.querySelectorAll(".category-row").length <= 1) {
-              const input = row.querySelector(".doc-category-input");
-              if (input) input.value = "";
-              return;
-            }
-            row.remove();
-          });
-          container.appendChild(row);
-        });
-        const addBtn = document.getElementById("add-doc-category-row");
-        if (addBtn && !addBtn.dataset.bound) {
-          addBtn.dataset.bound = "1";
-          addBtn.addEventListener("click", () => {
-            const row = document.createElement("div");
-            row.className = "grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 category-row";
-            row.innerHTML = `
-              <input type="text" class="doc-category-input w-full px-3 py-2 border rounded-lg text-sm" placeholder="VD: Toán 12, Đề thi, Hóa hữu cơ..." />
-              <button type="button" class="remove-category-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-            `;
-            row.querySelector(".remove-category-row").addEventListener("click", () => row.remove());
-            container.appendChild(row);
-          });
-        }
-      };
-
-      const fillDocLinkRows = (links = []) => {
-        const container = document.getElementById("adoc-links-list");
-        if (!container) return;
-        container.innerHTML = "";
-        const source = Array.isArray(links) && links.length ? links : [{}];
-        source.forEach((link) => {
-          const row = document.createElement("div");
-          row.className =
-            "grid grid-cols-1 md:grid-cols-[1fr_1.5fr_auto] gap-2 link-row";
-          row.innerHTML = `
-            <input type="text" class="doc-link-label w-full px-3 py-2 border rounded-lg text-sm" placeholder="Tên link" value="${safe(link?.label || "")}" />
-            <input type="url" class="doc-link-url w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..." value="${safe(link?.url || "")}" />
-            <button type="button" class="remove-link-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-          `;
-          row.querySelector(".remove-link-row").addEventListener("click", () => {
-            if (container.querySelectorAll(".link-row").length <= 1) {
-              row.querySelector(".doc-link-label").value = "";
-              row.querySelector(".doc-link-url").value = "";
-              return;
-            }
-            row.remove();
-          });
-          container.appendChild(row);
-        });
-        const addBtn = document.getElementById("add-doc-link-row");
-        if (addBtn && !addBtn.dataset.bound) {
-          addBtn.dataset.bound = "1";
-          addBtn.addEventListener("click", () => {
-            const row = document.createElement("div");
-            row.className =
-              "grid grid-cols-1 md:grid-cols-[1fr_1.5fr_auto] gap-2 link-row";
-            row.innerHTML = `
-              <input type="text" class="doc-link-label w-full px-3 py-2 border rounded-lg text-sm" placeholder="Tên link" />
-              <input type="url" class="doc-link-url w-full px-3 py-2 border rounded-lg text-sm" placeholder="https://..." />
-              <button type="button" class="remove-link-row px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-            `;
-            row.querySelector(".remove-link-row").addEventListener("click", () => row.remove());
-            container.appendChild(row);
-          });
-        }
-      };
-
-      const logKeyUsage = async (payload) => {
-        try {
-          const refObj = push(ref(db, dbPath("keyUsageLogs")));
-          await set(refObj, {
-            ...payload,
-            createdAt: Date.now(),
-          });
-        } catch (err) {
-          console.error("logKeyUsage failed", err);
-        }
-      };
       window.showModal = (
         title,
         message,
@@ -1249,50 +1028,29 @@
         box.classList.add("scale-95");
         setTimeout(() => modal.classList.add("hidden"), 150);
       };
-const openFormModal = (
-  title,
-  htmlContent,
-  onSubmit,
-  submitLabel = "Lưu",
-) => {
-  showModal(
-    title,
-    `
-      <div class="max-h-[65vh] overflow-y-auto pr-1">
-        <form id="dynamic-form" class="space-y-3">
-          ${htmlContent}
 
-          <div class="pt-2 flex justify-end gap-2 sticky bottom-0 bg-white py-3">
-            <button
-              type="button"
-              onclick="closeModal()"
-              class="px-4 py-2 rounded-lg bg-gray-100"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              class="px-4 py-2 rounded-lg bg-primary-600 text-white"
-            >
-              ${submitLabel}
-            </button>
-          </div>
-        </form>
-      </div>
-    `,
-    "info",
-  );
+      const openFormModal = (
+        title,
+        htmlContent,
+        onSubmit,
+        submitLabel = "Lưu",
+      ) => {
+        showModal(
+          title,
+          `<form id="dynamic-form" class="space-y-3">${htmlContent}<div class="pt-2 flex justify-end gap-2"><button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-100">Hủy</button><button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white">${submitLabel}</button></div></form>`,
+          "info",
+        );
+        setTimeout(() => {
+          const form = document.getElementById("dynamic-form");
+          if (form)
+            form.addEventListener("submit", async (e) => {
+              e.preventDefault();
+              await onSubmit(new FormData(form));
+            });
+        }, 0);
+      };
 
-  setTimeout(() => {
-    const form = document.getElementById("dynamic-form");
-    if (form) {
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        await onSubmit(new FormData(form));
-      });
-    }
-  }, 0);
-};     const askConfirm = (title, message, confirmLabel = "Xác nhận") =>
+      const askConfirm = (title, message, confirmLabel = "Xác nhận") =>
         new Promise((resolve) => {
           let settled = false;
           const originalClose = window.closeModal;
@@ -1438,211 +1196,12 @@ const openFormModal = (
         return key ? buildKeyRedeemUrl(key) : "";
       };
 
-      const getAdminSearchTerm = () =>
-        String(document.getElementById("admin-search-input")?.value || adminSearchTerm || "")
-          .trim()
-          .toLowerCase();
-
-      const adminMatches = (...parts) => {
-        const term = getAdminSearchTerm();
-        if (!term) return true;
-        return parts.flat().join(" ").toLowerCase().includes(term);
-      };
-
-      const getUserDepositTotal = (uid) =>
-        Object.values(globalData.tx || {})
-          .filter(
-            (t) =>
-              t.userId === uid &&
-              t.type === "deposit" &&
-              (t.status === "verified" || t.status === "success"),
-          )
-          .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-      const getUserPurchaseTotal = (uid) =>
-        Object.values(globalData.tx || {})
-          .filter(
-            (t) =>
-              t.userId === uid &&
-              t.type === "purchase" &&
-              (t.status === "verified" || t.status === "success"),
-          )
-          .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-      const getUserPaidOfflineTotal = (user) => Number(user?.offlinePaidAmount || 0);
-
-      const getUserRemainingCash = (user) =>
-        Math.max(getUserDepositTotal(user?.id || user?.uid) - getUserPaidOfflineTotal(user), 0);
-
-      const getUserTxHistory = (uid) =>
-        Object.values(globalData.tx || {})
-          .filter((tx) => tx.userId === uid)
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-      const getUserKeyLogs = (uid) =>
-        Object.values(globalData.keyUsageLogs || {})
-          .filter((log) => log.userId === uid)
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-      window.openUserDetail = (uid) => {
-        const u = globalData.users?.[uid];
-        if (!u) return;
-
-        const deposits = getUserTxHistory(uid).filter((tx) => tx.type === "deposit");
-        const consumes = getUserTxHistory(uid).filter((tx) => tx.type === "purchase");
-        const keyLogs = getUserKeyLogs(uid);
-        const remaining = getUserRemainingCash({ ...u, id: uid });
-
-        openFormModal(
-          "Chi tiết người dùng",
-          `
-      <div class="space-y-4">
-        <div class="flex items-center gap-4">
-          <img src="${safe(u.avatar || "https://placehold.co/100")}" class="w-16 h-16 rounded-full object-cover border border-gray-200" onerror="this.src='https://placehold.co/100'">
-          <div class="min-w-0">
-            <div class="font-bold text-gray-800">${safe(u.name || u.uid || "")}</div>
-            <div class="text-xs text-gray-400 break-all">${safe(u.email || "")}</div>
-            <div class="text-xs text-gray-400">${safe(u.class || "Chưa có lớp")} · ${safe(u.school || "Chưa có trường")}</div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="rounded-xl border border-gray-100 p-3 bg-gray-50">
-            <div class="text-xs text-gray-500">Ví</div>
-            <div class="text-lg font-bold text-primary-600">${formatVND(u.walletBalance || 0)}</div>
-          </div>
-          <div class="rounded-xl border border-gray-100 p-3 bg-gray-50">
-            <div class="text-xs text-gray-500">Đã thu ngoài đời</div>
-            <div class="text-lg font-bold text-gray-800">${formatVND(getUserPaidOfflineTotal(u))}</div>
-          </div>
-          <div class="rounded-xl border border-gray-100 p-3 bg-gray-50">
-            <div class="text-xs text-gray-500">Còn thiếu</div>
-            <div class="text-lg font-bold text-red-600">${formatVND(remaining)}</div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 text-sm">
-          <div class="rounded-xl border border-gray-100 p-3">
-            <div class="text-xs text-gray-500">Tổng nạp</div>
-            <div class="font-semibold">${formatVND(getUserDepositTotal(uid))}</div>
-          </div>
-          <div class="rounded-xl border border-gray-100 p-3">
-            <div class="text-xs text-gray-500">Tổng tiêu</div>
-            <div class="font-semibold">${formatVND(getUserPurchaseTotal(uid))}</div>
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-gray-100 p-3 bg-white">
-          <div class="font-semibold text-gray-800 mb-2">Đánh dấu đã thu thêm</div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">Số tiền thu thêm</label>
-              <input name="paidAmountAdd" type="number" min="0" step="1000" value="0" class="w-full px-3 py-2 border rounded-lg">
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">Ghi chú</label>
-              <input name="paidNote" class="w-full px-3 py-2 border rounded-lg" placeholder="VD: Thu tiền mặt">
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-3">
-          <div>
-            <div class="font-semibold text-gray-800 mb-2">Lịch sử nạp</div>
-            <div class="max-h-56 overflow-auto border border-gray-100 rounded-xl">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th class="px-3 py-2">Thời gian</th>
-                    <th class="px-3 py-2">Số tiền</th>
-                    <th class="px-3 py-2">Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${deposits.length ? deposits.map((tx) => `
-                      <tr class="border-t border-gray-100">
-                        <td class="px-3 py-2">${formatDate(tx.createdAt)}</td>
-                        <td class="px-3 py-2 font-medium text-green-600">${formatVND(tx.amount)}</td>
-                        <td class="px-3 py-2">${safe(tx.status || "")}</td>
-                      </tr>`).join("") : '<tr><td colspan="3" class="px-3 py-4 text-center text-gray-500">Chưa có nạp tiền.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div>
-            <div class="font-semibold text-gray-800 mb-2">Lịch sử tiêu dùng</div>
-            <div class="max-h-56 overflow-auto border border-gray-100 rounded-xl">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th class="px-3 py-2">Thời gian</th>
-                    <th class="px-3 py-2">Tài liệu</th>
-                    <th class="px-3 py-2">Số tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${consumes.length ? consumes.map((tx) => `
-                      <tr class="border-t border-gray-100">
-                        <td class="px-3 py-2">${formatDate(tx.createdAt)}</td>
-                        <td class="px-3 py-2">${safe((globalData.docs[tx.docId] || {}).title || tx.docId || "")}</td>
-                        <td class="px-3 py-2 font-medium text-red-600">${formatVND(tx.amount)}</td>
-                      </tr>`).join("") : '<tr><td colspan="3" class="px-3 py-4 text-center text-gray-500">Chưa có tiêu dùng.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div>
-            <div class="font-semibold text-gray-800 mb-2">Key click / sử dụng</div>
-            <div class="max-h-56 overflow-auto border border-gray-100 rounded-xl">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th class="px-3 py-2">Thời gian</th>
-                    <th class="px-3 py-2">Hành động</th>
-                    <th class="px-3 py-2">Tài liệu</th>
-                    <th class="px-3 py-2">Key</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${keyLogs.length ? keyLogs.map((log) => `
-                      <tr class="border-t border-gray-100">
-                        <td class="px-3 py-2">${formatDate(log.createdAt)}</td>
-                        <td class="px-3 py-2">${safe(log.action || "open_key")}</td>
-                        <td class="px-3 py-2">${safe(log.docTitle || log.docId || "")}</td>
-                        <td class="px-3 py-2 font-mono break-all">${safe(log.key || "")}</td>
-                      </tr>`).join("") : '<tr><td colspan="4" class="px-3 py-4 text-center text-gray-500">Chưa có log key.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    `,
-          async (fd) => {
-            const addPaid = Math.max(Number(fd.get("paidAmountAdd") || 0), 0);
-            const note = String(fd.get("paidNote") || "").trim();
-            const nextPaid = Number(u.offlinePaidAmount || 0) + addPaid;
-            await update(ref(db, dbPath("users", uid)), {
-              offlinePaidAmount: nextPaid,
-              offlinePaidUpdatedAt: Date.now(),
-              offlinePaidNote: note || null,
-            });
-            closeModal();
-            updateAdminStats();
-            renderAdminUsers();
-          },
-          "Lưu",
-        );
-      };
-
       const hasAccessToDoc = (docId) => {
+        if (!currentUser || !userData) return false;
+        if (userData.role === "admin") return true;
         const doc = globalData.docs[docId];
         if (!doc) return false;
         if (Number(doc.price) === 0) return true;
-        if (!currentUser || !userData) return false;
-        if (userData.role === "admin") return true;
         return getUserPurchases().some((p) => p.documentId === docId);
       };
 
@@ -1691,15 +1250,6 @@ const openFormModal = (
       <button id="nav-btn-wallet" onclick="nav('wallet'); closeSidebar?.()" class="w-full text-left px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 flex items-center gap-3"><i class="fas fa-wallet w-5"></i> Ví tiền</button>
       <button id="nav-btn-profile" onclick="nav('profile'); closeSidebar?.()" class="w-full text-left px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 flex items-center gap-3"><i class="fas fa-user-cog w-5"></i> Hồ sơ</button>
     `;
-        if (requiresProfileCompletion()) {
-          html = `
-      <div class="mb-3 p-3 rounded-xl bg-orange-50 text-orange-700 text-xs leading-relaxed border border-orange-100">
-        Hãy hoàn tất Họ tên và Lớp để mở khóa toàn bộ chức năng.
-      </div>
-      <button id="nav-btn-profile" onclick="nav('profile'); closeSidebar?.()" class="w-full text-left px-4 py-3 rounded-xl text-orange-700 bg-orange-50 hover:bg-orange-100 flex items-center gap-3"><i class="fas fa-user-check w-5"></i> Hoàn tất hồ sơ</button>
-      <button id="nav-btn-home" onclick="nav('home'); closeSidebar?.()" class="w-full text-left px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 flex items-center gap-3"><i class="fas fa-store w-5"></i> Cửa hàng</button>
-    `;
-        }
         if (userData?.role === "admin") {
           html += `<div class="my-2 border-t border-gray-100"></div><button id="nav-btn-admin" onclick="nav('admin'); closeSidebar?.()" class="w-full text-left px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 flex items-center gap-3"><i class="fas fa-chart-pie w-5"></i> Quản trị Admin</button>`;
         }
@@ -1716,11 +1266,9 @@ const openFormModal = (
         const verifiedBadge =
           userData.role === "admin"
             ? '<i class="fas fa-star text-yellow-400" title="Admin"></i>'
-            : requiresProfileCompletion()
-              ? '<i class="fas fa-exclamation-triangle text-orange-400" title="Cần bổ sung hồ sơ"></i>'
-              : userData.verified
-                ? '<i class="fas fa-check-circle text-blue-500" title="Đã duyệt"></i>'
-                : '<i class="fas fa-clock text-orange-400" title="Chờ duyệt"></i>';
+            : userData.verified
+              ? '<i class="fas fa-check-circle text-blue-500" title="Đã duyệt"></i>'
+              : '<i class="fas fa-clock text-orange-400" title="Chờ duyệt"></i>';
 
         header.innerHTML = `
       <div class="hidden sm:flex items-center bg-gray-100 rounded-full px-3 py-1 mr-2 cursor-pointer hover:bg-gray-200 transition" onclick="nav('wallet')">
@@ -1748,13 +1296,12 @@ const openFormModal = (
         const defaultUser = {
           uid: user.uid,
           email: user.email || "",
-          name: user.displayName || "",
+          name: user.displayName || "Học viên mới",
           avatar: user.photoURL || "https://placehold.co/100",
           role: isFirstUser ? "admin" : "user",
           verified: true,
           verificationMethod: "auto",
           verifiedAt: Date.now(),
-          profileCompleted: false,
           walletBalance: 0,
           class: "",
           school: "",
@@ -1766,23 +1313,17 @@ const openFormModal = (
           userData = defaultUser;
         } else {
           userData = {
-            ...defaultUser,
             ...snap.val(),
+            verified: true,
+            verificationMethod: snap.val()?.verificationMethod || "auto",
+            verifiedAt: snap.val()?.verifiedAt || Date.now(),
           };
+          await update(userRef, {
+            verified: true,
+            verificationMethod: "auto",
+            verifiedAt: Date.now(),
+          });
         }
-
-        const profileCompleted =
-          !!String(userData.name || "").trim() &&
-          !!String(userData.class || "").trim();
-        userData.profileCompleted = profileCompleted;
-
-        await update(userRef, {
-          profileCompleted,
-          verified: true,
-          verificationMethod: "auto",
-          verifiedAt: userData.verifiedAt || Date.now(),
-        });
-
         updateHeader();
       };
 
@@ -1801,11 +1342,6 @@ const openFormModal = (
             "mb-6 p-4 rounded-xl text-sm font-medium bg-purple-50 text-purple-700";
           banner.innerHTML =
             '<i class="fas fa-crown"></i> Tài khoản Admin Quản trị.';
-        } else if (requiresProfileCompletion()) {
-          banner.className =
-            "mb-6 p-4 rounded-xl text-sm font-medium bg-orange-50 text-orange-700";
-          banner.innerHTML =
-            '<i class="fas fa-exclamation-circle"></i> Vui lòng nhập đủ Họ tên và Lớp để mở khóa toàn bộ tính năng.';
         } else if (userData.verified) {
           banner.className =
             "mb-6 p-4 rounded-xl text-sm font-medium bg-green-50 text-green-700";
@@ -1819,147 +1355,22 @@ const openFormModal = (
         }
       };
 
-      
-      const renderFeaturedBanner = () => {
-        const section = document.getElementById("featured-docs-section");
-        const track = document.getElementById("featured-docs-track");
-        const dots = document.getElementById("featured-docs-dots");
-        const prevBtn = document.getElementById("featured-docs-prev");
-        const nextBtn = document.getElementById("featured-docs-next");
-        if (!section || !track || !dots) return;
-
-        const featured = getFeaturedDocs();
-        track.innerHTML = "";
-        dots.innerHTML = "";
-
-        if (!featured.length) {
-          section.classList.add("hidden");
-          return;
-        }
-
-        section.classList.remove("hidden");
-
-        track.innerHTML = featured.slice(0, 6).map((doc) => {
-          const labels = normalizeDocKeywords(doc).slice(0, 3);
-          return `
-            <article class="snap-start shrink-0 w-full">
-              <div class="grid md:grid-cols-[1.15fr_0.85fr] gap-0 min-h-[22rem]">
-                <div class="p-8 md:p-12 flex flex-col justify-between text-white">
-                  <div>
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 text-xs font-medium mb-4">
-                      <i class="fas fa-star"></i> Nổi bật hàng đầu
-                    </div>
-                    <h3 class="text-3xl md:text-4xl font-bold leading-tight mb-4">${safe(doc.title || "Tài liệu nổi bật")}</h3>
-                    <p class="text-white/85 text-sm md:text-base leading-relaxed max-w-2xl mb-5">${safe(doc.description || "Tài liệu được admin ghim lên top để người dùng xem nhanh hơn.")}</p>
-                    <div class="flex flex-wrap gap-2 mb-6">
-                      <span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs">${safe(doc.category || doc.subject || "Phân loại")}</span>
-                      <span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs">Lớp ${safe(doc.grade || "Chung")}</span>
-                      ${labels.map((k) => `<span class="px-3 py-1 rounded-full bg-white/10 text-white text-xs">${safe(k)}</span>`).join("")}
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-3 flex-wrap">
-                    <div class="text-white/90">
-                      <div class="text-xs uppercase tracking-[0.2em] text-white/60">Giá</div>
-                      <div class="text-2xl font-bold">${Number(doc.price || 0) === 0 ? "Miễn phí" : formatVND(doc.price)}</div>
-                    </div>
-                    <button onclick="nav('doc-detail', '${doc.id}')" class="ml-auto bg-white text-primary-700 px-5 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition">
-                      Xem chi tiết
-                    </button>
-                  </div>
-                </div>
-                <div class="relative min-h-[22rem]">
-                  <img src="${safe(doc.thumbnail || "https://placehold.co/900x600/e2e8f0/64748b?text=Tài+Liệu+Nổi+Bật")}" class="absolute inset-0 w-full h-full object-cover">
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
-                  <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
-                    <div class="bg-white/90 backdrop-blur px-4 py-2 rounded-2xl text-gray-800 shadow-lg">
-                      <div class="text-xs text-gray-500">Lượt mua</div>
-                      <div class="font-bold text-lg">${Number(doc.buys || 0)}</div>
-                    </div>
-                    <button onclick="shareDoc('${doc.id}')" class="bg-white/90 backdrop-blur px-4 py-2 rounded-2xl text-gray-800 shadow-lg hover:bg-white">
-                      <i class="fas fa-share-nodes"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </article>
-          `;
-        }).join("");
-
-        const slideCount = featured.slice(0, 6).length;
-        for (let i = 0; i < slideCount; i++) {
-          const dot = document.createElement("button");
-          dot.type = "button";
-          dot.className = `w-2.5 h-2.5 rounded-full transition ${i === 0 ? "bg-primary-600" : "bg-gray-300"}`;
-          dot.addEventListener("click", () => scrollFeaturedTo(i));
-          dots.appendChild(dot);
-        }
-
-        let currentIndex = 0;
-        const slidesEls = () => Array.from(track.children);
-        const updateDots = () => {
-          Array.from(dots.children).forEach((dot, idx) => {
-            dot.className = `w-2.5 h-2.5 rounded-full transition ${idx === currentIndex ? "bg-primary-600" : "bg-gray-300"}`;
-          });
-        };
-        const scrollFeaturedTo = (index) => {
-          const els = slidesEls();
-          if (!els.length) return;
-          currentIndex = (index + els.length) % els.length;
-          els[currentIndex].scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-          updateDots();
-        };
-        if (prevBtn) prevBtn.onclick = () => scrollFeaturedTo(currentIndex - 1);
-        if (nextBtn) nextBtn.onclick = () => scrollFeaturedTo(currentIndex + 1);
-        if (window.__featuredCarouselTimer) clearInterval(window.__featuredCarouselTimer);
-        window.__featuredCarouselTimer = setInterval(() => {
-          if (document.getElementById("view-home")?.classList.contains("hidden")) return;
-          const els = slidesEls();
-          if (!els.length) return;
-          scrollFeaturedTo(currentIndex + 1);
-        }, 5000);
-        track.addEventListener("scroll", () => {
-          const els = slidesEls();
-          if (!els.length) return;
-          const mid = track.scrollLeft + track.clientWidth / 2;
-          let best = 0;
-          let bestDist = Infinity;
-          els.forEach((el, idx) => {
-            const center = el.offsetLeft + el.clientWidth / 2;
-            const dist = Math.abs(center - mid);
-            if (dist < bestDist) {
-              bestDist = dist;
-              best = idx;
-            }
-          });
-          if (best !== currentIndex) {
-            currentIndex = best;
-            updateDots();
-          }
-        }, { passive: true });
-        scrollFeaturedTo(0);
-      };
-
-const renderHome = (searchQuery = "") => {
+      const renderHome = (searchQuery = "") => {
         const grid = document.getElementById("docs-grid");
-        renderKeywordFilters();
-        renderFeaturedBanner();
         grid.innerHTML = "";
         const docs = Object.entries(globalData.docs || {}).map(
           ([id, data]) => ({ id, ...data }),
         );
         let filtered = docs.filter((d) => d.status === "active");
-        if (currentFilter === "free") {
+        if (currentFilter === "free")
           filtered = filtered.filter((d) => Number(d.price) === 0);
-        } else if (currentFilter !== "all") {
-          filtered = filtered.filter((d) => {
-            const keywords = normalizeDocKeywords(d);
-            const category = String(d.category || d.subject || "").trim();
-            return keywords.includes(currentFilter) || category === currentFilter;
-          });
-        }
+        else if (currentFilter !== "all")
+          filtered = filtered.filter(
+            (d) => String(d.subject || "") === currentFilter,
+          );
         if (searchQuery)
           filtered = filtered.filter((d) =>
-            `${d.title || ""} ${d.category || d.subject || ""} ${normalizeDocKeywords(d).join(" ")} ${d.grade || ""}`
+            `${d.title || ""} ${d.subject || ""} ${d.grade || ""}`
               .toLowerCase()
               .includes(searchQuery),
           );
@@ -1968,29 +1379,21 @@ const renderHome = (searchQuery = "") => {
           return;
         }
         filtered
-          .sort((a, b) => {
-            const featuredDelta = Number(!!b.featured) - Number(!!a.featured);
-            if (featuredDelta !== 0) return featuredDelta;
-            const orderDelta = Number(b.featuredOrder || 0) - Number(a.featuredOrder || 0);
-            if (orderDelta !== 0) return orderDelta;
-            return (b.createdAt || 0) - (a.createdAt || 0);
-          })
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
           .forEach((doc) => {
             const isFree = Number(doc.price) === 0;
             const priceTag = isFree
               ? `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Miễn phí</span>`
               : `<span class="font-bold text-primary-600">${formatVND(doc.price)}</span>`;
-            const docKeywords = normalizeDocKeywords(doc);
             grid.innerHTML += `
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition cursor-pointer flex flex-col h-full" onclick="nav('doc-detail', '${doc.id}')">
           <div class="h-40 bg-gray-200 relative">
             <img src="${safe(doc.thumbnail || "https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu")}" class="w-full h-full object-cover">
-            <div class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-semibold shadow">${safe(doc.category || doc.subject || "Khác")}</div>
+            <div class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-semibold shadow">${safe(doc.subject || "Khác")}</div>
           </div>
           <div class="p-4 flex flex-col flex-1">
             <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">${safe(doc.title || "")}</h3>
             <p class="text-xs text-gray-500 mb-3">Lớp: ${safe(doc.grade || "Chung")} • ${Number(doc.buys || 0)} lượt mua</p>
-            ${docKeywords.length ? `<div class="flex flex-wrap gap-1 mb-2">${docKeywords.slice(0, 3).map((k) => `<span class="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600">${safe(k)}</span>`).join("")}</div>` : ""}
             <div class="mt-auto pt-3 border-t border-gray-50 flex justify-between items-center">
               ${priceTag}
               <button class="text-primary-600 bg-primary-50 w-8 h-8 rounded-full flex items-center justify-center hover:bg-primary-100"><i class="fas fa-arrow-right"></i></button>
@@ -2076,9 +1479,7 @@ const renderHome = (searchQuery = "") => {
         const container = document.getElementById("doc-detail-content");
         if (!doc) {
           container.innerHTML =
-            Object.keys(globalData.docs || {}).length === 0
-              ? '<div class="p-8 text-center text-gray-500">Đang tải tài liệu...</div>'
-              : '<div class="p-8 text-center text-red-500">Không tìm thấy tài liệu</div>';
+            '<div class="p-8 text-center text-red-500">Không tìm thấy tài liệu</div>';
           return;
         }
         const purchased = hasAccessToDoc(docId);
@@ -2273,9 +1674,8 @@ const renderHome = (searchQuery = "") => {
         </div>
         <div class="p-6 md:p-8 md:w-3/5 flex flex-col">
           <div class="flex gap-2 mb-3 flex-wrap">
-            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">${safe(doc.category || doc.subject || "Phân loại")}</span>
+            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">${safe(doc.subject || "Khác")}</span>
             <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">Lớp ${safe(doc.grade || "Chung")}</span>
-            ${normalizeDocKeywords(doc).map((k) => `<span class="bg-primary-50 text-primary-600 px-3 py-1 rounded-full text-xs font-semibold">${safe(k)}</span>`).join("")}
           </div>
           <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">${safe(doc.title || "")}</h2>
           <p class="text-gray-500 text-sm mb-6 flex gap-4 flex-wrap"><span><i class="fas fa-shopping-bag"></i> ${Number(doc.buys || 0)} lượt mua</span> <span><i class="fas fa-clock"></i> ${formatDate(doc.createdAt)}</span></p>
@@ -2346,19 +1746,7 @@ const renderHome = (searchQuery = "") => {
           loginCount: currentCount + 1,
           lastLoginAt: Date.now(),
           lastOpenedBy: currentUser.uid,
-          lastOpenedName: userData?.name || currentUser.email || currentUser.uid,
         }).catch(() => {});
-        logKeyUsage({
-          userId: currentUser.uid,
-          userName: userData?.name || currentUser.email || currentUser.uid,
-          email: userData?.email || currentUser.email || "",
-          docId,
-          docTitle: doc?.title || "",
-          purchaseId: purchase?.id || "",
-          key: purchase?.assignedKey || "",
-          action: "open_key",
-          keyPoolId: doc?.keyPoolId || "",
-        });
         window.open(keyLink, "_blank", "noopener,noreferrer");
       };
 
@@ -2698,126 +2086,23 @@ const renderHome = (searchQuery = "") => {
           });
       };
 
-      const renderKeywordManager = async () => {
-        const host = document.getElementById("admin-docs");
-        if (!host) return;
-
-        let card = document.getElementById("keyword-manager");
-        if (!card) {
-          card = document.createElement("div");
-          card.id = "keyword-manager";
-          card.className = "bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6";
-          card.innerHTML = `
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 class="font-bold text-gray-800">Quản lý từ khóa / phân loại</h3>
-                <p class="text-xs text-gray-500">Từ khóa hiển thị trên web và dùng để lọc tài liệu.</p>
-              </div>
-              <form id="keyword-add-form" class="flex gap-2">
-                <input id="keyword-new-name" class="px-3 py-2 border rounded-lg text-sm" placeholder="Thêm từ khóa mới">
-                <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium">Thêm</button>
-              </form>
-            </div>
-            <div id="keyword-manager-list" class="flex flex-wrap gap-2"></div>
-          `;
-          host.insertBefore(card, host.firstChild);
-          card.querySelector("#keyword-add-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const name = card.querySelector("#keyword-new-name").value.trim();
-            if (!name) return;
-            const id = slugify(name);
-            await update(ref(db, dbPath("keywords", id)), {
-              id,
-              name,
-              createdAt: globalData.keywords?.[id]?.createdAt || Date.now(),
-              updatedAt: Date.now(),
-            });
-            card.querySelector("#keyword-new-name").value = "";
-          });
-        }
-
-        const list = card.querySelector("#keyword-manager-list");
-        const items = getKeywordEntries();
-        if (!items.length) {
-          list.innerHTML = '<div class="text-sm text-gray-500">Chưa có từ khóa nào.</div>';
-          return;
-        }
-        list.innerHTML = items
-          .map((kw) => `
-              <div class="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-50 border border-gray-200">
-                <input data-keyword-id="${safe(kw.id)}" class="keyword-name-input bg-transparent outline-none text-sm w-28" value="${safe(kw.name || kw.id)}">
-                <button type="button" data-save="${safe(kw.id)}" class="text-xs px-2 py-1 rounded bg-primary-600 text-white">Lưu</button>
-                <button type="button" data-delete="${safe(kw.id)}" class="text-xs px-2 py-1 rounded bg-red-50 text-red-600">Xóa</button>
-              </div>
-            `)
-          .join("");
-
-        list.querySelectorAll("[data-save]").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const id = btn.dataset.save;
-            const input = list.querySelector(`[data-keyword-id="${CSS.escape(id)}"]`);
-            const name = input?.value.trim();
-            if (!name) return;
-            await update(ref(db, dbPath("keywords", id)), {
-              id,
-              name,
-              createdAt: globalData.keywords?.[id]?.createdAt || Date.now(),
-              updatedAt: Date.now(),
-            });
-          });
-        });
-
-        list.querySelectorAll("[data-delete]").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const id = btn.dataset.delete;
-            if (!id) return;
-            if (!confirm("Xóa từ khóa này?")) return;
-            await remove(ref(db, dbPath("keywords", id)));
-          });
-        });
-      };
-
- 
-      
       const renderAdminDocs = () => {
-        renderKeywordManager();
         const tbody = document.getElementById("admin-docs-body");
         tbody.innerHTML = "";
         const docs = Object.entries(globalData.docs || {})
           .map(([id, val]) => ({ id, ...val }))
           .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        const filtered = docs.filter((doc) =>
-          adminMatches(
-            doc.title,
-            doc.category,
-            doc.subject,
-            doc.grade,
-            doc.description,
-            normalizeDocKeywords(doc).join(" "),
-          ),
-        );
-        if (!filtered.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" class="px-4 py-5 text-center text-gray-500">Không tìm thấy tài liệu phù hợp.</td></tr>';
-          return;
-        }
-        filtered.forEach((doc) => {
-          const docKeywords = normalizeDocKeywords(doc);
+        docs.forEach((doc) => {
           tbody.innerHTML += `
         <tr class="hover:bg-gray-50">
-          <td class="px-4 py-3">
-            <div class="font-medium text-gray-800 line-clamp-1 flex items-center gap-2">${safe(doc.title || "")}${doc.featured ? '<span class="text-[10px] px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-bold">Nổi bật</span>' : ""}</div>
-            <p class="text-xs text-gray-400">${safe(doc.category || doc.subject || "")}</p>
-          </td>
-          <td class="px-4 py-3 text-gray-600">${safe(doc.grade || "")}<div class="text-xs text-gray-400">${docKeywords.map((k) => safe(k)).join(", ")}</div></td>
+          <td class="px-4 py-3"><p class="font-medium text-gray-800 line-clamp-1">${safe(doc.title || "")}</p></td>
+          <td class="px-4 py-3 text-gray-600">${safe(doc.subject || "")} / ${safe(doc.grade || "")}</td>
           <td class="px-4 py-3 font-medium text-primary-600">${formatVND(doc.price)}</td>
           <td class="px-4 py-3 text-gray-600">${Number(doc.buys || 0)}</td>
-          <td class="px-4 py-3 flex flex-wrap gap-2">
-            <button onclick="editDoc('${doc.id}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded" title="Sửa"><i class="fas fa-pen"></i></button>
-            <button onclick="cloneDoc('${doc.id}')" class="text-emerald-600 hover:text-emerald-800 bg-emerald-50 p-2 rounded" title="Clone"><i class="fas fa-clone"></i></button>
-            <button onclick="toggleFeaturedDoc('${doc.id}')" class="${doc.featured ? 'text-yellow-700 bg-yellow-100' : 'text-yellow-600 bg-yellow-50'} p-2 rounded" title="Ghim top"><i class="fas fa-star"></i></button>
-            <button onclick="deleteDoc('${doc.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded" title="Xóa"><i class="fas fa-trash"></i></button>
-            <button onclick="shareDoc('${doc.id}')" class="text-gray-700 hover:text-gray-900 bg-gray-100 p-2 rounded" title="Chia sẻ"><i class="fas fa-share-nodes"></i></button>
+          <td class="px-4 py-3 flex gap-2">
+            <button onclick="editDoc('${doc.id}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded"><i class="fas fa-pen"></i></button>
+            <button onclick="deleteDoc('${doc.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+            <button onclick="shareDoc('${doc.id}')" class="text-gray-700 hover:text-gray-900 bg-gray-100 p-2 rounded"><i class="fas fa-share-nodes"></i></button>
           </td>
         </tr>`;
         });
@@ -2825,140 +2110,80 @@ const renderHome = (searchQuery = "") => {
 
       const renderAdminUsers = () => {
         const tbody = document.getElementById("admin-users-body");
-        if (!tbody) return;
-        const users = Object.entries(globalData.users || {})
-          .map(([id, val]) => ({ id, ...val }))
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        const filtered = users.filter((u) =>
-          adminMatches(u.name, u.email, u.class, u.school, u.uid),
+        tbody.innerHTML = "";
+        const users = Object.values(globalData.users || {}).sort(
+          (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
         );
-        if (!filtered.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="8" class="px-4 py-5 text-center text-gray-500">Không tìm thấy người dùng phù hợp.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = filtered
-          .map((u) => {
-            const remaining = getUserRemainingCash({ ...u, id: u.id });
-            return `
-          <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3">
-              <div class="font-medium text-gray-800">${safe(u.name || u.uid || "")}</div>
-              <div class="text-xs text-gray-400 font-mono">${safe(u.uid || "")}</div>
-            </td>
-            <td class="px-4 py-3">
-              <img src="${safe(u.avatar || "https://placehold.co/100")}" class="w-10 h-10 rounded-full object-cover border border-gray-200" onerror="this.src='https://placehold.co/100'">
-            </td>
-            <td class="px-4 py-3 text-gray-600">${safe(u.email || "")}</td>
-            <td class="px-4 py-3 text-gray-600">${safe(u.class || "")}<div class="text-xs text-gray-400">${safe(u.school || "")}</div></td>
-            <td class="px-4 py-3 font-medium text-primary-600">${formatVND(u.walletBalance || 0)}</td>
-            <td class="px-4 py-3 font-medium ${remaining > 0 ? "text-red-600" : "text-green-600"}">${formatVND(remaining)}</td>
-            <td class="px-4 py-3">${u.role === "admin" ? '<span class="px-2 py-1 rounded-full bg-purple-50 text-purple-700 text-xs">Admin</span>' : (u.verified ? '<span class="px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs">Đã duyệt</span>' : '<span class="px-2 py-1 rounded-full bg-orange-50 text-orange-700 text-xs">Chờ duyệt</span>')}</td>
-            <td class="px-4 py-3 flex flex-wrap gap-2">
-              <button onclick="openUserDetail('${u.id}')" class="text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg text-xs font-medium">Chi tiết</button>
-              <button onclick="editUser('${u.id}')" class="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-xs font-medium">Sửa</button>
-              <button onclick="toggleVerify('${u.id}', ${!u.verified})" class="text-green-600 bg-green-50 px-3 py-1.5 rounded-lg text-xs font-medium">${u.verified ? "Bỏ duyệt" : "Duyệt"}</button>
-              <button onclick="deleteUser('${u.id}')" class="text-red-600 bg-red-50 px-3 py-1.5 rounded-lg text-xs font-medium">Xóa</button>
-            </td>
-          </tr>
-        `;
-          })
-          .join("");
+        users.forEach((u) => {
+          const statusBadge =
+            u.role === "admin"
+              ? '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">Admin</span>'
+              : u.verified
+                ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Đã duyệt</span>'
+                : '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">Chờ duyệt</span>';
+          const actionBtns =
+            u.role === "admin"
+              ? ""
+              : `
+        <button onclick="editUser('${u.uid}')" class="text-blue-600 text-xs font-medium border border-blue-600 px-2 py-1 rounded hover:bg-blue-50">Sửa</button>
+        <button onclick="deleteUser('${u.uid}')" class="text-red-500 text-xs font-medium border border-red-500 px-2 py-1 rounded hover:bg-red-50">Xóa</button>
+        <button onclick="toggleVerify('${u.uid}', ${!u.verified})" class="text-white ${u.verified ? "bg-orange-500" : "bg-green-500"} text-xs font-medium px-3 py-1 rounded hover:opacity-90 shadow">${u.verified ? "Bỏ duyệt" : "Duyệt"}</button>
+      `;
+          tbody.innerHTML += `
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 flex items-center gap-3">
+            <img src="${safe(u.avatar || "https://placehold.co/100")}" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+            <div><p class="font-medium text-gray-800 text-sm leading-tight">${safe(u.name || "")}</p><p class="text-xs text-gray-500">Ví: ${formatVND(u.walletBalance)}</p></div>
+          </td>
+          <td class="px-4 py-3 text-xs text-gray-600">${safe(u.email || "")}</td>
+          <td class="px-4 py-3 text-xs text-gray-600">${safe(u.class || "-")} / ${safe(u.school || "-")}</td>
+          <td class="px-4 py-3">${statusBadge}</td>
+          <td class="px-4 py-3 flex flex-wrap gap-2">${actionBtns}</td>
+        </tr>`;
+        });
       };
 
       const renderAdminTx = () => {
-        const depositBody = document.getElementById("admin-tx-deposit");
-        const consumeBody = document.getElementById("admin-tx-consume");
-        if (!depositBody || !consumeBody) return;
+        const tbody = document.getElementById("admin-tx-body");
+        tbody.innerHTML = "";
         const txs = Object.entries(globalData.tx || {})
           .map(([id, val]) => ({ id, ...val }))
+          .filter((tx) => tx.type === "deposit")
           .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        const usersById = globalData.users || {};
-        const docsById = globalData.docs || {};
-        const deposits = txs.filter((t) => t.type === "deposit");
-        const consumes = txs.filter((t) => t.type === "purchase");
-
-        const rowStatus = (tx) =>
-          tx.status === "verified" || tx.status === "success"
-            ? '<span class="px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs">Thành công</span>'
-            : tx.status === "pending"
-              ? '<span class="px-2 py-1 rounded-full bg-orange-50 text-orange-700 text-xs">Chờ duyệt</span>'
-              : '<span class="px-2 py-1 rounded-full bg-red-50 text-red-700 text-xs">Từ chối</span>';
-
-        const depFiltered = deposits.filter((tx) => {
-          const user = usersById[tx.userId] || {};
-          return adminMatches(tx.id, tx.userId, user.name, user.email, tx.amount, tx.status);
+        txs.forEach((tx) => {
+          const u = globalData.users[tx.userId] || { name: "Unknown" };
+          const statusBadge =
+            tx.status === "verified" || tx.status === "success"
+              ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Đã cộng</span>'
+              : tx.status === "rejected"
+                ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Từ chối</span>'
+                : '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">Chờ</span>';
+          tbody.innerHTML += `
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-xs"><p class="font-mono text-gray-500">${safe(tx.id.substring(1, 8).toUpperCase())}</p><p class="text-gray-400 mt-1">${formatDate(tx.createdAt)}</p></td>
+          <td class="px-4 py-3 text-sm font-medium text-gray-700">${safe(u.name || "")}</td>
+          <td class="px-4 py-3 font-bold text-green-600">${formatVND(tx.amount)}</td>
+          <td class="px-4 py-3">${statusBadge}</td>
+          <td class="px-4 py-3 flex gap-2">
+            ${tx.status === "pending" ? `<button onclick="approveTx('${tx.id}')" class="text-white bg-green-500 p-1 rounded hover:bg-green-600" title="Duyệt"><i class="fas fa-check"></i></button><button onclick="rejectTx('${tx.id}')" class="text-white bg-red-500 p-1 rounded hover:bg-red-600" title="Từ chối"><i class="fas fa-times"></i></button>` : ""}
+          </td>
+        </tr>`;
         });
-
-        const conFiltered = consumes.filter((tx) => {
-          const user = usersById[tx.userId] || {};
-          const doc = docsById[tx.docId] || {};
-          return adminMatches(tx.id, tx.userId, user.name, user.email, doc.title, tx.docId, tx.amount, tx.status);
-        });
-
-        depositBody.innerHTML = depFiltered.length
-          ? depFiltered
-              .map((tx) => {
-                const user = usersById[tx.userId] || {};
-                return `<tr class="hover:bg-gray-50"><td class="px-4 py-3 text-xs font-mono">${safe(tx.id)}<div class="text-gray-400">${formatDate(tx.createdAt)}</div></td><td class="px-4 py-3 text-sm">${safe(user.name || tx.userId || "")}<div class="text-xs text-gray-400">${safe(user.email || "")}</div></td><td class="px-4 py-3 font-medium text-primary-600">${formatVND(tx.amount)}</td><td class="px-4 py-3">${rowStatus(tx)}</td><td class="px-4 py-3 flex flex-wrap gap-2"><button onclick="approveTx('${tx.id}')" class="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-medium">Duyệt</button><button onclick="rejectTx('${tx.id}')" class="px-3 py-1.5 rounded-lg bg-red-50 text-red-700 text-xs font-medium">Từ chối</button><button onclick="editTx('${tx.id}')" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">Sửa</button><button onclick="deleteTx('${tx.id}')" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">Xóa</button></td></tr>`;
-              })
-              .join("")
-          : '<tr><td colspan="5" class="px-4 py-5 text-center text-gray-500">Không tìm thấy giao dịch nạp tiền.</td></tr>';
-
-        consumeBody.innerHTML = conFiltered.length
-          ? conFiltered
-              .map((tx) => {
-                const user = usersById[tx.userId] || {};
-                const doc = docsById[tx.docId] || {};
-                return `<tr class="hover:bg-gray-50"><td class="px-4 py-3 text-xs font-mono">${safe(tx.id)}<div class="text-gray-400">${formatDate(tx.createdAt)}</div></td><td class="px-4 py-3 text-sm">${safe(user.name || tx.userId || "")}<div class="text-xs text-gray-400">${safe(user.email || "")}</div></td><td class="px-4 py-3 text-sm text-gray-600">${safe(doc.title || tx.docId || "")}</td><td class="px-4 py-3 font-medium text-primary-600">${formatVND(tx.amount)}</td><td class="px-4 py-3 flex flex-wrap gap-2"><button onclick="editTx('${tx.id}')" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">Sửa</button><button onclick="deleteTx('${tx.id}')" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">Xóa</button></td></tr>`;
-              })
-              .join("")
-          : '<tr><td colspan="5" class="px-4 py-5 text-center text-gray-500">Không tìm thấy giao dịch tiêu dùng.</td></tr>';
-
-        const depositPanel = document.getElementById("admin-tx-deposit")?.closest(".bg-white.rounded-2xl.shadow-sm.border.border-gray-100.overflow-hidden");
-        const consumePanel = document.getElementById("admin-tx-consume")?.closest(".bg-white.rounded-2xl.shadow-sm.border.border-gray-100.overflow-hidden");
-        if (depositPanel && consumePanel) {
-          if (adminTxFilter === "deposit") {
-            depositPanel.classList.remove("hidden");
-            consumePanel.classList.add("hidden");
-          } else {
-            depositPanel.classList.add("hidden");
-            consumePanel.classList.remove("hidden");
-          }
-        }
       };
 
       const renderAdminReports = () => {
         const tbody = document.getElementById("admin-reports-body");
         if (!tbody) return;
+        tbody.innerHTML = "";
         const reports = Object.entries(globalData.reports || {})
           .map(([id, val]) => ({ id, ...val }))
           .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        const filtered = reports.filter((r) =>
-          adminMatches(
-            r.id,
-            r.userId,
-            (globalData.users[r.userId] || {}).name,
-            (globalData.users[r.userId] || {}).email,
-            (globalData.docs[r.docId] || {}).title,
-            r.docId,
-            r.type,
-            r.details,
-            r.status,
-          ),
-        );
-        if (!filtered.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" class="px-4 py-5 text-center text-gray-500">Không tìm thấy báo cáo nào.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = filtered
-          .map((r) => {
-            const u = globalData.users[r.userId] || {};
-            const d = globalData.docs[r.docId] || {};
-            return `
+        reports.forEach((r) => {
+          const u = globalData.users[r.userId] || {};
+          const d = globalData.docs[r.docId] || {};
+          tbody.innerHTML += `
         <tr class="hover:bg-gray-50">
-          <td class="px-4 py-3">${safe(u.name || r.userId || "")}<div class="text-xs text-gray-400">${formatDate(r.createdAt)}</div></td>
+          <td class="px-4 py-3">${safe(u.name || r.userId || "")}</td>
           <td class="px-4 py-3">${safe(d.title || r.docId || "")}</td>
           <td class="px-4 py-3">${safe(r.type || "")}</td>
           <td class="px-4 py-3"><span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">${safe(r.status || "new")}</span></td>
@@ -2966,38 +2191,7 @@ const renderHome = (searchQuery = "") => {
             <button onclick="resolveReport('${r.id}')" class="text-blue-600 text-xs font-medium border border-blue-600 px-2 py-1 rounded hover:bg-blue-50">Xử lý</button>
           </td>
         </tr>`;
-          })
-          .join("");
-      };
-
-      const renderKeyUsageLogs = () => {
-        const body = document.getElementById("admin-key-logs-body");
-        if (!body) return;
-        const logs = Object.entries(globalData.keyUsageLogs || {})
-          .map(([id, val]) => ({ id, ...val }))
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        const filtered = logs.filter((log) =>
-          adminMatches(log.id, log.userId, log.userName, log.email, log.docId, log.docTitle, log.key, log.action),
-        );
-        if (!filtered.length) {
-          body.innerHTML =
-            '<tr><td colspan="5" class="px-4 py-5 text-center text-gray-500">Không tìm thấy log key.</td></tr>';
-          return;
-        }
-        body.innerHTML = filtered.slice(0, 50).map((log) => {
-          const u = globalData.users[log.userId] || {};
-          const d = globalData.docs[log.docId] || {};
-          const actionLabel = log.action === "open_key" ? "Click / mở key" : log.action === "issued" ? "Đã cấp key" : safe(log.action || "Log");
-          return `
-              <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-xs">${formatDate(log.createdAt)}</td>
-                <td class="px-4 py-3 text-sm font-medium text-gray-700">${safe(log.userName || u.name || log.userId || "")}<div class="text-xs text-gray-400">${safe(log.email || u.email || "")}</div></td>
-                <td class="px-4 py-3 text-sm text-gray-600">${safe(d.title || log.docTitle || log.docId || "")}</td>
-                <td class="px-4 py-3 text-xs"><span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700">${actionLabel}</span></td>
-                <td class="px-4 py-3 text-xs font-mono text-gray-500 break-all">${safe(log.key || "")}</td>
-              </tr>
-            `;
-        }).join("");
+        });
       };
 
       const renderAdmin = () => {
@@ -3005,10 +2199,6 @@ const renderHome = (searchQuery = "") => {
         renderKeyPoolManager();
         updateAdminStats();
         renderAdminDocs();
-        renderAdminUsers();
-        renderAdminTx();
-        renderAdminReports();
-        renderKeyUsageLogs();
       };
 
       const renderKeyPoolManager = async () => {
@@ -3190,7 +2380,6 @@ KEY3"></textarea>
         const users = Object.values(globalData.users || {});
         const docs = Object.values(globalData.docs || {});
         const txs = Object.values(globalData.tx || {});
-        const logs = Object.values(globalData.keyUsageLogs || {});
         document.getElementById("stat-users").innerText = users.length;
         document.getElementById("stat-docs").innerText = docs.length;
         const rev = txs
@@ -3205,8 +2394,6 @@ KEY3"></textarea>
           (t) => t.type === "deposit" && t.status === "pending",
         ).length;
         document.getElementById("stat-pending-tx").innerText = pending;
-        const statClicks = document.getElementById("stat-key-clicks");
-        if (statClicks) statClicks.innerText = logs.filter((l) => l.action === "open_key").length;
       };
 
       const nav = (window.nav = (viewId, params = null) => {
@@ -3232,7 +2419,7 @@ KEY3"></textarea>
             "font-semibold",
           );
         if (viewId === "home") renderHome();
-        if (viewId === "doc-detail" && params) { currentDocId = params; renderDocDetail(params); }
+        if (viewId === "doc-detail" && params) renderDocDetail(params);
         if (viewId === "wallet") renderWallet();
         if (viewId === "admin") renderAdmin();
         if (viewId === "profile") renderProfileForm();
@@ -3259,94 +2446,133 @@ KEY3"></textarea>
       };
 
       const setupRealtimeListeners = () => {
+        if (!currentUser) return;
         dbUnsubscribers.forEach((u) => u && u());
         dbUnsubscribers = [];
 
         dbUnsubscribers.push(
+          onValue(ref(db, dbPath("users", currentUser.uid)), (snap) => {
+            if (snap.exists()) {
+              userData = snap.val();
+              updateHeader();
+              if (
+                !document
+                  .getElementById("view-wallet")
+                  .classList.contains("hidden")
+              )
+                renderWallet();
+              if (
+                !document
+                  .getElementById("view-profile")
+                  .classList.contains("hidden")
+              )
+                renderProfileForm();
+            }
+          }),
+        );
+
+        dbUnsubscribers.push(
           onValue(ref(db, dbPath("documents")), (snap) => {
             globalData.docs = snap.val() || {};
-            if (!document.getElementById("view-home").classList.contains("hidden")) renderHome();
-            if (!document.getElementById("view-doc-detail").classList.contains("hidden") && currentDocId) renderDocDetail(currentDocId);
-            if (!document.getElementById("view-purchased").classList.contains("hidden")) renderPurchased();
-            if (!document.getElementById("view-admin").classList.contains("hidden")) renderAdminDocs();
+            if (
+              !document.getElementById("view-home").classList.contains("hidden")
+            )
+              renderHome();
+            if (
+              !document
+                .getElementById("view-admin")
+                .classList.contains("hidden")
+            ) {
+              renderAdminDocs();
+              renderAdminReports();
+            }
           }),
         );
 
         dbUnsubscribers.push(
           onValue(ref(db, dbPath("purchases")), (snap) => {
             globalData.purchases = snap.val() || {};
-            if (!document.getElementById("view-purchased").classList.contains("hidden")) renderPurchased();
           }),
         );
-
         dbUnsubscribers.push(
           onValue(ref(db, dbPath("reports")), (snap) => {
             globalData.reports = snap.val() || {};
-            if (!document.getElementById("view-admin").classList.contains("hidden")) renderAdminReports();
+            if (
+              !document
+                .getElementById("view-admin")
+                .classList.contains("hidden")
+            )
+              renderAdminReports();
           }),
         );
-
         dbUnsubscribers.push(
-          onValue(ref(db, dbPath("transactions")), (snap) => {
-            globalData.tx = snap.val() || {};
-            if (!document.getElementById("view-wallet").classList.contains("hidden")) renderWallet();
-            if (!document.getElementById("view-admin").classList.contains("hidden")) {
-              renderAdminTx();
-              updateAdminStats();
+          onValue(ref(keyDb, keyDbPath("uniqueKeyPools")), (snap) => {
+            globalData.keyPools = snap.val() || {};
+            if (
+              !document
+                .getElementById("view-admin")
+                .classList.contains("hidden")
+            ) {
+              renderKeyPoolManager();
             }
           }),
         );
 
-        dbUnsubscribers.push(
-          onValue(ref(db, dbPath("keywords")), (snap) => {
-            globalData.keywords = snap.val() || {};
-            renderKeywordFilters();
-            if (!document.getElementById("view-admin").classList.contains("hidden")) renderKeywordManager();
-            if (!document.getElementById("view-home").classList.contains("hidden")) renderHome();
-          }),
-        );
-
-        dbUnsubscribers.push(
-          onValue(ref(db, dbPath("keyUsageLogs")), (snap) => {
-            globalData.keyUsageLogs = snap.val() || {};
-            if (!document.getElementById("view-admin").classList.contains("hidden")) renderKeyUsageLogs();
-            updateAdminStats();
-          }),
-        );
-
-        dbUnsubscribers.push(
-          onValue(ref(keyDb, keyDbPath("uniqueKeyPools")), (snap) => {
-            globalData.keyPools = snap.val() || {};
-            if (!document.getElementById("view-admin").classList.contains("hidden")) renderKeyPoolManager();
-          }),
-        );
-
-        if (currentUser) {
+        if (userData?.role === "admin") {
           dbUnsubscribers.push(
-            onValue(ref(db, dbPath("users", currentUser.uid)), (snap) => {
-              if (snap.exists()) {
-                userData = snap.val();
-                updateHeader();
-                if (!document.getElementById("view-wallet").classList.contains("hidden")) renderWallet();
-                if (!document.getElementById("view-profile").classList.contains("hidden")) renderProfileForm();
-              }
+            onValue(ref(db, dbPath("users")), (snap) => {
+              globalData.users = snap.val() || {};
+              if (
+                !document
+                  .getElementById("admin-users")
+                  .classList.contains("hidden")
+              )
+                renderAdminUsers();
+              updateAdminStats();
             }),
           );
-
-          if (userData?.role === "admin") {
-            dbUnsubscribers.push(
-              onValue(ref(db, dbPath("users")), (snap) => {
-                globalData.users = snap.val() || {};
-                if (!document.getElementById("admin-users").classList.contains("hidden")) renderAdminUsers();
-                updateAdminStats();
-              }),
-            );
-          }
+          dbUnsubscribers.push(
+            onValue(ref(db, dbPath("transactions")), (snap) => {
+              globalData.tx = snap.val() || {};
+              if (
+                !document
+                  .getElementById("admin-tx")
+                  .classList.contains("hidden")
+              )
+                renderAdminTx();
+              updateAdminStats();
+            }),
+          );
+          dbUnsubscribers.push(
+            onValue(ref(keyDb, keyDbPath("keyAllocations")), (snap) => {
+              globalData.keyAllocations = snap.val() || {};
+            }),
+          );
+        } else {
+          dbUnsubscribers.push(
+            onValue(
+              query(
+                ref(db, dbPath("transactions")),
+                orderByChild("userId"),
+                equalTo(currentUser.uid),
+              ),
+              (snap) => {
+                globalData.tx = snap.val() || {};
+                if (
+                  !document
+                    .getElementById("view-wallet")
+                    .classList.contains("hidden")
+                )
+                  renderWallet();
+              },
+            ),
+          );
         }
       };
+
       window.toggleVerify = async (uid, status) => {
         try {
-          await update(ref(db, dbPath("users", uid)), { verified: status, profileCompleted: status ? true : false });
+          await update(ref(db, dbPath("users", uid)), { verified: status });
         } catch {}
       };
 
@@ -3394,48 +2620,6 @@ KEY3"></textarea>
         } catch {}
       };
 
-      window.cloneDoc = async (id) => {
-        const doc = globalData.docs[id];
-        if (!doc) return;
-        const newId = push(ref(db, dbPath("documents"))).key;
-        const payload = {
-          ...doc,
-          title: `${doc.title || "Tài liệu"} (bản sao)`,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          buys: 0,
-        };
-        delete payload.id;
-        await set(ref(db, dbPath("documents", newId)), payload);
-        showModal("Đã clone", `Đã tạo bản sao mới: <span class="font-mono">${safe(newId)}</span>`, "success");
-      };
-
-      window.toggleFeaturedDoc = async (id) => {
-        const doc = globalData.docs[id];
-        if (!doc) return;
-        const nextFeatured = !doc.featured;
-        try {
-          const featuredOrder = nextFeatured ? Date.now() : 0;
-          await update(ref(db, dbPath("documents", id)), {
-            featured: nextFeatured,
-            featuredOrder,
-            updatedAt: Date.now(),
-          });
-          if (globalData.docs[id]) {
-            globalData.docs[id] = {
-              ...globalData.docs[id],
-              featured: nextFeatured,
-              featuredOrder,
-              updatedAt: Date.now(),
-            };
-          }
-          if (!document.getElementById("view-admin").classList.contains("hidden")) renderAdminDocs();
-          if (!document.getElementById("view-home").classList.contains("hidden")) renderHome(document.getElementById("global-search")?.value?.toLowerCase() || "");
-        } catch (err) {
-          showModal("Lỗi", err?.message || "Không thể cập nhật tài liệu nổi bật.", "error");
-        }
-      };
-
       window.editDoc = (id) => {
         const doc = globalData.docs[id];
         if (!doc) return;
@@ -3470,43 +2654,19 @@ KEY3"></textarea>
         );
       };
 
-      window.editTx = async (txId) => {
-        const tx = globalData.tx?.[txId];
-        if (!tx) return;
-        openFormModal(
-          "Chỉnh sửa giao dịch",
-          `
-            <div><label class="block text-xs text-gray-500 mb-1">Loại</label><input name="type" class="w-full px-3 py-2 border rounded-lg" value="${safe(tx.type || "")}"></div>
-            <div><label class="block text-xs text-gray-500 mb-1">Số tiền</label><input name="amount" type="number" class="w-full px-3 py-2 border rounded-lg" value="${Number(tx.amount || 0)}"></div>
-            <div><label class="block text-xs text-gray-500 mb-1">Trạng thái</label><input name="status" class="w-full px-3 py-2 border rounded-lg" value="${safe(tx.status || "")}"></div>
-            <div><label class="block text-xs text-gray-500 mb-1">Ghi chú</label><textarea name="note" rows="3" class="w-full px-3 py-2 border rounded-lg">${safe(tx.note || "")}</textarea></div>
-          `,
-          async (fd) => {
-            await update(ref(db, dbPath("transactions", txId)), {
-              type: fd.get("type"),
-              amount: Number(fd.get("amount") || 0),
-              status: fd.get("status"),
-              note: fd.get("note"),
-            });
-            closeModal();
-          },
-          "Lưu",
-        );
-      };
+      window.editTx = async () => {};
       window.approveTx = async (txId) => {
         try {
-          await update(ref(db, dbPath("transactions", txId)), { status: "verified" });
+          await update(ref(db, dbPath("transactions", txId)), {
+            status: "success",
+          });
         } catch {}
       };
       window.rejectTx = async (txId) => {
         try {
-          await update(ref(db, dbPath("transactions", txId)), { status: "rejected" });
-        } catch {}
-      };
-      window.deleteTx = async (txId) => {
-        if (!confirm("Xóa giao dịch này?")) return;
-        try {
-          await remove(ref(db, dbPath("transactions", txId)));
+          await update(ref(db, dbPath("transactions", txId)), {
+            status: "rejected",
+          });
         } catch {}
       };
 
@@ -3649,23 +2809,12 @@ KEY3"></textarea>
           try {
             if (avatarFile)
               avatar = await uploadToCloudinary(avatarFile, "avatars");
-            const nextProfile = {
+            await update(ref(db, dbPath("users", currentUser.uid)), {
               name: document.getElementById("prof-name").value,
               class: document.getElementById("prof-class").value,
               school: document.getElementById("prof-school").value,
               avatar,
-            };
-            await update(ref(db, dbPath("users", currentUser.uid)), nextProfile);
-            userData = {
-              ...(userData || {}),
-              ...nextProfile,
-              profileCompleted: !!String(nextProfile.name || "").trim() && !!String(nextProfile.class || "").trim(),
-            };
-            buildSidebar();
-            updateHeader();
-            if (!document.getElementById("view-profile").classList.contains("hidden")) renderProfileForm();
-            if (!document.getElementById("view-home").classList.contains("hidden")) renderHome(document.getElementById("global-search")?.value?.toLowerCase() || "");
-            if (!document.getElementById("view-purchased").classList.contains("hidden")) renderPurchased();
+            });
             showModal("Thành công", "Đã cập nhật hồ sơ.", "success");
           } catch (err) {
             showModal(
@@ -3697,15 +2846,13 @@ KEY3"></textarea>
                 previewFile,
                 "documents/previews",
               );
-            const links = getDocLinksFromForm();
-            const categories = getDocCategoriesFromForm();
-            const subject = categories[0] || document.getElementById("adoc-subject")?.value || "Khác";
+            const links = parseLinksInput(
+              document.getElementById("adoc-links").value,
+            );
             const docPayload = {
               title: document.getElementById("adoc-title").value,
               description: document.getElementById("adoc-desc").value,
-              subject,
-              category: subject,
-              keywords: categories,
+              subject: document.getElementById("adoc-subject").value || "Khác",
               grade: document.getElementById("adoc-grade").value || "Chung",
               price: Number(document.getElementById("adoc-price").value || 0),
               thumbnail,
@@ -3715,11 +2862,8 @@ KEY3"></textarea>
               status: "active",
               createdBy: currentUser.uid,
               createdAt: Date.now(),
-              updatedAt: Date.now(),
               views: 0,
               buys: 0,
-              featured: false,
-              featuredOrder: 0,
             };
             if (editingDocId) {
               await update(
@@ -3731,15 +2875,7 @@ KEY3"></textarea>
               await set(push(ref(db, dbPath("documents"))), docPayload);
             }
             e.target.reset();
-            fillDocLinkRows([]);
-            fillDocCategoryRows([]);
             showModal("Thành công", "Lưu tài liệu thành công", "success");
-            if (!document.getElementById("view-admin").classList.contains("hidden")) {
-              renderAdminDocs();
-              renderAdminTx();
-              renderAdminReports();
-            }
-            if (!document.getElementById("view-home").classList.contains("hidden")) renderHome(document.getElementById("global-search")?.value?.toLowerCase() || "");
           } catch (err) {
             showModal("Lỗi", err.message || "Không thể lưu tài liệu", "error");
           }
@@ -3816,41 +2952,10 @@ KEY3"></textarea>
             .forEach((p) => p.classList.add("hidden"));
           const panel = document.getElementById(e.target.dataset.target);
           if (panel) panel.classList.remove("hidden");
-          if (e.target.dataset.target === "admin-docs") {
-            renderAdminDocs();
-            fillDocLinkRows([]);
-            fillDocCategoryRows([]);
-          }
+          if (e.target.dataset.target === "admin-docs") renderAdminDocs();
           if (e.target.dataset.target === "admin-users") renderAdminUsers();
           if (e.target.dataset.target === "admin-tx") renderAdminTx();
           if (e.target.dataset.target === "admin-reports") renderAdminReports();
-        });
-      });
-      const adminSearchInput = document.getElementById("admin-search-input");
-      if (adminSearchInput) {
-        adminSearchInput.addEventListener("input", () => {
-          if (!document.getElementById("view-admin").classList.contains("hidden")) {
-            renderAdminDocs();
-            renderAdminUsers();
-            renderAdminTx();
-            renderAdminReports();
-            renderKeyUsageLogs();
-          }
-        });
-      }
-
-      document.querySelectorAll(".tx-tab-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          document.querySelectorAll(".tx-tab-btn").forEach((b) => {
-            b.classList.remove("bg-primary-50", "text-primary-600", "active");
-            b.classList.add("text-gray-600");
-          });
-          e.target.classList.add("bg-primary-50", "text-primary-600", "active");
-          e.target.classList.remove("text-gray-600");
-          const depositWrap = document.getElementById("admin-tx-deposit")?.closest(".bg-white");
-          const consumeWrap = document.getElementById("admin-tx-consume")?.closest(".bg-white");
-          if (depositWrap) depositWrap.classList.toggle("hidden", e.target.dataset.target !== "admin-tx-deposit");
-          if (consumeWrap) consumeWrap.classList.toggle("hidden", e.target.dataset.target !== "admin-tx-consume");
         });
       });
 
@@ -4052,9 +3157,8 @@ KEY3"></textarea>
         if (user) {
           currentUser = user;
           await ensureUserRecord(user);
-          buildSidebar();
           setupRealtimeListeners();
-          ensureProfilePrompt();
+          buildSidebar();
           if (params.get("doc")) {
             nav("doc-detail", params.get("doc"));
           } else {
@@ -4064,7 +3168,8 @@ KEY3"></textarea>
           currentUser = null;
           userData = null;
           buildSidebar();
-          setupRealtimeListeners();
+          dbUnsubscribers.forEach((unsub) => unsub && unsub());
+          dbUnsubscribers = [];
           if (params.get("doc")) {
             nav("doc-detail", params.get("doc"));
           } else {
@@ -4073,37 +3178,7 @@ KEY3"></textarea>
         }
       });
 
-      const bindAdminDocCloneButton = () => {
-        const btn = document.getElementById("clone-admin-form");
-        if (!btn || btn.dataset.bound) return;
-        btn.dataset.bound = "1";
-        btn.addEventListener("click", () => {
-          const title = document.getElementById("adoc-title");
-          const desc = document.getElementById("adoc-desc");
-          const subject = document.getElementById("adoc-subject");
-          const grade = document.getElementById("adoc-grade");
-          const price = document.getElementById("adoc-price");
-          const thumb = document.getElementById("adoc-thumb");
-          const preview = document.getElementById("adoc-preview");
-          const pool = document.getElementById("adoc-key-pool");
-          if (title) title.value = "";
-          if (desc) desc.value = "";
-          if (subject) subject.value = "";
-          if (grade) grade.value = "";
-          if (price) price.value = "0";
-          if (thumb) thumb.value = "";
-          if (preview) preview.value = "";
-          if (pool) pool.value = "";
-          fillDocLinkRows([]);
-          fillDocCategoryRows([]);
-          fillDocCategoryRows([]);
-        });
-      };
-
       document.addEventListener("DOMContentLoaded", () => {
-        bindAdminDocCloneButton();
-        fillDocLinkRows([]);
-        fillDocCategoryRows([]);
         const params = new URLSearchParams(location.search);
         if (params.get("doc")) {
           setTimeout(() => nav("doc-detail", params.get("doc")), 100);

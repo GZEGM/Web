@@ -104,6 +104,12 @@
         border-radius: 8px;
         border: 1px solid #e2e8f0;
       }
+      .exam-font-scale-host, .exam-font-scale-host * {
+        font-size: calc(1rem * var(--exam-font-scale, 1));
+      }
+      .section-banner {
+        border-left: 4px solid #10b981;
+      }
 
       /* Xử lý tràn text và công thức toán */
       .math-text-content {
@@ -137,12 +143,30 @@
         top: 0;
       }
       #question-panel {
-        transition:
-          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-          opacity 0.3s ease;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+        height: 100dvh;
+      }
+      #question-panel-backdrop {
+        pointer-events: none;
+      }
+      #question-panel.mobile-open {
+        pointer-events: auto;
+      }
+      .exam-font-scale-host {
+        font-size: calc(1rem * var(--exam-font-scale, 1));
+        line-height: 1.6;
       }
 
-      @media (max-width: 768px) {
+      .exam-font-scale-host .question-text,
+      .exam-font-scale-host .option-content,
+      .exam-font-scale-host .detail-card {
+        font-size: inherit;
+      }
+
+      @media (max-width: 200px) {
         body {
           overflow-x: hidden;
         }
@@ -157,6 +181,10 @@
           transform: translateX(-105%);
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.24);
           padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+        }
+        body.taking-exam-mode
+          .flex-1.overflow-hidden.flex.flex-col.md\:flex-row.relative {
+          min-height: 0;
         }
         body.taking-exam-mode #question-panel.mobile-open {
           transform: translateX(0);
@@ -194,14 +222,100 @@
         #modal-math .bg-white,
         #modal-attempt-log .bg-white,
         #modal-report .bg-white {
-          max-width: calc(100vw - 1rem) !important;
-          margin: 0.5rem !important;
-          height: calc(100dvh - 1rem) !important;
+          max-width: calc(100vw - 0.75rem) !important;
+          margin: 0.375rem !important;
+          height: calc(100dvh - 0.75rem) !important;
+          min-width: 0 !important;
+          overflow-x: hidden !important;
+        }
+
+        /* Chống tràn bên trong modal detail */
+        #modal-submission-detail .bg-white,
+        #modal-submission-detail .bg-gray-50,
+        #modal-submission-detail .detail-card,
+        #modal-submission-detail .flex,
+        #modal-submission-detail .grid {
+          min-width: 0 !important;
+        }
+
+        #modal-submission-detail .break-words,
+        #modal-submission-detail .text-wrap {
+          overflow-wrap: anywhere !important;
+          word-break: break-word !important;
+        }
+
+        #modal-submission-detail .katex,
+        #modal-submission-detail .katex-display {
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          overflow-y: hidden !important;
         }
 
         /* Chống đè header trên mobile modal */
         #modal-submission-detail .bg-white.rounded-2xl {
           max-height: 100%;
+        }
+      }
+
+      /* HARD FIX MOBILE OVERFLOW */
+
+      .option-content,
+      .option-content * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+
+      .option-content {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      /* KaTeX */
+      .option-content .katex-display {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        padding-bottom: 2px;
+      }
+
+      .option-content .katex {
+        white-space: normal !important;
+      }
+
+      /* IMG */
+      .option-content img {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+
+      /* TABLE */
+      .option-content table {
+        display: block;
+        overflow-x: auto;
+        max-width: 100%;
+      }
+
+      /* PRE */
+      .option-content pre {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+      }
+
+      /* MOBILE */
+      @media (max-width: 700px) {
+        .detail-card {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow: hidden !important;
+        }
+
+        .option-content {
+          font-size: 14px;
         }
       }
     </style>
@@ -446,6 +560,64 @@
           </div>
 
           <div
+            id="sub-exam-settings-block"
+            class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-blue-950"
+          >
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                  <i class="fa-solid fa-layer-group text-blue-600"></i> Làm đề
+                  con
+                </h3>
+                <p class="text-sm text-blue-700 mt-1">
+                  Chọn số câu theo từng phần. Nếu để trống, hệ thống dùng mặc
+                  định của giáo viên.
+                </p>
+                <p class="text-sm text-blue-700 mt-1">
+                  Nếu để giá trị 0 thì sẽ load toàn bộ câu hỏi phần đó.
+                </p>
+              </div>
+              <span
+                class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"
+              >
+                Tùy chỉnh
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="text-sm font-semibold text-blue-900">
+                Trắc nghiệm
+                <input
+                  id="subexam-mcq-count"
+                  type="number"
+                  min="0"
+                  class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
+                  placeholder="0"
+                />
+              </label>
+              <label class="text-sm font-semibold text-blue-900">
+                Đúng sai
+                <input
+                  id="subexam-tf-count"
+                  type="number"
+                  min="0"
+                  class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
+                  placeholder="0"
+                />
+              </label>
+              <label class="text-sm font-semibold text-blue-900">
+                Trả lời ngắn
+                <input
+                  id="subexam-short-count"
+                  type="number"
+                  min="0"
+                  class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
+                  placeholder="0"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div
             class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8 text-amber-900"
           >
             <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
@@ -465,6 +637,27 @@
                 >
               </label>
             </div>
+          </div>
+          <div
+            id="sub-exam-toggle-wrap"
+            class="hidden mb-6 text-left md:text-right"
+          >
+            <label
+              class="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 cursor-pointer"
+            >
+              <input
+                id="use-sub-exam"
+                type="checkbox"
+                class="w-5 h-5 accent-blue-600"
+              />
+              <span class="text-sm md:text-base font-bold text-blue-900"
+                >Làm đề con</span
+              >
+            </label>
+            <p class="text-xs text-blue-700 mt-2 md:text-right">
+              Bật lên để hệ thống chọn ngẫu nhiên số câu theo từng phần từ ngân
+              hàng câu hỏi gốc.
+            </p>
           </div>
           <div class="text-center md:text-right">
             <button
@@ -492,7 +685,7 @@
 
         <!-- Sửa py-10 thành py-3 md:py-4 để đỡ tốn diện tích top -->
         <div
-          class="bg-white border-b shadow-sm px-3 md:px-4 py-3 md:py-4 sticky top-0 z-30 shrink-0 flex justify-between items-center gap-2"
+          class="bg-white border-b shadow-sm px-3 md:px-4 py-15 md:py-4 sticky top-0 z-30 shrink-0 flex justify-between items-center gap-2"
         >
           <div class="flex-1 min-w-0 mr-2 md:mr-4">
             <h3
@@ -517,12 +710,38 @@
             >
               <i class="fa-regular fa-clock"></i>
             </button>
-            <div class="flex flex-col items-center">
+            <div class="flex flex-col items-center gap-1">
               <div
                 id="taking-timer"
                 class="font-mono text-lg md:text-2xl font-black text-green-600 bg-green-50 px-3 md:px-4 py-1 rounded-lg border border-green-100 shadow-inner transition-colors duration-500"
               >
                 00:00
+              </div>
+              <div class="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+                <button
+                  type="button"
+                  onclick="window.changeExamFontScale(-0.1)"
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 font-bold transition"
+                  title="Giảm cỡ chữ"
+                >
+                  A−
+                </button>
+                <button
+                  type="button"
+                  onclick="window.resetExamFontScale()"
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 text-[10px] font-bold transition"
+                  title="Đặt lại cỡ chữ"
+                >
+                  A
+                </button>
+                <button
+                  type="button"
+                  onclick="window.changeExamFontScale(0.1)"
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white hover:bg-gray-200 text-gray-700 font-bold transition"
+                  title="Tăng cỡ chữ"
+                >
+                  A+
+                </button>
               </div>
             </div>
             <button
@@ -552,7 +771,7 @@
               <!-- Nút đóng trên mobile -->
               <button
                 onclick="toggleQuestionPanel()"
-                class="md:hidden w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"
+                class="md:hidden w-8 h-8 rounded-full bg-gray-100 hify-center text-gray-600 over:bg-gray-200 flex items-center justtransition"
               >
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -687,6 +906,14 @@
             class="hidden bg-blue-100 hover:bg-blue-200 text-blue-700 px-8 py-3 rounded-xl font-bold transition shadow-sm w-full md:w-auto"
           >
             Xem chi tiết bài làm
+          </button>
+
+          <button
+            id="res-report-btn"
+            class="hidden bg-red-100 hover:bg-red-200 text-red-700 px-8 py-3 rounded-xl font-bold transition shadow-sm w-full md:w-auto flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-flag"></i>
+            Báo lỗi đề
           </button>
         </div>
       </div>
@@ -845,25 +1072,25 @@
     <!-- Modal Xem Chi Tiết Bài Làm ĐƯỢC FIX LẠI CHO MOBILE -->
     <div
       id="modal-submission-detail"
-      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden-view p-4"
+      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden-view p-2 sm:p-4"
       onclick="if (event.target === this) closeSubmissionDetail();"
     >
       <div
-        class="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-4xl h-full md:h-[90vh] flex flex-col modal-content-enter overflow-hidden"
+        class="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-4xl h-[100dvh] sm:h-[90vh] flex flex-col modal-content-enter overflow-hidden min-w-0"
       >
-        <!-- Header của Modal Detail (Fix đè nút) -->
-        <div class="p-3 md:p-5 border-b bg-white shrink-0 relative">
-          <div class="flex justify-between items-start gap-2">
-            <div class="flex-1 min-w-0">
+        <div class="p-3 md:p-5 border-b bg-white shrink-0 relative min-w-0">
+          <div class="flex justify-between items-start gap-2 min-w-0">
+            <div
+              class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-w-0 w-full max-w-full"
+            >
               <h3 class="font-bold text-base md:text-xl text-gray-800 truncate">
                 Chi tiết bài làm
               </h3>
               <p
                 id="sd-info"
-                class="text-[11px] md:text-sm text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight"
+                class="text-[11px] md:text-sm text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight min-w-0"
               ></p>
             </div>
-            <!-- Bỏ class absolute top-4 right-4 để không bị lẹm đè lên text -->
             <button
               onclick="closeSubmissionDetail()"
               class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition shrink-0"
@@ -872,9 +1099,9 @@
             </button>
           </div>
 
-          <div class="flex flex-wrap gap-2 mt-3">
+          <div class="flex flex-wrap gap-2 mt-3 min-w-0">
             <div
-              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm shrink-0"
+              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm shrink-0 min-w-0"
             >
               <button
                 id="btn-review-mode-attempt"
@@ -891,8 +1118,9 @@
                 Gốc
               </button>
             </div>
+
             <div
-              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm overflow-x-auto max-w-full"
+              class="inline-flex rounded-lg md:rounded-xl border border-gray-200 bg-gray-100 p-1 shadow-sm overflow-x-auto max-w-full min-w-0"
             >
               <button
                 id="btn-filter-all"
@@ -919,10 +1147,12 @@
           </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-3 md:p-6" id="sd-content"></div>
+        <div
+          class="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 min-w-0"
+          id="sd-content"
+        ></div>
       </div>
     </div>
-
     <!-- Modal Bảng Xếp Hạng -->
     <div
       id="modal-leaderboard"
@@ -948,7 +1178,7 @@
             <i class="fa-solid fa-xmark text-lg"></i>
           </button>
         </div>
-        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
           <div
             class="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm"
           >
@@ -1032,6 +1262,10 @@
       const ATTEMPT_HEARTBEAT_MS = 15000;
       let currentAttemptState = null;
       let currentAttemptCloudDocId = null;
+      let attemptSyncInFlight = false;
+      let attemptSyncQueued = false;
+      let attemptSyncTimer = null;
+      let attemptSyncLastSignature = "";
 
       window.showToast = (msg, type = "info") => {
         const container = document.getElementById("toast-container");
@@ -1357,24 +1591,22 @@
 
       async function syncAttemptToCloud(reason = "heartbeat") {
         if (!currentAttemptState || !currentExam || !State.studentName) return;
-        const remainingSec = Math.max(0, Number(timeRemaining || 0));
-        currentAttemptState.remainingSec = remainingSec;
-        currentAttemptState.answers = deepClone(answers);
-        currentAttemptState.status =
-          reason === "submitted" ? "submitted" : "active";
-        currentAttemptState.lastSeenAt = Date.now();
-        saveStoredAttempt(currentAttemptState);
         const now = Date.now();
-        if (
-          reason !== "submitted" &&
-          reason !== "answer-log" &&
-          currentAttemptState.lastCloudSyncAt &&
-          now - currentAttemptState.lastCloudSyncAt < ATTEMPT_HEARTBEAT_MS
-        ) {
-          return;
-        }
-        currentAttemptCloudDocId = buildAttemptKey(currentExam.id);
-        try {
+        const flushNow = reason === "submitted";
+
+        const runSync = async () => {
+          if (attemptSyncInFlight) {
+            attemptSyncQueued = true;
+            return;
+          }
+          const remainingSec = Math.max(0, Number(timeRemaining || 0));
+          currentAttemptState.remainingSec = remainingSec;
+          currentAttemptState.answers = deepClone(answers);
+          currentAttemptState.status =
+            reason === "submitted" ? "submitted" : "active";
+          currentAttemptState.lastSeenAt = Date.now();
+          saveStoredAttempt(currentAttemptState);
+
           const payload = {
             examId: currentExam.id,
             examTitle: currentExam.title,
@@ -1384,29 +1616,97 @@
             durationSec: currentAttemptState.durationSec,
             remainingSec,
             answers: deepClone(answers),
-            attemptQuestions: deepClone(currentExam.questions || []),
+            attemptQuestions: deepClone(
+              currentAttemptState.attemptQuestions ||
+                currentExam.questions ||
+                [],
+            ),
             activityLog: deepClone(currentAttemptState.activityLog || []),
             status: currentAttemptState.status,
             lastSeenAt: currentAttemptState.lastSeenAt,
-            updatedAt: now,
+            updatedAt: Date.now(),
             submittedAt:
               reason === "submitted"
-                ? now
+                ? Date.now()
                 : currentAttemptState.submittedAt || null,
             timeSpent: currentAttemptState.timeSpent || null,
+            isSubExam: !!currentAttemptState.isSubExam,
+            subExamConfig: deepClone(currentAttemptState.subExamConfig || null),
           };
-          await setDoc(
-            doc(db, `${basePath}/attempts`, currentAttemptCloudDocId),
-            payload,
-            { merge: true },
-          );
-          await mirrorDocToRtdb("attempts", currentAttemptCloudDocId, payload);
-          currentAttemptState.lastCloudSyncAt = now;
-          saveStoredAttempt(currentAttemptState);
-        } catch (e) {}
+          const signature = JSON.stringify({
+            answers: payload.answers,
+            remainingSec: payload.remainingSec,
+            status: payload.status,
+            attemptQuestions: payload.attemptQuestions,
+            activityLog: payload.activityLog,
+            isSubExam: payload.isSubExam,
+            subExamConfig: payload.subExamConfig,
+            submittedAt: payload.submittedAt,
+            timeSpent: payload.timeSpent,
+          });
+          if (
+            reason !== "submitted" &&
+            signature === attemptSyncLastSignature
+          ) {
+            return;
+          }
+          attemptSyncInFlight = true;
+          currentAttemptCloudDocId = buildAttemptKey(currentExam.id);
+          try {
+            await setDoc(
+              doc(db, `${basePath}/attempts`, currentAttemptCloudDocId),
+              payload,
+              { merge: true },
+            );
+            await mirrorDocToRtdb(
+              "attempts",
+              currentAttemptCloudDocId,
+              payload,
+            );
+            currentAttemptState.lastCloudSyncAt = Date.now();
+            attemptSyncLastSignature = signature;
+            saveStoredAttempt(currentAttemptState);
+          } catch (e) {
+          } finally {
+            attemptSyncInFlight = false;
+            if (attemptSyncQueued) {
+              attemptSyncQueued = false;
+              if (currentAttemptState && currentExam) {
+                setTimeout(() => void syncAttemptToCloud("heartbeat"), 0);
+              }
+            }
+          }
+        };
+
+        if (flushNow) {
+          if (attemptSyncTimer) {
+            clearTimeout(attemptSyncTimer);
+            attemptSyncTimer = null;
+          }
+          await runSync();
+          return;
+        }
+
+        if (
+          reason !== "submitted" &&
+          reason !== "answer-log" &&
+          currentAttemptState.lastCloudSyncAt &&
+          now - currentAttemptState.lastCloudSyncAt < ATTEMPT_HEARTBEAT_MS
+        ) {
+          return;
+        }
+
+        if (attemptSyncTimer) return;
+        attemptSyncTimer = setTimeout(() => {
+          attemptSyncTimer = null;
+          void runSync();
+        }, 3000);
       }
 
       function createAttemptState(exam, startedAt = Date.now(), source = {}) {
+        const storedQuestions = deepClone(
+          source.attemptQuestions || exam.questions || [],
+        );
         return {
           examId: exam.id,
           examTitle: exam.title,
@@ -1415,9 +1715,9 @@
           startedAt,
           durationSec: Math.max(0, Number((exam.timeLimit || 45) * 60)),
           answers: deepClone(source.answers || {}),
-          attemptQuestions: deepClone(
-            source.attemptQuestions || exam.questions || [],
-          ),
+          attemptQuestions: storedQuestions,
+          isSubExam: !!source.isSubExam,
+          subExamConfig: deepClone(source.subExamConfig || null),
           status: source.status || "active",
           submittedAt: source.submittedAt || null,
           timeSpent: source.timeSpent || null,
@@ -1460,7 +1760,9 @@
         if (!exam) return false;
         currentExam = {
           ...exam,
-          questions: deepClone(active.attemptQuestions || exam.questions || []),
+          questions: normalizeQuestionTree(deepClone(active.attemptQuestions || exam.questions || [])),
+          isSubExam: !!active.isSubExam,
+          subExamConfig: deepClone(active.subExamConfig || null),
         };
         answers = deepClone(active.answers || {});
         currentAttemptState = createAttemptState(
@@ -1510,6 +1812,152 @@
         );
       }
 
+
+      const EXAM_FONT_SCALE_KEY = "student_exam_font_scale_edu";
+      let examFontScale = Number(localStorage.getItem(EXAM_FONT_SCALE_KEY) || 1);
+      function clampExamFontScale(v) {
+        const n = Number(v);
+        if (!Number.isFinite(n)) return 1;
+        return Math.min(1.5, Math.max(0.8, Number(n.toFixed(2))));
+      }
+      function applyExamFontScale(value = examFontScale) {
+        examFontScale = clampExamFontScale(value);
+        localStorage.setItem(EXAM_FONT_SCALE_KEY, String(examFontScale));
+        document.documentElement.style.setProperty("--exam-font-scale", String(examFontScale));
+        ["taking-canvas-inner", "sd-content"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add("exam-font-scale-host");
+        });
+        const indicator = document.getElementById("font-scale-indicator");
+        if (indicator) indicator.innerText = `${Math.round(examFontScale * 100)}%`;
+      }
+      window.changeExamFontScale = function (delta) { applyExamFontScale(examFontScale + delta); };
+      window.resetExamFontScale = function () { applyExamFontScale(1); };
+      window.loadSavedExamFontScale = function () { applyExamFontScale(examFontScale); };
+      loadSavedExamFontScale();
+      function isSectionNode(node) { return !!node && node.type === 'section'; }
+      function isMultiNode(node) { return !!node && node.type === 'multi'; }
+      function ensureArray(val) { return Array.isArray(val) ? val : []; }
+      function deepCloneSafe(v) { return JSON.parse(JSON.stringify(v ?? null)); }
+      function ensureQuestionShape(q) {
+        const node = q && typeof q === 'object' ? q : {};
+        if (!node.id) node.id = generateId();
+        if (isSectionNode(node)) {
+          node.title = String(node.title || node.text || 'Section');
+          node.questions = ensureArray(node.questions).map((child) => ensureQuestionShape(child));
+          node.collapsed = !!node.collapsed;
+          return node;
+        }
+        node.type = node.type === 'multi' ? 'multi' : node.type || 'mcq';
+        node.text = String(node.text || '');
+        node.explanation = String(node.explanation || '');
+        node.latex = String(node.latex || '');
+        node.imageUrl = node.imageUrl || null;
+        node.imageWidth = node.imageWidth ? Number(node.imageWidth) : null;
+        node.imageHeight = node.imageHeight ? Number(node.imageHeight) : null;
+        node.optionImages = ensureArray(node.optionImages);
+        node.optionImageWidths = ensureArray(node.optionImageWidths);
+        node.optionImageHeights = ensureArray(node.optionImageHeights);
+        if (node.type === 'mcq') {
+          node.options = ensureArray(node.options).length ? node.options : ['', '', '', ''];
+          node.options = node.options.map((opt) => String(opt ?? ''));
+          node.correctIndex = Number.isFinite(Number(node.correctIndex)) ? Number(node.correctIndex) : 0;
+        } else if (node.type === 'multi') {
+          node.options = ensureArray(node.options).length ? node.options : ['', '', '', ''];
+          node.options = node.options.map((opt) => String(opt ?? ''));
+          node.correctIndices = ensureArray(node.correctIndices).map((n) => Number(n)).filter((n) => Number.isFinite(n));
+          node.partialScore = !!node.partialScore;
+        } else if (node.type === 'tf') {
+          node.statements = ensureArray(node.statements).length ? node.statements : ['a', 'b', 'c', 'd'].map(() => ({ id: generateId(), text: '', isTrue: false }));
+        } else if (node.type === 'short') {
+          node.exactAnswers = ensureArray(node.exactAnswers).length ? node.exactAnswers : [''];
+        }
+        return node;
+      }
+      function normalizeQuestionTree(list) {
+        return ensureArray(list).map((node) => {
+          const q = ensureQuestionShape(deepCloneSafe(node));
+          if (isSectionNode(q)) q.questions = normalizeQuestionTree(q.questions);
+          return q;
+        });
+      }
+      function traverseQuestionTree(list, cb, parent = null, level = 0) {
+        ensureArray(list).forEach((node, index) => {
+          cb(node, { parent, index, level, list });
+          if (isSectionNode(node)) traverseQuestionTree(node.questions || [], cb, node, level + 1);
+        });
+      }
+      function findQuestionListById(list, id, parent = null) {
+        for (let i = 0; i < list.length; i++) {
+          const node = list[i];
+          if (node.id === id) return { list, index: i, node, parent };
+          if (isSectionNode(node)) {
+            const found = findQuestionListById(node.questions || [], id, node);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+      function flattenQuestions(list, out = []) {
+        ensureArray(list).forEach((node) => {
+          if (isSectionNode(node)) {
+            out.push(node);
+            flattenQuestions(node.questions || [], out);
+          } else out.push(node);
+        });
+        return out;
+      }
+      function buildSubExamConfigFromExam(exam) {
+        const cfg = exam?.subExamConfig || {};
+        return {
+          enabled: !!exam?.allowSubExam,
+          mcqCount: Math.max(0, Number(cfg.mcqCount || 0)),
+          tfCount: Math.max(0, Number(cfg.tfCount || 0)),
+          shortCount: Math.max(0, Number(cfg.shortCount || 0)),
+        };
+      }
+      function normalizeSubExamCount(value) {
+        const n = Number.parseInt(value, 10);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      }
+      function pickRandomQuestions(list, count) {
+        const source = shuffleArray(Array.isArray(list) ? list : []);
+        return source.slice(0, Math.max(0, count));
+      }
+      function buildSubExamAttemptQuestions(
+        exam,
+        config = {},
+        allowOverride = false,
+      ) {
+        const questions = deepClone(exam?.questions || []);
+        const mcq = questions.filter((q) => q.type === "mcq");
+        const tf = questions.filter((q) => q.type === "tf");
+        const short = questions.filter((q) => q.type === "short");
+        const other = questions.filter(
+          (q) => !["mcq", "tf", "short"].includes(q.type),
+        );
+        const nextConfig = {
+          enabled: !!config.enabled,
+          mcqCount: Math.max(0, Number(config.mcqCount || 0)),
+          tfCount: Math.max(0, Number(config.tfCount || 0)),
+          shortCount: Math.max(0, Number(config.shortCount || 0)),
+        };
+        if (!nextConfig.enabled) {
+          return { questions, config: nextConfig, isSubExam: false };
+        }
+        const picked = [
+          ...pickRandomQuestions(mcq, nextConfig.mcqCount || mcq.length),
+          ...pickRandomQuestions(tf, nextConfig.tfCount || tf.length),
+          ...pickRandomQuestions(short, nextConfig.shortCount || short.length),
+          ...other,
+        ];
+        return {
+          questions: shuffleArray(picked),
+          config: nextConfig,
+          isSubExam: true,
+        };
+      }
+
       function shuffleArray(arr) {
         const a = arr.slice();
         for (let i = a.length - 1; i > 0; i--) {
@@ -1547,13 +1995,43 @@
           attemptOptions: arranged.map((x) => x.opt),
         };
       }
+      function buildMultiAttemptMeta(question, shouldShuffle) {
+        const originalOptions = Array.isArray(question.options)
+          ? deepClone(question.options)
+          : [];
+        const originalCorrectIndices = ensureArray(question.correctIndices)
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n));
+        const pairs = originalOptions.map((opt, idx) => ({ opt, idx }));
+        const arranged = shouldShuffle ? shuffleArray(pairs) : pairs;
+        const optionOrder = arranged.map((x) => x.idx);
+        const shuffledCorrectIndices = originalCorrectIndices
+          .map((origIdx) => arranged.findIndex((x) => x.idx === origIdx))
+          .filter((n) => n >= 0);
+        return {
+          ...question,
+          options: arranged.map((x) => x.opt),
+          correctIndices: shuffledCorrectIndices,
+          originalOptions,
+          originalCorrectIndices,
+          optionOrder,
+          attemptOptions: arranged.map((x) => x.opt),
+          partialScore: !!question.partialScore,
+        };
+      }
 
       function prepareQuestionsForAttempt(questions, shouldShuffle) {
         const qs = deepClone(questions || []);
         const arranged = shouldShuffle ? shuffleArray(qs) : qs;
         return arranged.map((q) => {
-          if (q.type === "mcq" && Array.isArray(q.options))
-            return buildMcqAttemptMeta(q, shouldShuffle);
+          if (q.type === "section") {
+            return {
+              ...q,
+              questions: prepareQuestionsForAttempt(q.questions || [], shouldShuffle),
+            };
+          }
+          if (q.type === "mcq" && Array.isArray(q.options)) return buildMcqAttemptMeta(q, shouldShuffle);
+          if (q.type === "multi" && Array.isArray(q.options)) return buildMultiAttemptMeta(q, shouldShuffle);
           return q;
         });
       }
@@ -1589,28 +2067,55 @@
               : Number(selectedAttemptIndex),
         };
       }
+      function getMultiReviewMeta(q, res, mode) {
+        const selectedAttempt = ensureArray(res?.answers?.[q.id]).map((n) => Number(n)).filter((n) => Number.isFinite(n));
+        const attemptSnap = res?.attemptQuestions?.find((x) => x.id === q.id) || q;
+        const order = Array.isArray(attemptSnap.optionOrder) ? attemptSnap.optionOrder : (q.options || []).map((_, idx) => idx);
+        const selectedOriginal = mode === "original"
+          ? selectedAttempt.map((idx) => order[idx]).filter((n) => n !== undefined)
+          : selectedAttempt;
+        return {
+          options: attemptSnap.options || q.options || [],
+          selectedIndices: selectedOriginal,
+          correctIndices: mode === "original"
+            ? ensureArray(q.originalCorrectIndices || q.correctIndices || [])
+            : ensureArray(attemptSnap.correctIndices || q.correctIndices || []),
+        };
+      }
 
+      function flattenScorableQuestions(list, out = []) {
+        ensureArray(list).forEach((node) => {
+          if (isSectionNode(node)) flattenScorableQuestions(node.questions || [], out);
+          else out.push(node);
+        });
+        return out;
+      }
       function computeAttemptScore(exam, answers) {
-        const qs = exam?.questions || [];
+        const qs = flattenScorableQuestions(exam?.questions || []);
         const totalQuestions = qs.length || 0;
         if (totalQuestions === 0)
-          return {
-            correctCount: 0,
-            wrongCount: 0,
-            totalQuestions: 0,
-            score: 0,
-          };
+          return { correctCount: 0, wrongCount: 0, totalQuestions: 0, score: 0 };
         let totalScore = 0;
         let correctCount = 0;
         const pointsPerQuestion = 10 / totalQuestions;
         qs.forEach((q) => {
           if (q.type === "mcq") {
-            if (
-              answers?.[q.id] !== undefined &&
-              Number(answers[q.id]) === Number(q.correctIndex)
-            ) {
+            if (answers?.[q.id] !== undefined && Number(answers[q.id]) === Number(q.correctIndex)) {
               totalScore += pointsPerQuestion;
               correctCount++;
+            }
+          } else if (q.type === "multi") {
+            const selected = ensureArray(answers?.[q.id]).map((n) => Number(n)).filter((n) => Number.isFinite(n));
+            const correct = ensureArray(q.correctIndices).map((n) => Number(n)).filter((n) => Number.isFinite(n));
+            const selSet = new Set(selected);
+            const corSet = new Set(correct);
+            const exact = selected.length === correct.length && selected.every((n) => corSet.has(n));
+            if (exact) {
+              totalScore += pointsPerQuestion;
+              correctCount++;
+            } else if (q.partialScore && correct.length) {
+              const matched = selected.filter((n) => corSet.has(n)).length;
+              totalScore += pointsPerQuestion * Math.max(0, Math.min(1, matched / correct.length));
             }
           } else if (q.type === "short") {
             if (isShortAnswerCorrect(answers?.[q.id], q)) {
@@ -1621,12 +2126,8 @@
             const a = answers?.[q.id] || {};
             let correctStatements = 0;
             const totalStatements = q.statements?.length || 4;
-            q.statements?.forEach((s) => {
-              if (a[s.id] !== undefined && a[s.id] === s.isTrue)
-                correctStatements++;
-            });
-            totalScore +=
-              pointsPerQuestion * (correctStatements / totalStatements);
+            q.statements?.forEach((s) => { if (a[s.id] !== undefined && a[s.id] === s.isTrue) correctStatements++; });
+            totalScore += pointsPerQuestion * (correctStatements / totalStatements);
             if (correctStatements === totalStatements) correctCount++;
           }
         });
@@ -1669,6 +2170,69 @@
       let userAttemptsCount = 0;
       let questionPanelHidden = false; // Note: adjusted logic in renderActiveExam
       let answerActivityLog = [];
+
+      function countTotalQuestions(list) {
+        let total = 0;
+        ensureArray(list).forEach((node) => {
+          if (isSectionNode(node)) total += countTotalQuestions(node.questions || []);
+          else total++;
+        });
+        return total;
+      }
+      function countAnsweredQuestions(list, answersObj) {
+        let total = 0;
+        ensureArray(list).forEach((node) => {
+          if (isSectionNode(node)) total += countAnsweredQuestions(node.questions || [], answersObj);
+          else if (node.type === "mcq" && answersObj?.[node.id] !== undefined) total++;
+          else if (node.type === "multi" && ensureArray(answersObj?.[node.id]).length) total++;
+          else if (node.type === "short" && answersObj?.[node.id]) total++;
+          else if (node.type === "tf" && answersObj?.[node.id] && (node.statements || []).every((s) => answersObj[node.id][s.id] !== undefined)) total++;
+        });
+        return total;
+      }
+      function renderQuestionBlock(q, index, mode = "attempt") {
+        if (isSectionNode(q)) {
+          const inner = (q.questions || []).map((child, idx) => renderQuestionBlock(child, idx, mode)).join("");
+          return `<div class="section-banner mb-6 md:mb-8 p-4 md:p-5 bg-green-50 border border-green-200 rounded-2xl">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div class="font-black text-lg md:text-xl text-green-800 break-words">${window.renderTextToHtml(q.title || "Section")}</div>
+              <div class="text-xs font-bold text-green-700 bg-white px-3 py-1 rounded-full">SECTION</div>
+            </div>
+            ${q.collapsed ? `<div class="text-sm text-green-700 italic">Section đang thu gọn</div>` : `<div class="space-y-4">${inner}</div>`}
+          </div>`;
+        }
+        const num = index + 1;
+        let h = `<div id="q-${q.id}" class="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-gray-200 mb-6 md:mb-8 transition-all duration-300 hover:shadow-md">
+          <div class="flex gap-3 md:gap-4 mb-4 md:mb-6"><div class="font-black text-lg md:text-2xl text-green-600 bg-green-50/80 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl shrink-0 border border-green-100">${num}</div><div class="text-base md:text-xl text-gray-800 md:pt-1 leading-relaxed font-medium math-text-content break-words">${window.renderTextToHtml(q.text)}</div></div>`;
+        if (q.latex) h += `<div class="mb-4 p-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 math-text-content">${window.renderTextToHtml(q.latex)}</div>`;
+        if (q.imageUrl) h += `<img src="${q.imageUrl}" class="image-preview mb-6 rounded-xl shadow-sm border border-gray-100" style="${q.imageWidth ? `width:${q.imageWidth}px;max-width:100%;` : "max-width:100%;"}${q.imageHeight ? `height:${q.imageHeight}px;object-fit:contain;` : ""}" />`;
+        h += `<div class="pl-0 md:pl-16">`;
+        if (q.type === "mcq") {
+          h += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">`;
+          (q.options || []).forEach((opt, oI) => {
+            h += `<label class="flex items-start gap-3 p-3 md:p-4 border-2 border-gray-100 rounded-xl md:rounded-2xl cursor-pointer hover:bg-green-50 hover:border-green-200 transition group" id="lbl_${q.id}_${oI}"><div class="relative flex items-center justify-center w-5 h-5 mt-0.5 md:mt-1 shrink-0"><input type="radio" name="ans_${q.id}" value="${oI}" onchange="recAns('${q.id}', ${oI})" class="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-green-600 checked:border-[6px] transition-all cursor-pointer"></div><div class="text-gray-700 font-medium md:pt-0.5 group-hover:text-green-900 w-full math-text-content break-words"><span class="font-bold text-gray-400 mr-1">${["A", "B", "C", "D", "E", "F", "G", "H"][oI] || String.fromCharCode(65 + oI)}.</span> ${window.renderTextToHtml(opt)}${q.optionImages?.[oI] ? `<div class="mt-2"><img src="${q.optionImages[oI]}" class="image-preview" style="${q.optionImageWidths?.[oI] ? `width:${q.optionImageWidths[oI]}px;max-width:100%;` : "max-width:100%;"}${q.optionImageHeights?.[oI] ? `height:${q.optionImageHeights[oI]}px;object-fit:contain;` : ""}" /></div>` : ""}</div></label>`;
+          });
+          h += `</div>`;
+        } else if (q.type === "multi") {
+          h += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">`;
+          (q.options || []).forEach((opt, oI) => {
+            const checked = ensureArray(answers[q.id]).includes(oI);
+            h += `<label class="flex items-start gap-3 p-3 md:p-4 border-2 border-gray-100 rounded-xl md:rounded-2xl cursor-pointer hover:bg-orange-50 hover:border-orange-200 transition group" id="lbl_${q.id}_${oI}"><div class="relative flex items-center justify-center w-5 h-5 mt-0.5 md:mt-1 shrink-0"><input type="checkbox" ${checked ? 'checked' : ''} onchange="recMulti('${q.id}', ${oI}, this.checked)" class="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-md checked:border-orange-600 checked:bg-orange-600 transition-all cursor-pointer"></div><div class="text-gray-700 font-medium md:pt-0.5 group-hover:text-orange-900 w-full math-text-content break-words"><span class="font-bold text-gray-400 mr-1">${["A", "B", "C", "D", "E", "F", "G", "H"][oI] || String.fromCharCode(65 + oI)}.</span> ${window.renderTextToHtml(opt)}${q.optionImages?.[oI] ? `<div class="mt-2"><img src="${q.optionImages[oI]}" class="image-preview" style="${q.optionImageWidths?.[oI] ? `width:${q.optionImageWidths[oI]}px;max-width:100%;` : "max-width:100%;"}${q.optionImageHeights?.[oI] ? `height:${q.optionImageHeights[oI]}px;object-fit:contain;` : ""}" /></div>` : ""}</div></label>`;
+          });
+          h += `</div>`;
+        } else if (q.type === "tf") {
+          h += `<div class="space-y-3">`;
+          (q.statements || []).forEach((s, sI) => {
+            h += `<div class="bg-gray-50 rounded-xl flex flex-col sm:flex-row gap-3 p-3 sm:p-4 border border-gray-100"><div class="flex gap-2 sm:gap-3 items-start flex-1 min-w-0"><span class="font-bold text-gray-400 w-6 shrink-0 pt-0.5">${String.fromCharCode(97 + sI)})</span><div class="text-gray-800 font-medium math-text-content pt-0.5">${window.renderTextToHtml(s.text)}</div></div><div class="flex justify-end sm:items-center shrink-0 mt-2 sm:mt-0"><div class="inline-flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm w-full sm:w-auto justify-center"><label class="flex-1 text-center sm:flex-none px-6 py-2 sm:px-4 sm:py-1.5 text-sm font-bold rounded-md cursor-pointer transition text-gray-500 hover:bg-gray-50" id="lbl_t_${s.id}"><input type="radio" name="tf_${s.id}" onchange="recTf('${q.id}','${s.id}',true)" class="hidden"> Đ</label><label class="flex-1 text-center sm:flex-none px-6 py-2 sm:px-4 sm:py-1.5 text-sm font-bold rounded-md cursor-pointer transition text-gray-500 hover:bg-gray-50" id="lbl_f_${s.id}"><input type="radio" name="tf_${s.id}" onchange="recTf('${q.id}','${s.id}',false)" class="hidden"> S</label></div></div></div>`;
+          });
+          h += `</div>`;
+        } else {
+          h += `<input id="input_${q.id}" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" oninput="recSh('${q.id}', this.value)" placeholder="Nhập văn bản hoặc bấm nút Bàn phím bên dưới" class="w-full max-w-md border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-50 py-3 px-4 outline-none text-base md:text-lg text-green-900 bg-white transition font-medium">`;
+        }
+        if (q.explanation) h += `<div class="mt-4 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900 math-text-content">${window.renderTextToHtml(q.explanation)}</div></div>`;
+        h += `</div></div>`;
+        return h;
+      }
 
       function nowVnTime(value) {
         return value ? new Date(value).toLocaleString("vi-VN") : "";
@@ -1973,6 +2537,7 @@
             show: true,
             showDetails: false,
           };
+          const titleLabel = `${window.renderTextToHtml(eInfo.title)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}`;
           const tr = document.createElement("tr");
           tr.className = "hover:bg-gray-50 transition";
           const actionButtons = [];
@@ -1990,12 +2555,11 @@
               `<button onclick="viewSubmissionDetail('${r.id}', '${r.examId}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Chi tiết</button>`,
             );
 
-          // Nút Báo cáo
           actionButtons.push(
-            `<button onclick="openReportModal('${r.examId}', '${r.id}', '${window.renderTextToHtml(eInfo.title).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-flag"></i></button>`,
+            `<button onclick="openReportModal('${r.examId}', '${r.id}', '${window.renderTextToHtml(eInfo.title).replace(/'/g, "\'")}')" class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-flag"></i></button>`,
           );
 
-          tr.innerHTML = `<td class="px-5 py-4 font-medium text-gray-900 min-w-[150px]">${window.renderTextToHtml(eInfo.title)}</td>
+          tr.innerHTML = `<td class="px-5 py-4 font-medium text-gray-900 min-w-[150px]">${titleLabel}</td>
             <td class="px-5 py-4 font-bold ${eInfo.show ? "text-green-700" : "text-gray-400"}">${eInfo.show ? Number(r.score || 0).toFixed(1) + " đ" : '<i class="fa-solid fa-eye-slash"></i> Ẩn'}</td>
             <td class="px-5 py-4 text-sm text-gray-500 min-w-[120px]">${toVnTime(r.submittedAt)}<br><span class="text-xs">Time: ${formatDuration(r.timeSpent || 0)}</span></td>
             <td class="px-5 py-4 flex flex-wrap gap-2">${actionButtons.join("")}</td>`;
@@ -2088,102 +2652,67 @@
         }
         return [...best.values()];
       }
-
       function renderSubmissionDetailView(exam, res, mode = "attempt") {
         const container = document.getElementById("sd-content");
         if (!container) return;
         container.innerHTML = "";
-        const questions =
-          mode === "original"
-            ? deepClone(exam.questions || [])
-            : deepClone(res.attemptQuestions || exam.questions || []);
-
-        questions.forEach((q, i) => {
-          const stuAns = res.answers?.[q.id];
-          const review =
-            q.type === "mcq" ? getMcqReviewMeta(q, res, mode) : null;
-          const isCorrect =
-            q.type === "mcq"
-              ? Number(review?.selectedIndex) === Number(review?.correctIndex)
-              : q.type === "tf"
-                ? (q.statements || []).every((s) => stuAns?.[s.id] === s.isTrue)
-                : q.type === "short"
-                  ? isShortAnswerCorrect(String(stuAns || ""), q)
-                  : true;
-
-          if (
-            (currentSubmissionFilter === "correct" && !isCorrect) ||
-            (currentSubmissionFilter === "wrong" && isCorrect)
-          ) {
-            return;
+        container.classList.add("exam-font-scale-host");
+        const renderNode = (q, i) => {
+          if (isSectionNode(q)) {
+            const inner = (q.questions || []).map((child, idx) => renderNode(child, idx)).join("");
+            return `<div class="detail-card mb-6 md:mb-8 p-4 md:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm min-w-0 overflow-hidden"><div class="section-banner mb-4 p-4 rounded-2xl bg-green-50 border border-green-200"><div class="font-bold text-base md:text-lg text-green-800">${window.renderTextToHtml(q.title || 'Section')}</div></div>${inner}</div>`;
           }
-
-          const qDiv = document.createElement("div");
-          qDiv.className =
-            "mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm";
-          let html = `<div class="font-bold text-lg mb-4 text-gray-800"><span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg mr-2">Câu ${i + 1}</span> ${window.renderTextToHtml(q.text)}</div>`;
-          if (q.imageUrl)
-            html += `<img src="${q.imageUrl}" class="image-preview mb-4"/>`;
-
+          const stuAns = res.answers?.[q.id];
+          const review = q.type === "mcq" ? getMcqReviewMeta(q, res, mode) : q.type === "multi" ? getMultiReviewMeta(q, res, mode) : null;
+          const isCorrect = q.type === "mcq" ? Number(review?.selectedIndex) === Number(review?.correctIndex) : q.type === "multi" ? JSON.stringify((review?.selectedIndices || []).slice().sort((a,b)=>a-b)) === JSON.stringify((review?.correctIndices || []).slice().sort((a,b)=>a-b)) : q.type === "tf" ? (q.statements || []).every((s) => stuAns?.[s.id] === s.isTrue) : q.type === "short" ? isShortAnswerCorrect(String(stuAns || ""), q) : true;
+          if ((currentSubmissionFilter === "correct" && !isCorrect) || (currentSubmissionFilter === "wrong" && isCorrect)) return "";
+          let html = `<div class="detail-card mb-6 md:mb-8 p-4 md:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm min-w-0 overflow-hidden"><div class="font-bold text-base md:text-lg mb-4 text-gray-800 break-words leading-7 min-w-0"><span class="inline-flex items-center bg-gray-100 text-gray-600 px-3 py-1 rounded-lg mr-2 whitespace-nowrap">Câu ${i + 1}</span><span class="break-words">${window.renderTextToHtml(q.text)}</span></div>`;
+          if (q.latex) html += `<div class="mb-4 p-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60">${window.renderTextToHtml(q.latex)}</div>`;
+          if (q.imageUrl) html += `<img src="${q.imageUrl}" class="image-preview mb-4"/>`;
           if (q.type === "mcq") {
             review.options.forEach((opt, oI) => {
               const isCorrectOpt = oI === review.correctIndex;
               const isSelected = Number(review.selectedIndex) === oI;
               let bg = "bg-gray-50 border-gray-200 text-gray-700";
               let icon = "";
-              if (isCorrectOpt) {
-                bg = "bg-green-50 border-green-400 text-green-800 font-bold";
-                icon = `<i class="fa-solid fa-check text-green-600 ml-auto"></i>`;
-              } else if (isSelected) {
-                bg = "bg-red-50 border-red-400 text-red-800 font-bold";
-                icon = `<i class="fa-solid fa-xmark text-red-600 ml-auto"></i>`;
-              }
-              html += `<div class="flex items-center p-3 border rounded-lg mb-2 ${bg}"><span class="w-6 font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span> ${window.renderTextToHtml(opt)} ${icon}</div>`;
+              if (isCorrectOpt) { bg = "bg-green-50 border-green-400 text-green-800 font-bold"; icon = `<i class="fa-solid fa-check text-green-600 ml-auto"></i>`; }
+              else if (isSelected) { bg = "bg-red-50 border-red-400 text-red-800 font-bold"; icon = `<i class="fa-solid fa-xmark text-red-600 ml-auto"></i>`; }
+              html += `<div class="flex items-center p-3 border rounded-lg mb-2 ${bg}"><span class="w-6 font-bold text-gray-500">${["A", "B", "C", "D", "E", "F", "G", "H"][oI] || String.fromCharCode(65 + oI)}.</span> ${window.renderTextToHtml(opt)} ${icon}</div>`;
             });
-            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${review.selectedIndex === undefined ? "Trống" : ["A", "B", "C", "D"][review.selectedIndex] || review.selectedIndex} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${review.correctIndex === undefined ? "—" : ["A", "B", "C", "D"][review.correctIndex] || review.correctIndex}</div>`;
-            if (q.explanation) {
-              html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
-            }
+            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${review.selectedIndex === undefined ? "Trống" : ["A", "B", "C", "D", "E", "F", "G", "H"][review.selectedIndex] || review.selectedIndex} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${review.correctIndex === undefined ? "—" : ["A", "B", "C", "D", "E", "F", "G", "H"][review.correctIndex] || review.correctIndex}</div>`;
+          } else if (q.type === "multi") {
+            const selected = new Set(review.selectedIndices || []);
+            const correct = new Set(review.correctIndices || []);
+            review.options.forEach((opt, oI) => {
+              const ok = correct.has(oI);
+              const sel = selected.has(oI);
+              const bg = ok ? "bg-green-50 border-green-400 text-green-800 font-bold" : sel ? "bg-red-50 border-red-400 text-red-800 font-bold" : "bg-gray-50 border-gray-200 text-gray-700";
+              html += `<div class="flex items-center p-3 border rounded-lg mb-2 ${bg}"><span class="w-6 font-bold text-gray-500">${["A", "B", "C", "D", "E", "F", "G", "H"][oI] || String.fromCharCode(65 + oI)}.</span> ${window.renderTextToHtml(opt)}${ok ? '<i class="fa-solid fa-check text-green-600 ml-auto"></i>' : sel ? '<i class="fa-solid fa-xmark text-red-600 ml-auto"></i>' : ''}</div>`;
+            });
+            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${(review.selectedIndices || []).map((i) => ["A", "B", "C", "D", "E", "F", "G", "H"][i] || i).join(' + ') || 'Trống'} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${(review.correctIndices || []).map((i) => ["A", "B", "C", "D", "E", "F", "G", "H"][i] || i).join(' + ') || '—'}</div>`;
           } else if (q.type === "tf") {
-            q.statements.forEach((s, sI) => {
-              const sAns = stuAns?.[s.id];
-              const rowCorrect = sAns === s.isTrue;
-              const bg =
-                sAns === undefined
-                  ? "bg-gray-50"
-                  : rowCorrect
-                    ? "bg-green-50 border-green-400 text-green-800"
-                    : "bg-red-50 border-red-400 text-red-800";
-              html += `<div class="p-3 border rounded-lg mb-2 flex justify-between ${bg}"><span>${String.fromCharCode(97 + sI)}) ${window.renderTextToHtml(s.text)}</span> <span class="font-bold shrink-0">HS Chọn: ${sAns === undefined ? "Trống" : sAns ? "Đúng" : "Sai"} (Chuẩn: ${s.isTrue ? "Đúng" : "Sai"})</span></div>`;
+            html += `<div class="space-y-3 min-w-0">`;
+            (q.statements || []).forEach((s, idx) => {
+              const stu = stuAns?.[s.id];
+              const ok = stu === s.isTrue;
+              html += `<div class="p-3 rounded-xl border ${ok ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"} min-w-0 overflow-hidden"><div class="font-semibold text-gray-800 break-words">${idx + 1}. ${window.renderTextToHtml(s.text)}</div><div class="mt-2 text-sm ${ok ? "text-green-700" : "text-red-700"} break-words">HS chọn: <b>${stu === true ? "Đúng" : stu === false ? "Sai" : "Bỏ trống"}</b><span class="mx-2 text-gray-300">|</span>Đáp án: <b>${s.isTrue ? "Đúng" : "Sai"}</b></div></div>`;
             });
-            if (q.explanation) {
-              html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
-            }
           } else if (q.type === "short") {
             const stTxt = String(stuAns || "");
-            const exactList = splitAcceptedShortAnswers(q.exactAnswers);
-            const exact = exactList.join(" | ");
-            html += `<div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 bg-gray-50 border rounded-lg"><div class="text-xs text-gray-500 font-bold mb-1">HỌC SINH NHẬP</div><div class="${isCorrect ? "text-green-600" : "text-red-600"} font-bold">${window.renderTextToHtml(stTxt) || '<i class="text-gray-400">Bỏ trống</i>'}</div></div>
-                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg"><div class="text-xs text-green-600 font-bold mb-1">ĐÁP ÁN ĐÚNG</div><div class="text-green-800 font-bold">${window.renderTextToHtml(exact)}</div></div>
-                 </div>`;
-            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${window.renderTextToHtml(stTxt || "Bỏ trống")} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${window.renderTextToHtml(exact || "—")}</div>`;
-            if (q.explanation) {
-              html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
-            }
+            const exact = q.exactAnswers || "—";
+            html += `<div class="grid gap-3 md:grid-cols-2 min-w-0"><div class="p-4 rounded-xl border border-gray-200 bg-gray-50 min-w-0 overflow-hidden"><div class="text-xs font-bold text-gray-400 mb-2">HS đã chọn</div><div class="break-words min-w-0">${window.renderTextToHtml(stTxt) || '<i class="text-gray-400">Bỏ trống</i>'}</div></div><div class="p-4 rounded-xl border border-green-200 bg-green-50 min-w-0 overflow-hidden"><div class="text-xs font-bold text-green-600 mb-2">Đáp án đúng</div><div class="text-green-800 font-bold break-words min-w-0">${window.renderTextToHtml(exact)}</div></div></div>`;
           }
-
-          qDiv.innerHTML = html;
-          container.appendChild(qDiv);
-        });
-        // if (Array.isArray(res.activityLog) && res.activityLog.length) {
-        //   container.innerHTML += `<div class="mt-8 p-5 bg-slate-50 border border-gray-200 rounded-2xl"><div class="flex items-center justify-between mb-4"><h4 class="font-bold text-gray-800">Nhật ký làm bài</h4><span class="text-xs text-gray-500">${res.activityLog.length} lần</span></div>${renderAttemptLogEntries(res.activityLog)}</div>`;
-        // }
+          if (q.explanation) html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
+          html += `</div>`;
+          return html;
+        };
+        const questions = mode === "original" ? deepClone(exam.questions || []) : deepClone(res.attemptQuestions || exam.questions || []);
+        questions.forEach((q, i) => { container.innerHTML += renderNode(q, i); });
         typesetMath();
         updateReviewModeButtons(mode);
         updateSubmissionFilterButtons(currentSubmissionFilter);
+        applyExamFontScale(examFontScale);
       }
-
       window.setSubmissionReviewMode = (mode) => {
         if (!currentSubmissionContext) return;
         currentSubmissionReviewMode =
@@ -2302,7 +2831,7 @@
         const backdrop = document.getElementById("question-panel-backdrop");
         if (!panel) return;
 
-        if (window.innerWidth < 768) {
+        if (window.innerWidth < 200) {
           if (!questionPanelHidden) {
             // Mở Panel
             panel.classList.remove("mobile-closed");
@@ -2362,6 +2891,33 @@
           document.getElementById("intro-attempts").innerHTML =
             `${userAttemptsCount} / ${data.maxAttempts || "∞"}`;
 
+          const subExamBlock = document.getElementById(
+            "sub-exam-settings-block",
+          );
+          const subExamToggleWrap = document.getElementById(
+            "sub-exam-toggle-wrap",
+          );
+          const allowSubExam = !!data.allowSubExam;
+          const subCfg = buildSubExamConfigFromExam(data);
+          if (subExamBlock)
+            subExamBlock.classList.toggle("hidden", !allowSubExam);
+          if (subExamToggleWrap)
+            subExamToggleWrap.classList.toggle("hidden", !allowSubExam);
+          if (allowSubExam) {
+            const mcqInput = document.getElementById("subexam-mcq-count");
+            const tfInput = document.getElementById("subexam-tf-count");
+            const shortInput = document.getElementById("subexam-short-count");
+            if (mcqInput && !mcqInput.value)
+              mcqInput.value = String(subCfg.mcqCount || 0);
+            if (tfInput && !tfInput.value)
+              tfInput.value = String(subCfg.tfCount || 0);
+            if (shortInput && !shortInput.value)
+              shortInput.value = String(subCfg.shortCount || 0);
+            const useSub = document.getElementById("use-sub-exam");
+            // if (useSub) useSub.checked = !!subCfg.enabled;
+            if (useSub) useSub.checked = false;
+          }
+
           if (data.maxAttempts > 0 && userAttemptsCount >= data.maxAttempts) {
             btnStart.disabled = true;
             btnStart.innerHTML = `<i class="fa-solid fa-ban"></i> Đã hết lượt làm bài`;
@@ -2409,7 +2965,7 @@
                     : idx === 2
                       ? "bg-orange-100 text-orange-600"
                       : "bg-gray-50 text-gray-500";
-              lbBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 text-center"><span class="w-6 h-6 inline-flex items-center justify-center rounded-full font-bold text-xs ${badge}">${idx + 1}</span></td><td class="px-4 py-2 font-medium min-w-[100px]">${window.renderTextToHtml(r.studentName)}</td><td class="px-4 py-2 font-bold text-green-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">${formatDuration(r.timeSpent || 0)}</td></tr>`;
+              lbBody.innerHTML += `<tr class="hover:bg-gray-50"><td class="px-4 py-2 text-center"><span class="w-6 h-6 inline-flex items-center justify-center rounded-full font-bold text-xs ${badge}">${idx + 1}</span></td><td class="px-4 py-2 font-medium min-w-[100px]">${window.renderTextToHtml(r.studentName)}${r.isSubExam ? ' <span class="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">Đề Con</span>' : ""}</td><td class="px-4 py-2 font-bold text-green-600">${Number(r.score || 0).toFixed(1)}</td><td class="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">${formatDuration(r.timeSpent || 0)}</td></tr>`;
             });
           } else {
             document.getElementById("th-score").classList.add("hidden");
@@ -2417,7 +2973,7 @@
           }
 
           const qs = prepareQuestionsForAttempt(
-            data.questions || [],
+            normalizeQuestionTree(data.questions || []),
             data.shuffle,
           );
           const savedAttempt = loadStoredAttempt(id);
@@ -2429,8 +2985,8 @@
             id,
             ...data,
             questions: canResume
-              ? deepClone(savedAttempt.attemptQuestions || qs)
-              : qs,
+              ? normalizeQuestionTree(deepClone(savedAttempt.attemptQuestions || qs))
+              : normalizeQuestionTree(qs),
           };
           answers = canResume ? deepClone(savedAttempt.answers || {}) : {};
           answerActivityLog = canResume
@@ -2440,7 +2996,7 @@
           document.getElementById("intro-title").innerText = data.title;
           document.getElementById("intro-time").innerText = data.timeLimit;
           document.getElementById("intro-count").innerText =
-            currentExam.questions.length;
+            countTotalQuestions(currentExam.questions || []);
           document.getElementById("intro-expire").innerText = data.expiresAt
             ? toVnTime(data.expiresAt)
             : "Không";
@@ -2465,6 +3021,16 @@
 
       async function resumeSavedAttempt(savedAttempt) {
         if (!currentExam || !savedAttempt) return;
+        currentExam = {
+          ...currentExam,
+          questions: normalizeQuestionTree(deepClone(
+            savedAttempt.attemptQuestions || currentExam.questions || [],
+          )),
+          isSubExam: !!savedAttempt.isSubExam,
+          subExamConfig: deepClone(
+            savedAttempt.subExamConfig || currentExam.subExamConfig || null,
+          ),
+        };
         currentAttemptState = createAttemptState(
           currentExam,
           Number(savedAttempt.startedAt || Date.now()),
@@ -2500,10 +3066,46 @@
           return;
         }
 
-        currentAttemptState = createAttemptState(currentExam, Date.now(), {
+        const allowSub = !!currentExam.allowSubExam;
+        const useSub = !!document.getElementById("use-sub-exam")?.checked;
+        const subExamConfig =
+          allowSub && useSub
+            ? {
+                enabled: true,
+                mcqCount: normalizeSubExamCount(
+                  document.getElementById("subexam-mcq-count")?.value,
+                ),
+                tfCount: normalizeSubExamCount(
+                  document.getElementById("subexam-tf-count")?.value,
+                ),
+                shortCount: normalizeSubExamCount(
+                  document.getElementById("subexam-short-count")?.value,
+                ),
+              }
+            : { enabled: false, mcqCount: 0, tfCount: 0, shortCount: 0 };
+        const attemptPack = buildSubExamAttemptQuestions(
+          currentExam,
+          subExamConfig,
+          true,
+        );
+        const attemptExam = {
+          ...currentExam,
+          questions: deepClone(
+            attemptPack.questions || currentExam.questions || [],
+          ),
+          isSubExam: !!attemptPack.isSubExam,
+          subExamConfig: deepClone(attemptPack.config || subExamConfig || null),
+        };
+        currentExam = {
+          ...attemptExam,
+          questions: normalizeQuestionTree(attemptExam.questions || []),
+        };
+        currentAttemptState = createAttemptState(attemptExam, Date.now(), {
           answers: {},
-          attemptQuestions: currentExam.questions,
+          attemptQuestions: attemptExam.questions,
           activityLog: [],
+          isSubExam: attemptExam.isSubExam,
+          subExamConfig: attemptExam.subExamConfig,
         });
         attemptStartTime = currentAttemptState.startedAt;
         renderActiveExam(currentAttemptState);
@@ -2514,23 +3116,30 @@
         const ex = currentExam;
         const panel = document.getElementById("question-panel");
         const backdrop = document.getElementById("question-panel-backdrop");
-
-        // Mặc định tự động ẩn Panel điều hướng trên Mobile để dễ nhìn nội dung
-        if (window.innerWidth < 768) {
+        if (window.innerWidth < 200) {
           questionPanelHidden = true;
-          if (panel) {
-            panel.classList.add("mobile-closed");
-            panel.classList.remove("mobile-open");
-          }
-          if (backdrop) {
-            backdrop.classList.add("hidden", "opacity-0");
-          }
+          panel?.classList.add("mobile-closed");
+          panel?.classList.remove("mobile-open");
+          backdrop?.classList.add("hidden", "opacity-0");
         } else {
           questionPanelHidden = false;
-          if (panel)
-            panel.classList.remove("hidden", "mobile-open", "mobile-closed");
+          panel?.classList.remove("hidden", "mobile-open", "mobile-closed");
         }
-
+        if (window.innerWidth < 200) {
+          if (!questionPanelHidden) {
+            panel.classList.remove("mobile-closed");
+            panel.classList.add("mobile-open");
+            backdrop?.classList.remove("hidden");
+            setTimeout(() => backdrop?.classList.remove("opacity-0"), 10);
+          } else {
+            panel.classList.remove("mobile-open");
+            panel.classList.add("mobile-closed");
+            backdrop?.classList.add("opacity-0");
+            setTimeout(() => backdrop?.classList.add("hidden"), 300);
+          }
+        } else {
+          panel.classList.toggle("hidden", questionPanelHidden);
+        }
         if (timerInterval) clearInterval(timerInterval);
         if (state) {
           currentAttemptState = state;
@@ -2539,16 +3148,12 @@
         } else {
           timeRemaining = (ex.timeLimit || 45) * 60;
           if (!currentAttemptState)
-            currentAttemptState = createAttemptState(ex, Date.now(), {
-              answers,
-              attemptQuestions: ex.questions,
-            });
+            currentAttemptState = createAttemptState(ex, Date.now(), { answers, attemptQuestions: ex.questions });
         }
         updateTimerUI();
         syncAnswerUiState();
         timerInterval = setInterval(() => {
-          if (currentAttemptState?.startedAt)
-            timeRemaining = getAttemptRemainingSec(currentAttemptState);
+          if (currentAttemptState?.startedAt) timeRemaining = getAttemptRemainingSec(currentAttemptState);
           else timeRemaining--;
           updateTimerUI();
           touchAttemptState("heartbeat");
@@ -2558,73 +3163,51 @@
             submitExam(false);
           }
         }, 1000);
-
         const nav = document.getElementById("taking-nav");
         const cvs = document.getElementById("taking-canvas-inner");
         nav.innerHTML = "";
         cvs.innerHTML = "";
-        document.getElementById("nav-progress").innerText =
-          `0/${ex.questions.length}`;
-
-        ex.questions.forEach((q, i) => {
-          const btn = document.createElement("button");
-          btn.id = `nav-q-${q.id}`;
-          btn.className =
-            "w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50 transition shadow-sm bg-white";
-          btn.innerText = i + 1;
-          btn.onclick = () => {
-            document
-              .getElementById(`q-${q.id}`)
-              .scrollIntoView({ behavior: "smooth", block: "center" });
-            // Tự động đóng panel trên mobile sau khi click chọn câu hỏi
-            if (window.innerWidth < 768 && !questionPanelHidden)
-              toggleQuestionPanel();
-          };
-          nav.appendChild(btn);
-
-          const div = document.createElement("div");
-          div.id = `q-${q.id}`;
-          div.className =
-            "bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-gray-200 mb-6 md:mb-8 transition-all duration-300 hover:shadow-md";
-
-          let h = `<div class="flex gap-3 md:gap-4 mb-4 md:mb-6"><div class="font-black text-lg md:text-2xl text-green-600 bg-green-50/80 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl shrink-0 border border-green-100">${i + 1}</div><div class="text-base md:text-xl text-gray-800 md:pt-1 leading-relaxed font-medium math-text-content break-words">${window.renderTextToHtml(q.text)}</div></div><div class="pl-0 md:pl-16">`;
-
-          if (q.imageUrl)
-            h += `<img src="${q.imageUrl}" class="image-preview mb-6 rounded-xl shadow-sm border border-gray-100" />`;
-
-          if (q.type === "mcq") {
-            h += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">`;
-            q.options.forEach((opt, oI) => {
-              h += `<label class="flex items-start gap-3 p-3 md:p-4 border-2 border-gray-100 rounded-xl md:rounded-2xl cursor-pointer hover:bg-green-50 hover:border-green-200 transition group" id="lbl_${q.id}_${oI}"><div class="relative flex items-center justify-center w-5 h-5 mt-0.5 md:mt-1 shrink-0"><input type="radio" name="ans_${q.id}" value="${oI}" onchange="recAns('${q.id}', ${oI})" class="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-green-600 checked:border-[6px] transition-all cursor-pointer"></div><div class="text-gray-700 font-medium md:pt-0.5 group-hover:text-green-900 w-full math-text-content break-words"><span class="font-bold text-gray-400 mr-1">${["A", "B", "C", "D"][oI]}.</span> ${window.renderTextToHtml(opt)}</div></label>`;
-            });
-            h += `</div>`;
-          } else if (q.type === "tf") {
-            // Sửa lại layout Bảng Đúng/Sai thành Flexbox bọc từng cục, responsive trên Mobile
-            h += `<div class="space-y-3">`;
-            q.statements.forEach((s, sI) => {
-              h += `<div class="bg-gray-50 rounded-xl flex flex-col sm:flex-row gap-3 p-3 sm:p-4 border border-gray-100">
-                <div class="flex gap-2 sm:gap-3 items-start flex-1 min-w-0">
-                    <span class="font-bold text-gray-400 w-6 shrink-0 pt-0.5">${String.fromCharCode(97 + sI)})</span>
-                    <div class="text-gray-800 font-medium math-text-content pt-0.5">${window.renderTextToHtml(s.text)}</div>
-                </div>
-                <div class="flex justify-end sm:items-center shrink-0 mt-2 sm:mt-0">
-                    <div class="inline-flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm w-full sm:w-auto justify-center">
-                        <label class="flex-1 text-center sm:flex-none px-6 py-2 sm:px-4 sm:py-1.5 text-sm font-bold rounded-md cursor-pointer transition text-gray-500 hover:bg-gray-50" id="lbl_t_${s.id}"><input type="radio" name="tf_${s.id}" onchange="recTf('${q.id}','${s.id}',true)" class="hidden"> Đ</label>
-                        <label class="flex-1 text-center sm:flex-none px-6 py-2 sm:px-4 sm:py-1.5 text-sm font-bold rounded-md cursor-pointer transition text-gray-500 hover:bg-gray-50" id="lbl_f_${s.id}"><input type="radio" name="tf_${s.id}" onchange="recTf('${q.id}','${s.id}',false)" class="hidden"> S</label>
-                    </div>
-                </div>
-              </div>`;
-            });
-            h += `</div>`;
-          } else {
-            h += `<input id="input_${q.id}" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" oninput="recSh('${q.id}', this.value)" placeholder="Nhập văn bản hoặc bấm nút Bàn phím bên dưới" class="w-full max-w-md border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-50 py-3 px-4 outline-none text-base md:text-lg text-green-900 bg-white transition font-medium">`;
-          }
-          div.innerHTML = h + `</div>`;
-          cvs.appendChild(div);
-        });
+        const flat = flattenQuestions(ex.questions || []);
+        document.getElementById("nav-progress").innerText = `0/${countTotalQuestions(ex.questions || [])}`;
+        window.__questionCounter = 0;
+        const renderNavForList = (list) => {
+          (list || []).forEach((q) => {
+            if (isSectionNode(q)) {
+              const sec = document.createElement("div");
+              sec.className = "mb-6";
+              sec.innerHTML = renderQuestionBlock(q, window.__questionCounter, "attempt");
+              cvs.appendChild(sec);
+              renderNavForList(q.questions || []);
+              return;
+            }
+            const no = ++window.__questionCounter;
+            const btn = document.createElement("button");
+            btn.id = `nav-q-${q.id}`;
+            btn.className = "w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50 transition shadow-sm bg-white";
+            btn.innerText = no;
+            btn.onclick = () => {
+              const el = document.getElementById(`q-${q.id}`);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+              if (window.innerWidth < 200 && !questionPanelHidden) toggleQuestionPanel();
+            };
+            nav.appendChild(btn);
+            const div = document.createElement("div");
+            div.innerHTML = renderQuestionBlock(q, no - 1, "attempt");
+            cvs.appendChild(div);
+          });
+        };
+        renderNavForList(ex.questions || []);
         typesetMath();
         syncAnswerUiState();
+        applyExamFontScale(examFontScale);
       }
+
+      window.addEventListener("load", () => {
+        if (window.innerWidth < 768) {
+          questionPanelHidden = true;
+          // updateQuestionPanelVisibility();
+        }
+      });
 
       function updateTimerUI() {
         const t = timeRemaining;
@@ -2644,11 +3227,20 @@
       window.recAns = (q, v) => {
         const before = answers[q];
         answers[q] = v;
-        const qMeta = currentExam?.questions?.find((x) => x.id === q);
-        appendAnswerLog("mcq", q, before, v, {
-          questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "",
-        });
+        const qMeta = flattenQuestions(currentExam?.questions || []).find((x) => x.id === q);
+        appendAnswerLog("mcq", q, before, v, { questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "" });
         updNavUI(q, true);
+        syncAnswerUiState();
+        requestAnimationFrame(syncAnswerUiState);
+        touchAttemptState("answer");
+      };
+      window.recMulti = (q, idx, checked) => {
+        const prev = ensureArray(answers[q]);
+        const next = checked ? Array.from(new Set(prev.concat([idx]))) : prev.filter((n) => Number(n) !== Number(idx));
+        answers[q] = next;
+        const qMeta = flattenQuestions(currentExam?.questions || []).find((x) => x.id === q);
+        appendAnswerLog("multi", q, prev, next, { questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "" });
+        updNavUI(q, next.length > 0);
         syncAnswerUiState();
         requestAnimationFrame(syncAnswerUiState);
         touchAttemptState("answer");
@@ -2657,13 +3249,10 @@
         if (!answers[q]) answers[q] = {};
         const before = answers[q]?.[s];
         answers[q][s] = v;
-        const qMeta = currentExam?.questions?.find((x) => x.id === q);
-        appendAnswerLog("tf", q, before, v, {
-          questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "",
-        });
-        const exQ = currentExam.questions.find((x) => x.id === q);
-        if (exQ.statements.every((x) => answers[q][x.id] !== undefined))
-          updNavUI(q, true);
+        const qMeta = flattenQuestions(currentExam?.questions || []).find((x) => x.id === q);
+        appendAnswerLog("tf", q, before, v, { questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "" });
+        const exQ = flattenQuestions(currentExam.questions || []).find((x) => x.id === q);
+        if (exQ?.statements?.every((x) => answers[q][x.id] !== undefined)) updNavUI(q, true);
         syncAnswerUiState();
         requestAnimationFrame(syncAnswerUiState);
         touchAttemptState("answer");
@@ -2672,10 +3261,8 @@
         const next = v.trim();
         const before = answers[q];
         answers[q] = next;
-        const qMeta = currentExam?.questions?.find((x) => x.id === q);
-        appendAnswerLog("short", q, before, next, {
-          questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "",
-        });
+        const qMeta = flattenQuestions(currentExam?.questions || []).find((x) => x.id === q);
+        appendAnswerLog("short", q, before, next, { questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "" });
         updNavUI(q, v.trim() !== "");
         syncAnswerUiState();
         requestAnimationFrame(syncAnswerUiState);
@@ -2688,34 +3275,15 @@
           btn.className = done
             ? "w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold bg-green-600 text-white border-2 border-green-600 shadow-md shadow-green-200 transition transform scale-105"
             : "w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50 transition shadow-sm bg-white";
-        let c = 0;
-        currentExam.questions.forEach((q) => {
-          if (q.type === "mcq" && answers[q.id] !== undefined) c++;
-          if (q.type === "short" && answers[q.id]) c++;
-          if (
-            q.type === "tf" &&
-            answers[q.id] &&
-            q.statements.every((s) => answers[q.id][s.id] !== undefined)
-          )
-            c++;
-        });
-        document.getElementById("nav-progress").innerText =
-          `${c}/${currentExam.questions.length}`;
+        const c = countAnsweredQuestions(currentExam.questions || [], answers);
+        const navProgress = document.getElementById("nav-progress");
+        if (navProgress) navProgress.innerText = `${c}/${flattenQuestions(currentExam.questions || []).filter((x) => !isSectionNode(x)).length}`;
       }
 
       window.submitExam = async (reqConf = true) => {
         const ex = currentExam;
         let answered = 0;
-        ex.questions.forEach((q) => {
-          if (q.type === "mcq" && answers[q.id] !== undefined) answered++;
-          if (q.type === "short" && answers[q.id]) answered++;
-          if (
-            q.type === "tf" &&
-            answers[q.id] &&
-            q.statements.every((s) => answers[q.id][s.id] !== undefined)
-          )
-            answered++;
-        });
+        answered = countAnsweredQuestions(ex.questions || [], answers);
         if (reqConf) {
           const conf = await customConfirm(
             `Bạn đã làm ${answered}/${ex.questions.length} câu. Nộp bài?`,
@@ -2747,6 +3315,8 @@
             attemptQuestions: deepClone(ex.questions),
             activityLog: deepClone(currentAttemptState?.activityLog || []),
             answers: deepClone(answers),
+            isSubExam: !!ex.isSubExam,
+            subExamConfig: deepClone(ex.subExamConfig || null),
           };
           await setDoc(docRef, payload);
           await mirrorDocToRtdb("results", docRef.id, payload);
@@ -2785,12 +3355,20 @@
 
           if (ex.showDetails === true) {
             const btnDetail = document.getElementById("res-detail-btn");
+            const btnReport = document.getElementById("res-report-btn");
+
             btnDetail.classList.remove("hidden");
             btnDetail.onclick = () => viewSubmissionDetail(docRef.id, ex.id);
+
+            if (btnReport) {
+              btnReport.classList.remove("hidden");
+              btnReport.onclick = () =>
+                openReportModal(ex.id, docRef.id, ex.title);
+            }
           } else {
             document.getElementById("res-detail-btn").classList.add("hidden");
+            document.getElementById("res-report-btn")?.classList.add("hidden");
           }
-
           showView("view-exam-result");
           setLoading(false);
         } catch (e) {
