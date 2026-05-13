@@ -1103,6 +1103,13 @@ let chatbotHistory = [];
       window.trackDocumentLinkClick = (docId, url, label = "", source = "link") => {
         if (!currentUser || !docId || !url) return true;
         const doc = globalData.docs?.[docId] || {};
+        const normalizedSource = String(source || "link");
+        const action =
+          normalizedSource === "key"
+            ? "open_key"
+            : normalizedSource === "doc" || normalizedSource === "open_doc"
+              ? "open_doc"
+              : "open_link";
         logKeyUsage({
           userId: currentUser.uid,
           userName: userData?.name || currentUser.email || currentUser.uid,
@@ -1110,8 +1117,8 @@ let chatbotHistory = [];
           docId,
           docTitle: doc.title || "",
           purchaseId: "",
-          key: source === "key" ? String(label || url) : "",
-          action: source === "key" ? "open_key" : "open_link",
+          key: action === "open_key" ? String(label || url) : "",
+          action,
           keyPoolId: doc.keyPoolId || "",
           linkLabel: label || "",
           linkUrl: url || "",
@@ -1497,12 +1504,15 @@ const openFormModal = (
       window.copyDocLink = async (url) => {
         const ok = await copyText(url);
         showModal(
-          ok ? "Đã sao chép" : "Sao chép link",
-          ok
-            ? "Đã copy link tài liệu."
-            : `Link: <span class="font-mono break-all">${safe(url)}</span>`,
-          ok ? "success" : "info",
-        );
+  ok ? "Đã sao chép" : "Sao chép link",
+  ok
+    ? `Đã copy link tài liệu.<br>
+       <span class="text-red-500 font-semibold">
+         Vui lòng không leak, mọi hành vi lộ tài liệu sẽ khóa tài liệu!
+       </span>`
+    : `Link: <span class="font-mono break-all">${safe(url)}</span>`,
+  ok ? "success" : "info",
+);
       };
 
       const uploadToCloudinary = async (file, folder = "edumarket") => {
@@ -2090,8 +2100,22 @@ const openFormModal = (
 
 const renderHome = (searchQuery = "") => {
         const grid = document.getElementById("docs-grid");
+        const hasSearch = !!String(searchQuery || "").trim();
         renderKeywordFilters();
-        renderFeaturedBanner();
+        if (currentFilter === "all" && !hasSearch) {
+          renderFeaturedBanner();
+        } else {
+          const section = document.getElementById("featured-docs-section");
+          const track = document.getElementById("featured-docs-track");
+          const dots = document.getElementById("featured-docs-dots");
+          if (section) section.classList.add("hidden");
+          if (track) track.innerHTML = "";
+          if (dots) dots.innerHTML = "";
+          if (window.__featuredCarouselTimer) {
+            clearInterval(window.__featuredCarouselTimer);
+            window.__featuredCarouselTimer = null;
+          }
+        }
         grid.innerHTML = "";
         const docs = Object.entries(globalData.docs || {}).map(
           ([id, data]) => ({ id, ...data }),
@@ -2106,7 +2130,7 @@ const renderHome = (searchQuery = "") => {
             return keywords.includes(currentFilter) || category === currentFilter;
           });
         }
-        if (searchQuery)
+        if (hasSearch)
           filtered = filtered.filter((d) =>
             `${d.title || ""} ${d.category || d.subject || ""} ${normalizeDocKeywords(d).join(" ")} ${d.grade || ""}`
               .toLowerCase()
@@ -2144,7 +2168,7 @@ const renderHome = (searchQuery = "") => {
           <div class="p-4 flex flex-col flex-1">
             <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">${safe(doc.title || "")}</h3>
             <p class="text-xs text-gray-500 mb-3">Lớp: ${safe(doc.grade || "Chung")} • ${Number(doc.buys || 0)} lượt mua</p>
-            ${docKeywords.length ? `<div class="flex flex-wrap gap-1 mb-2">${docKeywords.slice(0, 3).map((k) => `<button type="button" onclick="event.stopPropagation(); setDocTagFilter('${jsQuote(k)})" class="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-600">${safe(k)}</button>`).join("")}</div>` : ""}
+            ${docKeywords.length ? `<div class="flex flex-wrap gap-1 mb-2">${docKeywords.slice(0, 3).map((k) => `<button type="button" onclick="event.stopPropagation(); setDocTagFilter('${jsQuote(k)}')" class="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-600">${safe(k)}</button>`).join("")}</div>` : ""}
             <div class="mt-auto pt-3 border-t border-gray-50 flex justify-between items-center">
               ${priceTag}
               <button class="text-primary-600 bg-primary-50 w-8 h-8 rounded-full flex items-center justify-center hover:bg-primary-100"><i class="fas fa-arrow-right"></i></button>
@@ -2153,7 +2177,6 @@ const renderHome = (searchQuery = "") => {
         </div>`;
           });
       };
-
       const allocateKeyFromPool = async (poolId, docId, userId) => {
         try {
           if (!poolId) return null;
@@ -2251,7 +2274,7 @@ const renderHome = (searchQuery = "") => {
           (purchase?.assignedKey
             ? buildKeyRedeemUrl(purchase.assignedKey)
             : null);
-        const makeLinkRow = (url, label, className, sourceType = "link") => `
+        const makeLinkRow = (url, label, className, sourceType = "open_doc") => `
             <div class="flex gap-2">
               <a
                 href="${safe(url)}"
@@ -2263,7 +2286,7 @@ const renderHome = (searchQuery = "") => {
                 ${safe(label || "Mở tài liệu")}
               </a>
               <button
-                onclick="copyDocLink(${jsQuote(url)}); return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(url)}, ${jsQuote(label || "")}, ${jsQuote(sourceType)})"
+                onclick='copyDocLink(${jsQuote(url)}); return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(url)}, ${jsQuote(label || "")}, ${jsQuote(sourceType)})'
                 class="px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
               >
                 <i class="fas fa-copy"></i>
@@ -2284,7 +2307,7 @@ const renderHome = (searchQuery = "") => {
     links.length
       ? links
           .map(
-            (l) => makeLinkRow(l.url, l.label || "Mở tài liệu", "bg-green-600 text-white hover:bg-green-700"),
+            (l) => makeLinkRow(l.url, l.label || "Mở tài liệu", "bg-green-600 text-white hover:bg-green-700", "open_doc"),
           )
           .join("")
       : hasKeyPool
@@ -2847,64 +2870,148 @@ for (let i = 0; i < confirmQuestions.length; i++) {
         );
       }
 
-      const renderPurchased = () => {
-        const grid = document.getElementById("purchased-grid");
-        grid.innerHTML = "";
-        if (!currentUser) {
-          grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">Bạn cần đăng nhập để xem tài liệu đã mua.</div>`;
-          return;
-        }
-        const myPurchases = getUserPurchases();
-        if (myPurchases.length === 0) {
-          grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">Bạn chưa mua tài liệu nào.</div>`;
-          return;
-        }
-        myPurchases
-          .sort((a, b) => (b.purchasedAt || 0) - (a.purchasedAt || 0))
-          .forEach((pur) => {
-            const doc = globalData.docs[pur.documentId];
-            if (!doc) return;
-            const linksSource = (
-              pur.accessLinks && pur.accessLinks.length
-                ? pur.accessLinks
-                : getDocLinks(doc)
-            ).map((l) => ({
-              ...l,
-              url:
-                l.url ||
-                (pur.assignedKey && doc.keyPoolId
-                  ? buildKeyRedeemUrl(pur.assignedKey)
-                  : ""),
-            }));
-            const links = linksSource
-              .filter((l) => l.url)
-              .map(
-                (l) => `
-                  <div class="flex gap-2">
-                    <a href="${safe(l.url)}" target="_blank" rel="noopener noreferrer" onclick="return trackDocumentLinkClick(${jsQuote(pur.documentId)}, ${jsQuote(l.url)}, ${jsQuote(l.label || "Mở tài liệu")}, ${jsQuote(pur.assignedKey ? "key" : "link")})" class="flex-1 text-center w-full bg-green-50 text-green-700 py-2 rounded-lg font-medium text-sm hover:bg-green-100">${safe(l.label || "Mở tài liệu")}</a>
-                    <button onclick="copyDocLink(${jsQuote(l.url)}); return trackDocumentLinkClick(${jsQuote(pur.documentId)}, ${jsQuote(l.url)}, ${jsQuote(l.label || "Mở tài liệu")}, ${jsQuote(pur.assignedKey ? "key" : "link")})" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200" title="Copy link"><i class="fas fa-copy"></i></button>
-                  </div>`,
-              )
-              .join("");
-            grid.innerHTML += `
-  <div class="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden flex flex-col h-full">
-    <div class="h-36 bg-gray-200 relative">
-      <img src="${safe(doc.thumbnail || "https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu")}" class="w-full h-full object-cover">
-      <span class="absolute top-2 left-2 bg-green-600 text-white text-[10px] px-2 py-1 rounded-full shadow">Đã mua</span>
-      <div class="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-[11px]">
-        <i class="fas fa-eye"></i> ${Number(doc.views || 0)} lượt xem
-      </div>
-    </div>
-    <div class="p-4 flex flex-col flex-1">
-      <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">${safe(doc.title || "")}</h3>
-      <p class="text-xs text-gray-500 mb-3">${safe(doc.category || doc.subject || "")} • ${Number(doc.buys || 0)} lượt mua</p>
-      <div class="space-y-2">${links || '<div class="text-xs text-gray-500">Chưa có link hiển thị.</div>'}</div>
-    </div>
-  </div>`;
-          });
+  const renderPurchased = () => {
+  const grid = document.getElementById("purchased-grid");
+  if (!grid) return;
+
+  try {
+    grid.innerHTML = "";
+
+    if (!currentUser) {
+      grid.innerHTML = `
+        <div class="col-span-full text-center py-10 text-gray-500">
+          Bạn cần đăng nhập để xem tài liệu đã mua.
+        </div>
+      `;
+      return;
+    }
+
+    const myPurchases = Object.values(globalData.purchases || {})
+      .filter((p) => p.userId === currentUser.uid)
+      .sort((a, b) => (b.purchasedAt || 0) - (a.purchasedAt || 0));
+
+    if (!myPurchases.length) {
+      grid.innerHTML = `
+        <div class="col-span-full text-center py-10 text-gray-500">
+          Bạn chưa mua tài liệu nào.
+        </div>
+      `;
+      return;
+    }
+
+    const renderedDocs = new Set();
+    const cards = [];
+
+    myPurchases.forEach((pur) => {
+      const docId = String(pur.documentId || pur.docId || "").trim();
+      if (!docId || renderedDocs.has(docId)) return;
+      renderedDocs.add(docId);
+
+      const doc = globalData.docs?.[docId];
+      const resolvedDoc = doc || {
+        id: docId,
+        title: "Tài liệu đã mua",
+        grade: "Chung",
+        views: 0,
+        buys: 0,
+        thumbnail: "https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu",
       };
 
-      const renderKeywordManager = async () => {
+      const rawLinks =
+        Array.isArray(pur.accessLinks) && pur.accessLinks.length
+          ? pur.accessLinks
+          : getDocLinks(resolvedDoc);
+
+      const linksSource = rawLinks
+        .map((l) => ({
+          ...l,
+          url: l?.url || (pur.assignedKey ? buildKeyRedeemUrl(pur.assignedKey) : ""),
+        }))
+        .filter((l) => l?.url);
+
+      const linksHtml = linksSource.length
+        ? linksSource
+            .map((l) => `
+              <div class="flex gap-2">
+                <a
+                  href="${safe(l.url)}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onclick="return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(l.url)}, ${jsQuote(l.label || 'Mở tài liệu')}, ${jsQuote(pur.assignedKey ? 'key' : 'open_doc')})"
+                  class="flex-1 text-center w-full bg-green-50 text-green-700 py-2 rounded-lg font-medium text-sm hover:bg-green-100"
+                >
+                  ${safe(l.label || 'Mở tài liệu')}
+                </a>
+
+                <button
+                  onclick='copyDocLink(${jsQuote(l.url)}); return trackDocumentLinkClick(${jsQuote(docId)}, ${jsQuote(l.url)}, ${jsQuote(l.label || 'Mở tài liệu')}, ${jsQuote(pur.assignedKey ? 'key' : 'open_doc')})'
+                  class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200"
+                  title="Copy link"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            `)
+            .join("")
+        : `<div class="text-xs text-gray-400">Chưa có link truy cập.</div>`;
+
+      cards.push(`
+        <div class="bg-white rounded-2xl shadow-sm border border-green-100 overflow-hidden flex flex-col h-full">
+          <div class="h-36 bg-gray-200 relative">
+            <img
+              src="${safe(resolvedDoc.thumbnail || 'https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu')}"
+              class="w-full h-full object-cover"
+              onerror="this.src='https://placehold.co/400x200/e2e8f0/64748b?text=Tài+Liệu'"
+            >
+
+            <span class="absolute top-2 left-2 bg-green-600 text-white text-[10px] px-2 py-1 rounded-full shadow">
+              Đã mua
+            </span>
+
+            <div class="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 rounded text-[11px]">
+              <i class="fas fa-eye"></i>
+              ${Number(resolvedDoc.views || 0)} lượt xem
+            </div>
+          </div>
+
+          <div class="p-4 flex flex-col flex-1">
+            <h3 class="font-bold text-gray-800 line-clamp-2 mb-1">
+              ${safe(resolvedDoc.title || '')}
+            </h3>
+
+            <p class="text-xs text-gray-500 mb-3">
+              Lớp: ${safe(resolvedDoc.grade || 'Chung')}
+              •
+              ${Number(resolvedDoc.buys || 0)} lượt mua
+            </p>
+
+            <div class="mt-auto space-y-2">
+              ${linksHtml}
+            </div>
+          </div>
+        </div>
+      `);
+    });
+
+    grid.innerHTML = cards.join("");
+
+    if (!grid.innerHTML.trim()) {
+      grid.innerHTML = `
+        <div class="col-span-full text-center py-10 text-gray-500">
+          Không tìm thấy tài liệu đã mua.
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error("renderPurchased failed:", err);
+    grid.innerHTML = `
+      <div class="col-span-full text-center py-10 text-red-500">
+        Không thể tải danh sách tài liệu đã mua.
+      </div>
+    `;
+  }
+};
+    const renderKeywordManager = async () => {
         const host = document.getElementById("admin-docs");
         if (!host) return;
 
@@ -3193,14 +3300,21 @@ for (let i = 0; i < confirmQuestions.length; i++) {
         body.innerHTML = filtered.slice(0, 50).map((log) => {
           const u = globalData.users[log.userId] || {};
           const d = globalData.docs[log.docId] || {};
-          const actionLabel = log.action === "open_key" ? "Click key" : log.action === "open_link" ? "Click link" : log.action === "view_doc" ? "Xem tài liệu" : log.action === "issued" ? "Đã cấp key" : safe(log.action || "Log");
+          const actionLabel =
+            log.action === "open_key" ? "Click key" :
+            log.action === "open_doc" ? "Mở tài liệu" :
+            log.action === "open_link" ? "Click link" :
+            log.action === "view_doc" ? "Xem tài liệu" :
+            log.action === "issued" ? "Đã cấp key" :
+            safe(log.action || "Log");
+          const keyValue = String(log.key || log.linkUrl || "").trim();
           return `
               <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3 text-xs">${formatDate(log.createdAt)}</td>
                 <td class="px-4 py-3 text-sm font-medium text-gray-700">${safe(log.userName || u.name || log.userId || "")}<div class="text-xs text-gray-400">${safe(log.email || u.email || "")}</div></td>
                 <td class="px-4 py-3 text-sm text-gray-600">${safe(d.title || log.docTitle || log.docId || "")}</td>
                 <td class="px-4 py-3 text-xs"><span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700">${actionLabel}</span></td>
-                <td class="px-4 py-3 text-xs font-mono text-gray-500 break-all">${safe(log.key || "")}</td>
+                <td class="px-4 py-3 text-xs font-mono text-gray-500 break-all">${safe(keyValue)}</td>
               </tr>
             `;
         }).join("");
