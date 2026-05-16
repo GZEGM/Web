@@ -699,14 +699,6 @@
             >
               <i class="fa-solid fa-list-check"></i>
             </button>
-            <button
-              id="btn-open-attempt-log"
-              onclick="openAttemptLogModal()"
-              class="hidden w-9 h-9 md:w-11 md:h-11 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition items-center justify-center shrink-0"
-              title="Xem nhật ký làm bài"
-            >
-              <i class="fa-regular fa-clock"></i>
-            </button>
             <div class="flex flex-col items-center gap-1">
               <div
                 id="taking-timer"
@@ -1037,42 +1029,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal Attempt Log -->
-    <div
-      id="modal-attempt-log"
-      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[121] flex items-center justify-center hidden-view p-4"
-      onclick="if (event.target === this) closeAttemptLogModal();"
-    >
-      <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-full md:h-[90vh] flex flex-col modal-content-enter overflow-hidden"
-      >
-        <div
-          class="p-4 md:p-5 border-b flex justify-between items-center bg-white shrink-0"
-        >
-          <div class="min-w-0 pr-4">
-            <h3 class="font-bold text-lg md:text-xl text-gray-800">
-              Nhật ký làm bài
-            </h3>
-            <p
-              id="attempt-log-info"
-              class="text-xs md:text-sm text-gray-500 mt-1 truncate"
-            ></p>
-          </div>
-          <button
-            onclick="closeAttemptLogModal()"
-            class="w-8 h-8 md:w-10 md:h-10 shrink-0 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
-          >
-            <i class="fa-solid fa-xmark text-lg"></i>
-          </button>
-        </div>
-        <div
-          class="flex-1 overflow-y-auto p-4 md:p-6"
-          id="attempt-log-content"
-        ></div>
-      </div>
-    </div>
-
     <!-- Modal Xem Chi Tiết Bài Làm ĐƯỢC FIX LẠI CHO MOBILE -->
     <div
       id="modal-submission-detail"
@@ -1230,6 +1186,7 @@
         getDocs,
         getDoc,
         query,
+        where,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
       import {
         getDatabase,
@@ -1274,7 +1231,7 @@
       };
 
       const ATTEMPT_STORAGE_KEY = "dk_active_attempts_edu_v1";
-      const ATTEMPT_HEARTBEAT_MS = 15000;
+      const ATTEMPT_HEARTBEAT_MS = 45000;
       let currentAttemptState = null;
       let currentAttemptCloudDocId = null;
       let attemptSyncInFlight = false;
@@ -1636,7 +1593,7 @@
                 currentExam.questions ||
                 [],
             ),
-            activityLog: deepClone(currentAttemptState.activityLog || []),
+            
             status: currentAttemptState.status,
             lastSeenAt: currentAttemptState.lastSeenAt,
             updatedAt: Date.now(),
@@ -1653,7 +1610,7 @@
             remainingSec: payload.remainingSec,
             status: payload.status,
             attemptQuestions: payload.attemptQuestions,
-            activityLog: payload.activityLog,
+            
             isSubExam: payload.isSubExam,
             subExamConfig: payload.subExamConfig,
             submittedAt: payload.submittedAt,
@@ -1736,9 +1693,7 @@
           status: source.status || "active",
           submittedAt: source.submittedAt || null,
           timeSpent: source.timeSpent || null,
-          activityLog: Array.isArray(source.activityLog)
-            ? deepClone(source.activityLog)
-            : [],
+          // activity log removed to reduce storage/write size
           lastSeenAt: Date.now(),
           lastCloudSyncAt: source.lastCloudSyncAt || 0,
           remainingSec:
@@ -1755,8 +1710,7 @@
           Number(timeRemaining || 0),
         );
         currentAttemptState.lastSeenAt = Date.now();
-        answerActivityLog =
-          currentAttemptState.activityLog || answerActivityLog || [];
+        answerActivityLog = [];
         if (
           currentAttemptState.remainingSec <= 0 &&
           currentAttemptState.status !== "submitted"
@@ -2158,23 +2112,64 @@
         return { correctCount, wrongCount, totalQuestions, score };
       }
 
-      async function getAllDocsFiltered(name, predicate) {
-        const snap = await getDocs(query(examCollection(name)));
-        const arr = [];
-        snap.forEach((d) => {
-          const data = d.data();
-          if (!predicate || predicate(data, d.id))
-            arr.push({ id: d.id, ...data });
-        });
-        return arr;
-      }
-      async function loadExamById(examId) {
-        const snap = await getDoc(examDoc("exams", examId));
-        if (!snap.exists()) return null;
-        return { id: snap.id, ...snap.data() };
-      }
 
-      function rtdbDoc(name, id) {
+const CACHE_TTL_MS = 30000;
+const examDocCache = new Map();
+const studentResultsCache = { name: "", loadedAt: 0, data: [] };
+const examResultsCache = new Map();
+
+async function loadExamById(examId, force = false) {
+  const key = String(examId || "").trim();
+  if (!key) return null;
+  const cached = examDocCache.get(key);
+  if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
+    return deepClone(cached.data);
+  }
+  const snap = await getDoc(examDoc("exams", key));
+  if (!snap.exists()) return null;
+  const data = { id: snap.id, ...snap.data() };
+  examDocCache.set(key, { loadedAt: Date.now(), data });
+  return deepClone(data);
+}
+
+async function loadStudentResults(force = false) {
+  const key = String(State.studentName || "").trim();
+  if (!key) return [];
+  if (
+    !force &&
+    studentResultsCache.name === key &&
+    Date.now() - studentResultsCache.loadedAt < CACHE_TTL_MS
+  ) {
+    return deepClone(studentResultsCache.data);
+  }
+  const snap = await getDocs(
+    query(examCollection("results"), where("studentName", "==", key)),
+  );
+  const arr = [];
+  snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+  studentResultsCache.name = key;
+  studentResultsCache.loadedAt = Date.now();
+  studentResultsCache.data = arr;
+  return deepClone(arr);
+}
+
+async function loadExamResults(examId, force = false) {
+  const key = String(examId || "").trim();
+  if (!key) return [];
+  const cached = examResultsCache.get(key);
+  if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
+    return deepClone(cached.data);
+  }
+  const snap = await getDocs(
+    query(examCollection("results"), where("examId", "==", key)),
+  );
+  const arr = [];
+  snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+  examResultsCache.set(key, { loadedAt: Date.now(), data: arr });
+  return deepClone(arr);
+}
+
+function rtdbDoc(name, id) {
         return ref(rtdb, `${basePath}/${name}/${id}`);
       }
       async function mirrorDocToRtdb(name, id, data) {
@@ -2216,57 +2211,7 @@
         };
       }
 
-      function appendAnswerLog(type, qId, before, after, meta = {}) {
-        if (!currentAttemptState) return;
-        const entry = makeAnswerLogEntry(type, qId, before, after, meta);
-        currentAttemptState.activityLog = Array.isArray(
-          currentAttemptState.activityLog,
-        )
-          ? [...currentAttemptState.activityLog, entry].slice(-500)
-          : [entry];
-        answerActivityLog = currentAttemptState.activityLog;
-        saveStoredAttempt(currentAttemptState);
-        void syncAttemptToCloud("answer-log");
-      }
-
-      function renderAttemptLogEntries(entries) {
-        if (!Array.isArray(entries) || !entries.length)
-          return '<div class="text-center py-10 text-gray-500 italic">Chưa có nhật ký thao tác.</div>';
-        return `<div class="space-y-3">${entries
-          .slice()
-          .sort((a, b) => Number(a.at || 0) - Number(b.at || 0))
-          .map((log, idx) => {
-            const title =
-              log.questionLabel ||
-              (log.questionId
-                ? `Câu ${log.questionId}`
-                : log.type || "Thao tác");
-            const before = normalizeLoggedValue(log.before);
-            const after = normalizeLoggedValue(log.after);
-            return `<div class="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2"><div><div class="font-bold text-gray-800">${idx + 1}. ${window.renderTextToHtml(title)}</div><div class="text-xs text-gray-500">${nowVnTime(log.at)}</div></div><span class="text-xs font-bold px-2 py-1 rounded-full bg-green-50 text-green-700">${window.renderTextToHtml(log.type || "log")}</span></div><div class="grid md:grid-cols-2 gap-3 text-sm"><div class="p-3 rounded-xl bg-gray-50 border border-gray-100"><div class="text-xs font-bold text-gray-400 mb-1">Trước</div><div class="break-words">${window.renderTextToHtml(before)}</div></div><div class="p-3 rounded-xl bg-green-50 border border-green-100"><div class="text-xs font-bold text-green-600 mb-1">Sau</div><div class="break-words">${window.renderTextToHtml(after)}</div></div></div>${log.detail ? `<div class="mt-3 text-sm text-gray-600">${window.renderTextToHtml(log.detail)}</div>` : ""}</div>`;
-          })
-          .join("")}</div>`;
-      }
-
-      window.openAttemptLogModal = () => {
-        const modal = document.getElementById("modal-attempt-log");
-        if (!modal) return;
-        const info = document.getElementById("attempt-log-info");
-        const content = document.getElementById("attempt-log-content");
-        if (info)
-          info.innerHTML = currentAttemptState
-            ? `<b>${window.renderTextToHtml(currentAttemptState.examTitle || "")}</b> | ${window.renderTextToHtml(State.studentName || "")} | Bắt đầu: ${nowVnTime(currentAttemptState.startedAt)}`
-            : "Chưa có dữ liệu nhật ký";
-        if (content)
-          content.innerHTML = renderAttemptLogEntries(
-            currentAttemptState?.activityLog || answerActivityLog || [],
-          );
-        modal.classList.remove("hidden-view");
-      };
-      window.closeAttemptLogModal = () =>
-        document
-          .getElementById("modal-attempt-log")
-          ?.classList.add("hidden-view");
+      function appendAnswerLog() {}
 
       function updateNavbar() {
         const acts = document.getElementById("nav-actions");
@@ -2468,10 +2413,7 @@
         const body = document.getElementById("history-body");
         const empty = document.getElementById("history-empty");
         body.innerHTML = "";
-        const results = await getAllDocsFiltered(
-          "results",
-          (d) => d.studentName === State.studentName,
-        );
+        const results = await loadStudentResults();
         results.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
         if (!results.length) {
           empty.classList.remove("hidden");
@@ -2843,10 +2785,7 @@
         try {
           const exam = await loadExamById(examId);
           if (!exam) throw new Error("Không tìm thấy bài thi");
-          const results = await getAllDocsFiltered(
-            "results",
-            (d) => d.examId === examId,
-          );
+          const results = await loadExamResults(examId);
           await renderLeaderboardModal(exam, results);
         } catch (e) {
           showToast(e.message || "Không mở được bảng xếp hạng", "error");
@@ -2910,13 +2849,8 @@
             return;
           }
 
-          const allResults = await getAllDocsFiltered(
-            "results",
-            (d) => d.examId === id,
-          );
-          userAttemptsCount = allResults.filter(
-            (r) => r.studentName === State.studentName,
-          ).length;
+          const allResults = await loadStudentResults();
+          userAttemptsCount = allResults.filter((r) => r.examId === id).length;
           const btnStart = document.getElementById("btn-start");
           document.getElementById("intro-attempts").innerHTML =
             `${userAttemptsCount} / ${data.maxAttempts || "∞"}`;
@@ -3130,7 +3064,6 @@
         currentAttemptState = createAttemptState(attemptExam, Date.now(), {
           answers: {},
           attemptQuestions: attemptExam.questions,
-          activityLog: [],
           isSubExam: attemptExam.isSubExam,
           subExamConfig: attemptExam.subExamConfig,
         });
@@ -3411,7 +3344,7 @@
             timeSpent,
             submittedAt: Date.now(),
             attemptQuestions: deepClone(ex.questions),
-            activityLog: deepClone(currentAttemptState?.activityLog || []),
+            
             answers: deepClone(answers),
             isSubExam: !!ex.isSubExam,
             subExamConfig: deepClone(ex.subExamConfig || null),
@@ -3424,7 +3357,7 @@
             createAttemptState(ex, attemptStartTime, {
               answers,
               attemptQuestions: ex.questions,
-              activityLog: answerActivityLog,
+              
             });
           currentAttemptState.status = "submitted";
           currentAttemptState.submittedAt = Date.now();

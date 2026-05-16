@@ -6,12 +6,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
+
+    </div>
     <title>DkTEST - Học sinh</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+<link rel="icon" type="image/png" href="assets/icon/logo.png">
     <script>
       window.MathJax = {
         tex: {
@@ -1243,6 +1246,17 @@
         messagingSenderId: "603672592444",
         appId: "1:603672592444:web:8d7b493fc9848756bec339",
       };
+
+//       const firebaseConfig = {
+//   apiKey: "AIzaSyAWCvV2a27xqDizvzYFaNDF6DD-Yh3VF20",
+//   authDomain: "exam-e1721.firebaseapp.com",
+//   projectId: "exam-e1721",
+//   storageBucket: "exam-e1721.firebasestorage.app",
+//   messagingSenderId: "640950778052",
+//   appId: "1:640950778052:web:8db13bc2cd23c5617ab191",
+//   measurementId: "G-95KHKGEHD9"
+// };
+
       const appId =
         typeof __app_id !== "undefined" ? __app_id : "default-DkTEST";
       const app = initializeApp(firebaseConfig);
@@ -1260,7 +1274,7 @@
       };
 
       const ATTEMPT_STORAGE_KEY = "dk_active_attempts_edu_v1";
-      const ATTEMPT_HEARTBEAT_MS = 15000;
+      const ATTEMPT_HEARTBEAT_MS = 45000;
       let currentAttemptState = null;
       let currentAttemptCloudDocId = null;
       let attemptSyncInFlight = false;
@@ -1552,7 +1566,7 @@
         if (!currentExam) return;
         currentExam.questions.forEach((q) => {
           if (q.type === "mcq") {
-            const selected = answers[q.id];
+            const selected = normalizeMcqAnswer(answers[q.id]).selectedIndex;
             q.options?.forEach((_, idx) => {
               const input = document.querySelector(
                 `input[name="ans_${q.id}"][value="${idx}"]`,
@@ -1805,6 +1819,125 @@
           .filter(Boolean);
       }
 
+      function normalizeMcqAnswer(rawAnswer) {
+        if (rawAnswer === undefined || rawAnswer === null) return {};
+        if (typeof rawAnswer === "object" && !Array.isArray(rawAnswer)) {
+          const selectedIndex = Number(
+            rawAnswer.selectedIndex ?? rawAnswer.index,
+          );
+          const originalIndex = Number(
+            rawAnswer.originalIndex ??
+              rawAnswer.selectedOriginalIndex ??
+              rawAnswer.originalOptionIndex,
+          );
+          return {
+            selectedIndex: Number.isFinite(selectedIndex)
+              ? selectedIndex
+              : undefined,
+            originalIndex: Number.isFinite(originalIndex)
+              ? originalIndex
+              : undefined,
+            selectedText: String(
+              rawAnswer.selectedText ?? rawAnswer.text ?? "",
+            ),
+            optionOrder: Array.isArray(rawAnswer.optionOrder)
+              ? deepClone(rawAnswer.optionOrder)
+              : [],
+          };
+        }
+        const selectedIndex = Number(rawAnswer);
+        return {
+          selectedIndex: Number.isFinite(selectedIndex)
+            ? selectedIndex
+            : undefined,
+          originalIndex: Number.isFinite(selectedIndex)
+            ? selectedIndex
+            : undefined,
+          selectedText: "",
+          optionOrder: [],
+        };
+      }
+
+      function buildMcqAnswerSnapshot(question, selectedIndex) {
+        const normalizedIndex = Number(selectedIndex);
+        const safeIndex = Number.isFinite(normalizedIndex)
+          ? normalizedIndex
+          : undefined;
+        const optionOrder = Array.isArray(question?.optionOrder)
+          ? deepClone(question.optionOrder)
+          : [];
+        return {
+          selectedIndex: safeIndex,
+          selectedText:
+            safeIndex === undefined
+              ? ""
+              : String(question?.options?.[safeIndex] ?? ""),
+          originalIndex:
+            safeIndex === undefined
+              ? undefined
+              : Number.isFinite(Number(optionOrder[safeIndex]))
+                ? Number(optionOrder[safeIndex])
+                : safeIndex,
+          optionOrder,
+        };
+      }
+
+      function findOptionIndexByText(options, text) {
+        const target = String(text ?? "").trim();
+        if (!target || !Array.isArray(options) || !options.length) return -1;
+        return options.findIndex((opt) => String(opt ?? "").trim() === target);
+      }
+
+      function resolveMcqSelectedIndexForMode(rawAnswer, attemptSnap, mode) {
+        const normalized = normalizeMcqAnswer(rawAnswer);
+        const attemptOptions = Array.isArray(attemptSnap?.options)
+          ? attemptSnap.options
+          : [];
+        const originalOptions = Array.isArray(attemptSnap?.originalOptions)
+          ? attemptSnap.originalOptions
+          : [];
+
+        if (mode === "original") {
+          if (Number.isFinite(normalized.originalIndex)) {
+            return normalized.originalIndex;
+          }
+          if (
+            Number.isFinite(normalized.selectedIndex) &&
+            Array.isArray(attemptSnap?.optionOrder)
+          ) {
+            const mapped = attemptSnap.optionOrder[normalized.selectedIndex];
+            if (Number.isFinite(Number(mapped))) return Number(mapped);
+          }
+          if (normalized.selectedText) {
+            const idx = findOptionIndexByText(
+              originalOptions.length ? originalOptions : attemptOptions,
+              normalized.selectedText,
+            );
+            if (idx !== -1) return idx;
+          }
+          return normalized.selectedIndex;
+        }
+
+        if (Number.isFinite(normalized.selectedIndex)) {
+          return normalized.selectedIndex;
+        }
+        if (normalized.selectedText) {
+          const idx = findOptionIndexByText(
+            attemptOptions,
+            normalized.selectedText,
+          );
+          if (idx !== -1) return idx;
+        }
+        if (
+          Number.isFinite(normalized.originalIndex) &&
+          Array.isArray(attemptSnap?.optionOrder)
+        ) {
+          const idx = attemptSnap.optionOrder.indexOf(normalized.originalIndex);
+          if (idx !== -1) return idx;
+        }
+        return undefined;
+      }
+
       function isShortAnswerCorrect(studentValue, question) {
         const answer = normalizeShortAnswerText(studentValue);
         if (!answer) return false;
@@ -1951,23 +2084,21 @@
       }
 
       function getMcqReviewMeta(q, res, mode) {
-        const selectedAttemptIndex = res?.answers?.[q.id];
+        const rawAnswer = res?.answers?.[q.id];
         const attemptSnap =
           res?.attemptQuestions?.find((x) => x.id === q.id) || q;
-        const originalOrder = Array.isArray(attemptSnap.optionOrder)
-          ? attemptSnap.optionOrder
-          : (q.options || []).map((_, idx) => idx);
-        const originalSelectedIndex =
-          selectedAttemptIndex === undefined || selectedAttemptIndex === null
-            ? undefined
-            : originalOrder[Number(selectedAttemptIndex)];
+        const selectedIndex = resolveMcqSelectedIndexForMode(
+          rawAnswer,
+          attemptSnap,
+          mode,
+        );
         if (mode === "original") {
           return {
             options: q.originalOptions || q.options || [],
             correctIndex: Number.isFinite(Number(q.originalCorrectIndex))
               ? Number(q.originalCorrectIndex)
               : Number(q.correctIndex || 0),
-            selectedIndex: originalSelectedIndex,
+            selectedIndex,
           };
         }
         return {
@@ -1975,10 +2106,7 @@
           correctIndex: Number.isFinite(Number(attemptSnap.correctIndex))
             ? Number(attemptSnap.correctIndex)
             : Number(q.correctIndex || 0),
-          selectedIndex:
-            selectedAttemptIndex === undefined || selectedAttemptIndex === null
-              ? undefined
-              : Number(selectedAttemptIndex),
+          selectedIndex,
         };
       }
 
@@ -1997,9 +2125,12 @@
         const pointsPerQuestion = 10 / totalQuestions;
         qs.forEach((q) => {
           if (q.type === "mcq") {
+            const selectedIndex = normalizeMcqAnswer(
+              answers?.[q.id],
+            ).selectedIndex;
             if (
-              answers?.[q.id] !== undefined &&
-              Number(answers[q.id]) === Number(q.correctIndex)
+              selectedIndex !== undefined &&
+              Number(selectedIndex) === Number(q.correctIndex)
             ) {
               totalScore += pointsPerQuestion;
               correctCount++;
@@ -2529,9 +2660,14 @@
           }
 
           if (q.type === "mcq") {
+            const resolvedSelectedIndex = resolveMcqSelectedIndexForMode(
+              res.answers?.[q.id],
+              res?.attemptQuestions?.find((x) => x.id === q.id) || q,
+              mode,
+            );
             review.options.forEach((opt, oI) => {
               const isCorrectOpt = oI === review.correctIndex;
-              const isSelected = Number(review.selectedIndex) === oI;
+              const isSelected = Number(resolvedSelectedIndex) === oI;
               let bg = "bg-gray-50 border-gray-200 text-gray-700";
               let icon = "";
               if (isCorrectOpt) {
@@ -2543,7 +2679,7 @@
               }
               html += `<div class="flex items-center p-3 border rounded-lg mb-2 ${bg}"><span class="w-6 font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span> ${window.renderTextToHtml(opt)} ${icon}</div>`;
             });
-            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${review.selectedIndex === undefined ? "Trống" : ["A", "B", "C", "D"][review.selectedIndex] || review.selectedIndex} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${review.correctIndex === undefined ? "—" : ["A", "B", "C", "D"][review.correctIndex] || review.correctIndex}</div>`;
+            html += `<div class="mt-3 text-sm text-gray-600"><b>HS đã chọn:</b> ${resolvedSelectedIndex === undefined ? "Trống" : ["A", "B", "C", "D"][resolvedSelectedIndex] || resolvedSelectedIndex} <span class="mx-2 text-gray-300">|</span> <b>Đáp án đúng:</b> ${review.correctIndex === undefined ? "—" : ["A", "B", "C", "D"][review.correctIndex] || review.correctIndex}</div>`;
             if (q.explanation) {
               html += `<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50"><div class="text-xs font-bold text-blue-600 mb-1">Giải thích</div><div class="text-blue-900">${window.renderTextToHtml(q.explanation)}</div></div>`;
             }
@@ -3160,9 +3296,14 @@
 
       window.recAns = (q, v) => {
         const before = answers[q];
-        answers[q] = v;
         const qMeta = currentExam?.questions?.find((x) => x.id === q);
-        appendAnswerLog("mcq", q, before, v, {
+        const numericIndex = Number(v);
+        const snapshot =
+          qMeta && Number.isFinite(numericIndex)
+            ? buildMcqAnswerSnapshot(qMeta, numericIndex)
+            : { selectedIndex: v };
+        answers[q] = snapshot;
+        appendAnswerLog("mcq", q, before, snapshot, {
           questionLabel: qMeta ? `Câu hỏi: ${qMeta.text || ""}` : "",
         });
         updNavUI(q, true);
@@ -3207,7 +3348,11 @@
             : "w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50 transition shadow-sm bg-white";
         let c = 0;
         currentExam.questions.forEach((q) => {
-          if (q.type === "mcq" && answers[q.id] !== undefined) c++;
+          if (
+            q.type === "mcq" &&
+            normalizeMcqAnswer(answers[q.id]).selectedIndex !== undefined
+          )
+            c++;
           if (q.type === "short" && answers[q.id]) c++;
           if (
             q.type === "tf" &&
@@ -3224,7 +3369,11 @@
         const ex = currentExam;
         let answered = 0;
         ex.questions.forEach((q) => {
-          if (q.type === "mcq" && answers[q.id] !== undefined) answered++;
+          if (
+            q.type === "mcq" &&
+            normalizeMcqAnswer(answers[q.id]).selectedIndex !== undefined
+          )
+            answered++;
           if (q.type === "short" && answers[q.id]) answered++;
           if (
             q.type === "tf" &&

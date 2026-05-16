@@ -9,6 +9,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="icon" type="image/png" href="assets/icon/logo.png" />
     <script>
       window.MathJax = {
         tex: {
@@ -152,22 +153,6 @@
       .search-input:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
-      }
-      .editor-textarea {
-        min-height: 7.5rem;
-        resize: vertical;
-      }
-      .editor-latex {
-        min-height: 8.5rem;
-        resize: vertical;
-      }
-      .section-card {
-        border: 1px solid #dbe4f0;
-        background: #f8fafc;
-      }
-      .admin-font-scale-host,
-      .admin-font-scale-host * {
-        font-size: calc(1rem * var(--admin-font-scale, 1));
       }
 
       @media (max-width: 768px) {
@@ -817,28 +802,6 @@
                   <i class="fa-solid fa-pen"></i>
                 </div>
                 <span class="font-medium text-gray-700">Trả lời ngắn</span>
-              </button>
-              <button
-                onclick="addQuestion('multi')"
-                class="w-full flex items-center bg-white border border-gray-200 hover:border-orange-400 hover:shadow-sm hover:bg-orange-50/50 p-3 rounded-xl transition group"
-              >
-                <div
-                  class="w-8 h-8 rounded bg-orange-100 text-orange-600 flex items-center justify-center mr-3 group-hover:scale-110 transition"
-                >
-                  <i class="fa-solid fa-square-check"></i>
-                </div>
-                <span class="font-medium text-gray-700">Nhiều lựa chọn</span>
-              </button>
-              <button
-                onclick="addSection()"
-                class="w-full flex items-center bg-white border border-gray-200 hover:border-slate-400 hover:shadow-sm hover:bg-slate-50/80 p-3 rounded-xl transition group"
-              >
-                <div
-                  class="w-8 h-8 rounded bg-slate-100 text-slate-600 flex items-center justify-center mr-3 group-hover:scale-110 transition"
-                >
-                  <i class="fa-solid fa-layer-group"></i>
-                </div>
-                <span class="font-medium text-gray-700">Section</span>
               </button>
             </div>
 
@@ -1630,19 +1593,19 @@
         getFirestore,
         collection,
         doc,
-        setDoc,
-        getDocs,
-        getDoc,
-        deleteDoc,
-        updateDoc,
+        setDoc as fsSetDoc,
+        getDocs as fsGetDocs,
+        getDoc as fsGetDoc,
+        deleteDoc as fsDeleteDoc,
+        updateDoc as fsUpdateDoc,
         query,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
       import {
         getDatabase,
         ref,
-        set,
-        remove,
-        onValue,
+        set as rtdbSet,
+        remove as rtdbRemove,
+        onValue as rtdbOnValue,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
       const firebaseConfig = {
@@ -1653,12 +1616,146 @@
         messagingSenderId: "603672592444",
         appId: "1:603672592444:web:8d7b493fc9848756bec339",
       };
+
+      // const firebaseConfig = {
+      //   apiKey: "AIzaSyAWCvV2a27xqDizvzYFaNDF6DD-Yh3VF20",
+      //   authDomain: "exam-e1721.firebaseapp.com",
+      //   projectId: "exam-e1721",
+      //   storageBucket: "exam-e1721.firebasestorage.app",
+      //   messagingSenderId: "640950778052",
+      //   appId: "1:640950778052:web:8db13bc2cd23c5617ab191",
+      //   measurementId: "G-95KHKGEHD9",
+      // };
       const appId =
         typeof __app_id !== "undefined" ? __app_id : "default-DkTEST";
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
       const rtdb = getDatabase(app);
+
+      window.__fsReads = 0;
+      window.__fsWrites = 0;
+      window.__rtdbReads = 0;
+      window.__rtdbWrites = 0;
+      window.__dbActivityLog = [];
+
+      function logDbActivity(kind, op, label, payload = {}) {
+        const entry = {
+          time: new Date().toISOString(),
+          kind,
+          op,
+          label: label || "",
+          ...payload,
+        };
+        window.__dbActivityLog.push(entry);
+        const tag = `[${kind} ${op}]${label ? " " + label : ""}`;
+        console.log(
+          `%c${tag}`,
+          `color:${kind === "READ" ? "#16a34a" : "#dc2626"};font-weight:bold`,
+        );
+        console.log(entry);
+      }
+
+      async function trackedGetDocs(q, label = "") {
+        const snap = await fsGetDocs(q);
+        const reads = snap.size || 0;
+        window.__fsReads += reads;
+        logDbActivity("READ", "getDocs", label, {
+          reads,
+          totalReads: window.__fsReads,
+        });
+        return snap;
+      }
+
+      async function trackedGetDoc(ref, label = "") {
+        const snap = await fsGetDoc(ref);
+        const reads = snap.exists() ? 1 : 0;
+        window.__fsReads += reads;
+        logDbActivity("READ", "getDoc", label, {
+          reads,
+          totalReads: window.__fsReads,
+        });
+        return snap;
+      }
+
+      async function trackedSetDoc(ref, data, options, label = "") {
+        const res = await fsSetDoc(ref, data, options);
+        window.__fsWrites += 1;
+        logDbActivity("WRITE", "setDoc", label, {
+          writes: 1,
+          totalWrites: window.__fsWrites,
+        });
+        return res;
+      }
+
+      async function trackedUpdateDoc(ref, data, label = "") {
+        const res = await fsUpdateDoc(ref, data);
+        window.__fsWrites += 1;
+        logDbActivity("WRITE", "updateDoc", label, {
+          writes: 1,
+          totalWrites: window.__fsWrites,
+        });
+        return res;
+      }
+
+      async function trackedDeleteDoc(ref, label = "") {
+        const res = await fsDeleteDoc(ref);
+        window.__fsWrites += 1;
+        logDbActivity("WRITE", "deleteDoc", label, {
+          writes: 1,
+          totalWrites: window.__fsWrites,
+        });
+        return res;
+      }
+
+      async function trackedSet(refTarget, value, label = "") {
+        const res = await rtdbSet(refTarget, value);
+        window.__rtdbWrites += 1;
+        logDbActivity("WRITE", "rtdbSet", label, {
+          writes: 1,
+          totalWrites: window.__rtdbWrites,
+        });
+        return res;
+      }
+
+      async function trackedRemove(refTarget, label = "") {
+        const res = await rtdbRemove(refTarget);
+        window.__rtdbWrites += 1;
+        logDbActivity("WRITE", "rtdbRemove", label, {
+          writes: 1,
+          totalWrites: window.__rtdbWrites,
+        });
+        return res;
+      }
+
+      function trackedOnValue(refTarget, callback, cancelCallback) {
+        logDbActivity("READ", "onValue-subscribe", "", {
+          target: String(refTarget || ""),
+        });
+        return rtdbOnValue(
+          refTarget,
+          (snap) => {
+            window.__rtdbReads += 1;
+            logDbActivity("READ", "onValue", "", {
+              reads: 1,
+              totalReads: window.__rtdbReads,
+              target: String(refTarget || ""),
+            });
+            callback(snap);
+          },
+          cancelCallback,
+        );
+      }
+
+      const getDocs = trackedGetDocs;
+      const getDoc = trackedGetDoc;
+      const setDoc = trackedSetDoc;
+      const updateDoc = trackedUpdateDoc;
+      const deleteDoc = trackedDeleteDoc;
+      const set = trackedSet;
+      const remove = trackedRemove;
+      const onValue = trackedOnValue;
+
       const basePath = `artifacts/${appId}/public/data`;
       let explanationText = null;
 
@@ -1679,204 +1776,6 @@
       };
 
       window.generateId = () => Math.random().toString(36).substring(2, 11);
-
-      const FONT_SCALE_KEY = "admin_exam_font_scale_edu";
-      let adminFontScale = Number(localStorage.getItem(FONT_SCALE_KEY) || 1);
-      function clampFontScale(v) {
-        const n = Number(v);
-        if (!Number.isFinite(n)) return 1;
-        return Math.min(1.5, Math.max(0.8, Number(n.toFixed(2))));
-      }
-      function applyAdminFontScale(v = adminFontScale) {
-        adminFontScale = clampFontScale(v);
-        localStorage.setItem(FONT_SCALE_KEY, String(adminFontScale));
-        document.documentElement.style.setProperty(
-          "--admin-font-scale",
-          String(adminFontScale),
-        );
-      }
-      applyAdminFontScale(adminFontScale);
-
-      function isSectionNode(node) {
-        return !!node && node.type === "section";
-      }
-      function isMultiNode(node) {
-        return !!node && node.type === "multi";
-      }
-      function ensureArray(val) {
-        return Array.isArray(val) ? val : [];
-      }
-      function deepCloneSafe(v) {
-        return JSON.parse(JSON.stringify(v ?? null));
-      }
-      function ensureQuestionShape(q) {
-        const node = q && typeof q === "object" ? q : {};
-        if (!node.id) node.id = generateId();
-        if (isSectionNode(node)) {
-          node.title = String(node.title || node.text || "Section");
-          node.questions = ensureArray(node.questions).map((child) =>
-            ensureQuestionShape(child),
-          );
-          node.collapsed = !!node.collapsed;
-          return node;
-        }
-        node.type = node.type === "multi" ? "multi" : node.type || "mcq";
-        node.text = String(node.text || "");
-        node.explanation = String(node.explanation || "");
-        node.latex = String(node.latex || "");
-        node.imageUrl = node.imageUrl || null;
-        node.imageWidth = node.imageWidth ? Number(node.imageWidth) : null;
-        node.imageHeight = node.imageHeight ? Number(node.imageHeight) : null;
-        node.optionImages = ensureArray(node.optionImages);
-        node.optionImageWidths = ensureArray(node.optionImageWidths);
-        node.optionImageHeights = ensureArray(node.optionImageHeights);
-        if (node.type === "mcq") {
-          node.options = ensureArray(node.options).length
-            ? node.options
-            : ["", "", "", ""];
-          node.options = node.options.map((opt) => String(opt ?? ""));
-          node.correctIndex = Number.isFinite(Number(node.correctIndex))
-            ? Number(node.correctIndex)
-            : 0;
-        } else if (node.type === "multi") {
-          node.options = ensureArray(node.options).length
-            ? node.options
-            : ["", "", "", ""];
-          node.options = node.options.map((opt) => String(opt ?? ""));
-          node.correctIndices = ensureArray(node.correctIndices)
-            .map((n) => Number(n))
-            .filter((n) => Number.isFinite(n));
-          node.partialScore = !!node.partialScore;
-        } else if (node.type === "tf") {
-          node.statements = ensureArray(node.statements).length
-            ? node.statements
-            : ["a", "b", "c", "d"].map((ch) => ({
-                id: generateId(),
-                text: "",
-                isTrue: false,
-              }));
-        } else if (node.type === "short") {
-          node.exactAnswers = ensureArray(node.exactAnswers).length
-            ? node.exactAnswers
-            : [""];
-        }
-        return node;
-      }
-      function normalizeQuestionTree(list) {
-        return ensureArray(list).map((node) => {
-          const q = ensureQuestionShape(deepCloneSafe(node));
-          if (isSectionNode(q))
-            q.questions = normalizeQuestionTree(q.questions);
-          return q;
-        });
-      }
-      function traverseQuestionTree(list, cb, parent = null, level = 0) {
-        ensureArray(list).forEach((node, index) => {
-          cb(node, { parent, index, level, list });
-          if (isSectionNode(node))
-            traverseQuestionTree(node.questions || [], cb, node, level + 1);
-        });
-      }
-      function findQuestionListById(list, id, parent = null) {
-        for (let i = 0; i < list.length; i++) {
-          const node = list[i];
-          if (node.id === id) return { list, index: i, node, parent };
-          if (isSectionNode(node)) {
-            const found = findQuestionListById(node.questions || [], id, node);
-            if (found) return found;
-          }
-        }
-        return null;
-      }
-      function removeQuestionNodeById(list, id) {
-        const found = findQuestionListById(list, id);
-        if (!found) return null;
-        const removed = found.list.splice(found.index, 1)[0];
-        return removed || null;
-      }
-      function insertNodeIntoSection(sectionId, node) {
-        const found = findQuestionListById(examDraft.questions, sectionId);
-        if (!found || !isSectionNode(found.node)) return false;
-        found.node.questions = found.node.questions || [];
-        found.node.questions.push(node);
-        return true;
-      }
-      window.moveNode = function (sourceId, targetId, place = "after") {
-        if (sourceId === targetId) return;
-        const sourceFound = findQuestionListById(examDraft.questions, sourceId);
-        const targetFound = findQuestionListById(examDraft.questions, targetId);
-        if (!sourceFound || !targetFound) return;
-        const node = sourceFound.list.splice(sourceFound.index, 1)[0];
-        const targetList = targetFound.list;
-        let insertIndex = targetFound.index + (place === "after" ? 1 : 0);
-        if (sourceFound.list === targetList && sourceFound.index < insertIndex)
-          insertIndex--;
-        targetList.splice(insertIndex, 0, node);
-        renderEditorQuestions();
-      };
-      window.dropIntoSection = function (sourceId, sectionId) {
-        const sourceFound = findQuestionListById(examDraft.questions, sourceId);
-
-        const sectionFound = findQuestionListById(
-          examDraft.questions,
-          sectionId,
-        );
-
-        if (
-          !sourceFound ||
-          !sectionFound ||
-          !isSectionNode(sectionFound.node)
-        ) {
-          return;
-        }
-
-        const node = sourceFound.list.splice(sourceFound.index, 1)[0];
-
-        sectionFound.node.questions = sectionFound.node.questions || [];
-
-        sectionFound.node.questions.push(node);
-
-        renderEditorQuestions();
-      };
-      function nodeMatchesSearch(node, search) {
-        if (!search) return true;
-        const hay = [
-          node.title,
-          node.text,
-          node.latex,
-          node.explanation,
-          ...(node.options || []),
-          ...(node.exactAnswers || []),
-          ...(node.statements || []).map((s) => s.text),
-        ]
-          .map((x) => String(x || "").toLowerCase())
-          .join(" ");
-        if (hay.includes(search)) return true;
-        if (isSectionNode(node))
-          return (node.questions || []).some((child) =>
-            nodeMatchesSearch(child, search),
-          );
-        return false;
-      }
-      function renderAnswerImageEditor(q, idx) {
-        const url = q.optionImages?.[idx];
-        const width = q.optionImageWidths?.[idx] || "";
-        const height = q.optionImageHeights?.[idx] || "";
-        return `
-          <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">
-            <div class="sm:col-span-2">
-              <div class="flex flex-wrap gap-2 items-center">
-                <button type="button" onclick="triggerOptionImageUpload('${q.id}', ${idx})" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">Ảnh đáp án</button>
-                ${url ? `<button type=\"button\" onclick=\"removeOptionImage('${q.id}', ${idx})\" class=\"px-3 py-1.5 rounded-lg bg-red-50 text-red-700 text-xs font-bold border border-red-200\">Xóa ảnh</button>` : ""}
-              </div>
-              ${url ? `<img src="${url}" class="image-preview mt-2" style="${width ? `width:${width}px;max-width:100%;` : "max-width:100%;"}${height ? `height:${height}px;object-fit:contain;` : ""}"/>` : ""}
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <input type="number" min="40" step="10" value="${width}" placeholder="Rộng" oninput="setOptionImageSize('${q.id}', ${idx}, 'width', this.value)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              <input type="number" min="40" step="10" value="${height}" placeholder="Cao" oninput="setOptionImageSize('${q.id}', ${idx}, 'height', this.value)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-          </div>`;
-      }
 
       window.showToast = (msg, type = "info") => {
         const container = document.getElementById("toast-container");
@@ -2070,68 +1969,30 @@
       }
 
       function normalizeQuestionForSave(question) {
-        const q = ensureQuestionShape(deepCloneSafe(question));
-        if (isSectionNode(q)) {
-          q.title = normalizeMathInput(q.title || q.text || "Section");
-          q.questions = normalizeQuestionsForSave(q.questions || []);
-          return q;
-        }
-        if (q.type === "mcq") {
-          q.options = (q.options || []).map((opt) => normalizeMathInput(opt));
-          q.optionImages = ensureArray(q.optionImages).slice(
-            0,
-            q.options.length,
-          );
-          q.optionImageWidths = ensureArray(q.optionImageWidths).slice(
-            0,
-            q.options.length,
-          );
-          q.optionImageHeights = ensureArray(q.optionImageHeights).slice(
-            0,
-            q.options.length,
-          );
+        const q = deepClone(question);
+        if (q.type === "mcq" && Array.isArray(q.options)) {
+          q.options = q.options.map((opt) => normalizeMathInput(opt));
+          q.originalOptions = deepClone(q.options);
           q.correctIndex = Math.max(0, Number(q.correctIndex || 0));
-          q.originalOptions = deepCloneSafe(q.options);
           q.originalCorrectIndex = q.correctIndex;
           q.optionOrder = q.options.map((_, idx) => idx);
-        } else if (q.type === "multi") {
-          q.options = (q.options || []).map((opt) => normalizeMathInput(opt));
-          q.optionImages = ensureArray(q.optionImages).slice(
-            0,
-            q.options.length,
-          );
-          q.optionImageWidths = ensureArray(q.optionImageWidths).slice(
-            0,
-            q.options.length,
-          );
-          q.optionImageHeights = ensureArray(q.optionImageHeights).slice(
-            0,
-            q.options.length,
-          );
-          q.correctIndices = ensureArray(q.correctIndices)
-            .map((n) => Number(n))
-            .filter((n) => Number.isFinite(n));
-          q.partialScore = !!q.partialScore;
-        } else if (q.type === "tf") {
-          q.statements = ensureArray(q.statements).map((s) => ({
+        } else if (q.type === "tf" && Array.isArray(q.statements)) {
+          q.statements = q.statements.map((s) => ({
             ...s,
             text: normalizeMathInput(s.text),
           }));
-        } else if (q.type === "short") {
-          q.exactAnswers = ensureArray(q.exactAnswers).map((a) =>
-            normalizeMathInput(a),
-          );
+        } else if (q.type === "short" && Array.isArray(q.exactAnswers)) {
+          q.exactAnswers = q.exactAnswers.map((a) => normalizeMathInput(a));
         }
         q.text = normalizeMathInput(q.text);
         q.explanation = normalizeMathInput(q.explanation || "");
-        q.latex = normalizeMathInput(q.latex || "");
         q.imageWidth = q.imageWidth ? Number(q.imageWidth) : null;
         q.imageHeight = q.imageHeight ? Number(q.imageHeight) : null;
         return q;
       }
 
       function normalizeQuestionsForSave(questions) {
-        return ensureArray(questions).map((q) => normalizeQuestionForSave(q));
+        return (questions || []).map((q) => normalizeQuestionForSave(q));
       }
 
       function splitSmartImportBlocks(text) {
@@ -2462,46 +2323,12 @@
         };
       }
 
-      function flattenExportNodes(list, rows = [], prefix = []) {
-        (list || []).forEach((node) => {
-          if (isSectionNode(node)) {
-            rows.push({
-              kind: "section",
-              title: node.title || "Section",
-              prefix: prefix.slice(),
-            });
-            flattenExportNodes(
-              node.questions || [],
-              rows,
-              prefix.concat([node.title || "Section"]),
-            );
-          } else {
-            rows.push({ kind: "question", node, prefix: prefix.slice() });
-          }
-        });
-        return rows;
-      }
       function getAnswerKeyRows(exportData) {
         const rows = [];
-        const flat = flattenExportNodes(exportData.questions || []);
-        let no = 0;
-        flat.forEach((item) => {
-          if (item.kind === "section") {
-            rows.push([`SECTION: ${item.title}`, ""]);
-            return;
-          }
-          const q = item.node;
+        (exportData.questions || []).forEach((q, idx) => {
           let answer = "";
           if (q.type === "mcq") {
             answer = ["A", "B", "C", "D"][Number(q.correctIndex) || 0] || "A";
-          } else if (q.type === "multi") {
-            answer = (q.correctIndices || [])
-              .map(
-                (i) =>
-                  ["A", "B", "C", "D", "E", "F", "G", "H"][i] ||
-                  String.fromCharCode(65 + i),
-              )
-              .join(" + ");
           } else if (q.type === "tf") {
             answer = (q.statements || [])
               .map(
@@ -2514,8 +2341,7 @@
           } else if (q.type === "short") {
             answer = splitAcceptedShortAnswers(q.exactAnswers).join(" | ");
           }
-          no++;
-          rows.push([String(no), answer || "-"]);
+          rows.push([String(idx + 1), answer || "-"]);
         });
         return rows;
       }
@@ -2528,7 +2354,6 @@
           ".q{margin:14px 0 6px;font-weight:700;}",
           ".opt{margin-left:18px;margin-bottom:2px;}",
           ".exp{margin:6px 0 10px 18px;color:#4b5563;font-style:italic;}",
-          ".section{margin:18px 0 10px;padding:10px 12px;background:#f3f4f6;border-left:4px solid #64748b;font-weight:700;}",
           ".answer-title{margin-top:24px;text-align:center;font-size:20px;font-weight:700;}",
           "table{width:100%;border-collapse:collapse;margin-top:10px;}",
           "th,td{border:1px solid #d1d5db;padding:8px;vertical-align:top;text-align:left;}",
@@ -2540,7 +2365,8 @@
             escapeHtmlText(exportData.title || "De thi") +
             "</title><style>" +
             styles +
-            "@media print{body{margin:0}}</style></head><body>",
+            "@media print{body{margin:0}}" +
+            "</style></head><body>",
         );
         parts.push(
           "<div class='title'>" +
@@ -2556,45 +2382,36 @@
               : "") +
             "</div>",
         );
-        const renderNode = (node, idx, level = 0) => {
-          if (isSectionNode(node)) {
-            parts.push(
-              `<div class='section'>${escapeHtmlText(node.title || "Section")}</div>`,
-            );
-            (node.questions || []).forEach((child, cIdx) =>
-              renderNode(child, cIdx, level + 1),
-            );
-            return;
-          }
+        (exportData.questions || []).forEach((q, idx) => {
           parts.push(
             "<div class='q'>Câu " +
               (idx + 1) +
               ". " +
-              escapeHtmlText(node.text || "") +
+              escapeHtmlText(q.text || "") +
               "</div>",
           );
-          if (node.imageUrl) {
+          if (q.imageUrl) {
             const style = [
-              node.imageWidth ? `width:${Number(node.imageWidth)}px;` : "",
-              node.imageHeight ? `height:${Number(node.imageHeight)}px;` : "",
+              q.imageWidth ? `width:${Number(q.imageWidth)}px;` : "",
+              q.imageHeight ? `height:${Number(q.imageHeight)}px;` : "",
               "max-width:100%;object-fit:contain;",
             ].join("");
             parts.push(
-              `<div class='opt'><img src='${escapeHtmlText(node.imageUrl)}' style='${style}' /></div>`,
+              `<div class='opt'><img src='${escapeHtmlText(q.imageUrl)}' style='${style}' /></div>`,
             );
           }
-          if (node.type === "mcq" || node.type === "multi") {
-            (node.options || []).forEach((opt, oI) => {
+          if (q.type === "mcq") {
+            (q.options || []).forEach((opt, oI) => {
               parts.push(
                 "<div class='opt'>" +
-                  String.fromCharCode(65 + oI) +
+                  ["A", "B", "C", "D"][oI] +
                   ". " +
                   escapeHtmlText(opt || "") +
                   "</div>",
               );
             });
-          } else if (node.type === "tf") {
-            (node.statements || []).forEach((s, sI) => {
+          } else if (q.type === "tf") {
+            (q.statements || []).forEach((s, sI) => {
               parts.push(
                 "<div class='opt'>" +
                   String.fromCharCode(97 + sI) +
@@ -2603,25 +2420,23 @@
                   "</div>",
               );
             });
-          } else if (node.type === "short") {
+          } else if (q.type === "short") {
             parts.push(
               "<div class='opt'>Đáp án: " +
                 escapeHtmlText(
-                  (splitAcceptedShortAnswers(node.exactAnswers) || []).join(
-                    " | ",
-                  ),
+                  (splitAcceptedShortAnswers(q.exactAnswers) || []).join(" | "),
                 ) +
                 "</div>",
             );
           }
-          if (node.explanation)
+          if (q.explanation) {
             parts.push(
               "<div class='exp'>Giải thích: " +
-                escapeHtmlText(node.explanation) +
+                escapeHtmlText(q.explanation) +
                 "</div>",
             );
-        };
-        (exportData.questions || []).forEach((q, idx) => renderNode(q, idx));
+          }
+        });
         parts.push("<div class='answer-title'>ĐÁP ÁN</div>");
         parts.push(
           "<table><thead><tr><th style='width:80px'>Câu</th><th>Đáp án</th></tr></thead><tbody>",
@@ -2636,6 +2451,7 @@
           );
         });
         parts.push("</tbody></table>");
+
         return parts.join("");
       }
 
@@ -3326,7 +3142,7 @@
             );
             const data = await res.json();
             if (data.secure_url) {
-              const q = findQuestionListById(examDraft.questions, qId)?.node;
+              const q = examDraft.questions.find((x) => x.id === qId);
               if (q) {
                 q.imageUrl = data.secure_url;
                 renderEditorQuestions();
@@ -3341,7 +3157,7 @@
         input.click();
       };
       window.removeImage = (qId) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
           q.imageUrl = null;
           renderEditorQuestions();
@@ -3572,178 +3388,35 @@
         }, 50);
       };
 
-      function addQuestionToTarget(targetId, type) {
-        const node =
-          type === "section"
-            ? ensureQuestionShape({
-                id: generateId(),
-                type: "section",
-                title: "Section mới",
-                collapsed: false,
-                questions: [],
-              })
-            : ensureQuestionShape(
-                type === "multi"
-                  ? {
-                      id: generateId(),
-                      type: "multi",
-                      text: "",
-                      latex: "",
-                      explanation: "",
-                      options: ["A", "B", "C", "D"],
-                      correctIndices: [0],
-                      partialScore: false,
-                      optionImages: [],
-                      optionImageWidths: [],
-                      optionImageHeights: [],
-                    }
-                  : type === "tf"
-                    ? {
-                        id: generateId(),
-                        type: "tf",
-                        text: "",
-                        latex: "",
-                        explanation: "",
-                        statements: [
-                          { id: generateId(), text: "", isTrue: true },
-                          { id: generateId(), text: "", isTrue: false },
-                          { id: generateId(), text: "", isTrue: true },
-                          { id: generateId(), text: "", isTrue: false },
-                        ],
-                      }
-                    : type === "short"
-                      ? {
-                          id: generateId(),
-                          type: "short",
-                          text: "",
-                          latex: "",
-                          explanation: "",
-                          exactAnswers: [""],
-                        }
-                      : {
-                          id: generateId(),
-                          type: "mcq",
-                          text: "",
-                          latex: "",
-                          explanation: "",
-                          options: ["", "", "", ""],
-                          correctIndex: 0,
-                          optionImages: [],
-                          optionImageWidths: [],
-                          optionImageHeights: [],
-                        },
-              );
-        if (!targetId) {
-          examDraft.questions.push(node);
-        } else {
-          const found = findQuestionListById(examDraft.questions, targetId);
-          if (found && isSectionNode(found.node) && type !== "section") {
-            found.node.questions = found.node.questions || [];
-            found.node.questions.push(node);
-          } else if (found && type === "section") {
-            found.list.splice(found.index + 1, 0, node);
-          } else {
-            examDraft.questions.push(node);
-          }
-        }
-        renderEditorQuestions();
-        setTimeout(() => {
-          const cvs = document.getElementById("ce-questions-canvas");
-          if (cvs) cvs.scrollTop = cvs.scrollHeight;
-        }, 50);
-      }
-      window.addQuestion = (type) => addQuestionToTarget(null, type);
-      window.addSection = () => addQuestionToTarget(null, "section");
-      window.addQuestionIntoSection = (sectionId, type = "mcq") =>
-        addQuestionToTarget(sectionId, type);
       window.deleteQuestion = (id) => {
-        const removed = removeQuestionNodeById(examDraft.questions, id);
-        if (!removed) return;
-        if (
-          isSectionNode(removed) &&
-          Array.isArray(removed.questions) &&
-          removed.questions.length
-        ) {
-          examDraft.questions = examDraft.questions.concat(
-            removed.questions.map((x) => ensureQuestionShape(x)),
-          );
-        }
-        renderEditorQuestions();
-      };
-      window.deleteSection = (id) => {
-        const found = findQuestionListById(examDraft.questions, id);
-        if (!found || !isSectionNode(found.node)) return;
-        const sec = found.list.splice(found.index, 1)[0];
-        if (sec && Array.isArray(sec.questions)) {
-          found.list.splice(
-            found.index,
-            0,
-            ...sec.questions.map((x) => ensureQuestionShape(x)),
-          );
-        }
-        renderEditorQuestions();
-      };
-      window.renameSection = (id) => {
-        const found = findQuestionListById(examDraft.questions, id);
-        if (!found || !isSectionNode(found.node)) return;
-        const next = prompt("Tên section", found.node.title || "Section");
-        if (next === null) return;
-        found.node.title = next.trim() || "Section";
-        renderEditorQuestions();
-      };
-      window.renameSectionInline = (id, title) => {
-        const found = findQuestionListById(examDraft.questions, id);
-        if (!found || !isSectionNode(found.node)) return;
-        found.node.title = String(title || "").trim() || "Section";
-      };
-      window.toggleSectionCollapse = (id) => {
-        const found = findQuestionListById(examDraft.questions, id);
-        if (!found || !isSectionNode(found.node)) return;
-        found.node.collapsed = !found.node.collapsed;
+        examDraft.questions = examDraft.questions.filter((q) => q.id !== id);
         renderEditorQuestions();
       };
       window.updText = (id, v) => {
-        const q = findQuestionListById(examDraft.questions, id)?.node;
-        if (q && !isSectionNode(q)) {
+        const q = examDraft.questions.find((x) => x.id === id);
+        if (q) {
           q.text = normalizeMathInput(v);
           typesetMath();
         }
       };
-      window.updLatex = (id, v) => {
-        const q = findQuestionListById(examDraft.questions, id)?.node;
-        if (q && !isSectionNode(q)) {
-          q.latex = normalizeMathInput(v);
-          typesetMath();
-        }
-      };
       window.updOpt = (qId, idx, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
-        if (q && q.options) {
+        const q = examDraft.questions.find((x) => x.id === qId);
+        if (q) {
           q.options[idx] = normalizeMathInput(v);
           typesetMath();
         }
       };
       window.setCor = (qId, idx) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
           q.correctIndex = parseInt(idx);
           renderEditorQuestions();
         }
       };
-      window.toggleMultiCorrect = (qId, idx, checked) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
-        if (!q) return;
-        q.correctIndices = ensureArray(q.correctIndices);
-        const n = Number(idx);
-        if (checked && !q.correctIndices.includes(n)) q.correctIndices.push(n);
-        if (!checked)
-          q.correctIndices = q.correctIndices.filter((x) => Number(x) !== n);
-        renderEditorQuestions();
-      };
       window.updTf = (qId, sId, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
-          const s = q.statements?.find((x) => x.id === sId);
+          const s = q.statements.find((x) => x.id === sId);
           if (s) {
             s.text = normalizeMathInput(v);
             typesetMath();
@@ -3751,15 +3424,15 @@
         }
       };
       window.setTfCor = (qId, sId, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
-          const s = q.statements?.find((x) => x.id === sId);
+          const s = q.statements.find((x) => x.id === sId);
           if (s) s.isTrue = v;
           renderEditorQuestions();
         }
       };
       window.updSh = (qId, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (q) {
           const answers = splitAcceptedShortAnswers(v).map((a) =>
             normalizeMathInput(a),
@@ -3769,11 +3442,11 @@
         }
       };
       window.updExp = (qId, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (q) q.explanation = normalizeMathInput(v);
       };
       window.setImageSize = (qId, field, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
+        const q = examDraft.questions.find((x) => x.id === qId);
         if (!q) return;
         const n = Number(v);
         if (field === "width")
@@ -3782,172 +3455,135 @@
           q.imageHeight = Number.isFinite(n) && n > 0 ? n : null;
         renderEditorQuestions();
       };
-      window.triggerOptionImageUpload = (qId, idx) => {
-        if (!State.cloudinary.cloudName || !State.cloudinary.uploadPreset) {
-          showToast(
-            "Vui lòng cấu hình Cloudinary trước khi tải ảnh!",
-            "warning",
-          );
-          openCloudinarySettings();
-          return;
-        }
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*";
-        input.onchange = async (e) => {
-          const file = e.target.files && e.target.files[0];
-          if (!file) return;
-          const q = findQuestionListById(examDraft.questions, qId)?.node;
-          if (!q) return;
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("upload_preset", State.cloudinary.uploadPreset);
-          try {
-            const res = await fetch(
-              `https://api.cloudinary.com/v1_1/${State.cloudinary.cloudName}/image/upload`,
-              { method: "POST", body: formData },
-            );
-            const data = await res.json();
-            if (data.secure_url) {
-              q.optionImages = ensureArray(q.optionImages);
-              q.optionImages[idx] = data.secure_url;
-              q.optionImageWidths = ensureArray(q.optionImageWidths);
-              q.optionImageHeights = ensureArray(q.optionImageHeights);
-              renderEditorQuestions();
-            } else throw new Error(data.error?.message || "Lỗi khi upload ảnh");
-          } catch (error) {
-            showToast("Lỗi upload: " + error.message, "error");
-          }
-        };
-        input.click();
-      };
-      window.removeOptionImage = (qId, idx) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
-        if (!q) return;
-        if (Array.isArray(q.optionImages)) q.optionImages[idx] = null;
-        if (Array.isArray(q.optionImageWidths)) q.optionImageWidths[idx] = null;
-        if (Array.isArray(q.optionImageHeights))
-          q.optionImageHeights[idx] = null;
-        renderEditorQuestions();
-      };
-      window.setOptionImageSize = (qId, idx, field, v) => {
-        const q = findQuestionListById(examDraft.questions, qId)?.node;
-        if (!q) return;
-        const n = Number(v);
-        if (field === "width") {
-          q.optionImageWidths = ensureArray(q.optionImageWidths);
-          q.optionImageWidths[idx] = Number.isFinite(n) && n > 0 ? n : null;
-        }
-        if (field === "height") {
-          q.optionImageHeights = ensureArray(q.optionImageHeights);
-          q.optionImageHeights[idx] = Number.isFinite(n) && n > 0 ? n : null;
-        }
-        renderEditorQuestions();
-      };
+
       function renderEditorQuestions() {
         const container = document.getElementById("ce-questions-canvas");
         if (!container) return;
+
+        // Giữ vị trí cuộn trước khi render lại
         const prevScrollTop = container.scrollTop;
         const prevScrollLeft = container.scrollLeft;
-        const qs = normalizeQuestionTree(examDraft.questions || []);
-        examDraft.questions = qs;
+
+        const qs = examDraft.questions || [];
         const search = String(window.createQuestionSearch || "")
           .trim()
           .toLowerCase();
-        const renderNode = (node, index, level = 0) => {
-          if (!nodeMatchesSearch(node, search)) return "";
-          if (isSectionNode(node)) {
-            const body = (node.questions || [])
-              .map((child, childIndex) =>
-                renderNode(child, childIndex, level + 1),
-              )
-              .join("");
-            return `
-              <div class="section-card rounded-2xl p-4 md:p-5 mb-6" draggable="true" ondragstart="window.__dragNodeId='${node.id}'" ondragover="event.preventDefault()" ondrop="dropIntoSection(window.__dragNodeId, '${node.id}')">
-                <div class="flex items-center justify-between gap-3 mb-3">
-                  <div class="flex items-center gap-3 min-w-0 flex-1">
-                    <div class="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center font-black shrink-0">S</div>
-                    <input value="${escapeHtml(node.title || "Section")}" oninput="this.dataset.v=this.value" onblur="window.renameSectionInline('${node.id}', this.value)" class="flex-1 min-w-0 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-800 bg-white" />
-                  </div>
-                  <div class="flex gap-2 shrink-0">
-                    <button type="button" onclick="toggleSectionCollapse('${node.id}')" class="px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-sm font-semibold">${node.collapsed ? "Mở" : "Thu"}</button>
-                    <button type="button" onclick="addQuestionIntoSection('${node.id}', 'mcq')" class="px-3 py-2 rounded-lg bg-white border border-blue-200 text-blue-700 text-sm font-semibold">+ Câu</button>
-                    <button type="button" onclick="deleteSection('${node.id}')" class="px-3 py-2 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-semibold">Xóa section</button>
-                  </div>
-                </div>
-                ${!node.collapsed ? `<div class="space-y-4 pl-1">${body || '<div class="text-sm text-gray-400 italic">Chưa có câu hỏi trong section</div>'}</div>` : '<div class="text-sm text-slate-500 italic">Section đang thu gọn</div>'}
-              </div>`;
-          }
-          const displayNo = index + 1;
-          const q = node;
-          const sectionInfo =
-            level > 0
-              ? `<div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Câu trong section</div>`
-              : "";
+        const filtered = search
+          ? qs.filter((q, idx) => {
+              const hay = [
+                idx + 1,
+                `câu ${idx + 1}`,
+                `cau ${idx + 1}`,
+                q.text,
+                ...(q.options || []),
+                ...(q.statements || []).map((s) => s.text),
+                ...(q.exactAnswers || []),
+              ]
+                .map((x) => String(x || "").toLowerCase())
+                .join(" ");
+              return hay.includes(search);
+            })
+          : qs;
+
+        document.getElementById("empty-exam-state").style.display = qs.length
+          ? filtered.length
+            ? "none"
+            : "block"
+          : "block";
+
+        document.getElementById("empty-exam-state").innerHTML =
+          qs.length && !filtered.length
+            ? `<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl"><i class="fa-solid fa-magnifying-glass"></i></div><p class="text-xl font-medium text-gray-500">Không có câu hỏi phù hợp</p><p class="text-sm mt-2">Thử đổi từ khóa tìm kiếm</p>`
+            : `<div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl"><i class="fa-regular fa-clipboard"></i></div><p class="text-xl font-medium text-gray-500">Chưa có câu hỏi nào</p><p class="text-sm mt-2">Chọn công cụ bên trái để bắt đầu tạo đề</p>`;
+
+        Array.from(container.children).forEach((c) => {
+          if (c.id !== "empty-exam-state") c.remove();
+        });
+
+        filtered.forEach((q, i) => {
+          const realIndex = qs.findIndex((x) => x.id === q.id);
+          const displayNo = realIndex >= 0 ? realIndex + 1 : i + 1;
+          const div = document.createElement("div");
+          div.className =
+            "bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6 relative group transition-all hover:shadow-md";
+
           let h = `
-            <div id="q-${q.id}" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6 relative group transition-all hover:shadow-md" draggable="true" ondragstart="window.__dragNodeId='${q.id}'" ondragover="event.preventDefault()" ondrop="moveNode(window.__dragNodeId, '${q.id}', 'after')">
-              <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                <button onclick="triggerImageUpload('${q.id}')" class="text-gray-400 hover:text-blue-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Thêm Ảnh"><i id="img-btn-icon-${q.id}" class="fa-regular fa-image"></i></button>
-                <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-              </div>
-              ${sectionInfo}
-              <div class="flex gap-4 mb-4">
-                <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
-                <div class="flex-1">
-          `;
-          h += `
-                <div class="flex flex-col gap-2">
-                  <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
-                  <textarea class="search-input editor-textarea editor-latex font-mono text-sm leading-6" placeholder="Khung Latex riêng (tuỳ chọn)" oninput="updLatex('${q.id}', this.value)" onblur="updLatex('${q.id}', this.value)">${escapeHtml(q.latex || "")}</textarea>
-                  <div class="inline-preview">${window.renderTextToWysiwyg(q.latex || "")}</div>
-                </div>
-              </div>
-            </div>`;
+      <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+        <button onclick="triggerImageUpload('${q.id}')" class="text-gray-400 hover:text-blue-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Thêm Ảnh"><i id="img-btn-icon-${q.id}" class="fa-regular fa-image"></i></button>
+        <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <div class="flex gap-4 mb-4">
+        <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
+        <div class="flex-1">
+    `;
+
+          if (createEditMode === "latex") {
+            h += `
+        <textarea
+          class="search-input source-editor font-mono text-sm leading-6"
+          placeholder="Nhập câu hỏi bằng LaTeX hoặc dấu nhanh như sqrt(x), x^2..."
+          oninput="updText('${q.id}', this.value); this.value = this.value;"
+          onblur="updText('${q.id}', this.value)"
+        >${escapeHtml(q.text || "")}</textarea>
+        <div class="inline-preview">${window.renderTextToWysiwyg(q.text)}</div>
+      </div>
+    </div>`;
+          } else {
+            h += `
+        <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
+      </div>
+    </div>`;
+          }
+
           if (q.imageUrl) {
             h += `<div class="pl-14 mb-4 relative inline-block group/img"><img src="${q.imageUrl}" class="image-preview" style="${q.imageWidth ? `width:${q.imageWidth}px;max-width:100%;` : "max-width:100%;"}${q.imageHeight ? `height:${q.imageHeight}px;object-fit:contain;` : ""}" /><button onclick="removeImage('${q.id}')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs opacity-0 group-hover/img:opacity-100 transition"><i class="fa-solid fa-xmark"></i></button></div>`;
           }
-          h += `<div class="pl-14 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3"><label class="text-xs font-semibold text-gray-500">Rộng ảnh (px)<input type="number" min="40" step="10" value="${q.imageWidth || ""}" oninput="setImageSize('${q.id}', 'width', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></label><label class="text-xs font-semibold text-gray-500">Cao ảnh (px)<input type="number" min="40" step="10" value="${q.imageHeight || ""}" oninput="setImageSize('${q.id}', 'height', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></label><label class="text-xs font-semibold text-gray-500">Giải thích<textarea class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 editor-textarea" oninput="updExp('${q.id}', this.value)" placeholder="Giải thích: ...">${escapeHtml(q.explanation || "")}</textarea></label></div>`;
-          if (q.type === "mcq" || q.type === "multi") {
+
+          h += `<div class="pl-14 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3"><label class="text-xs font-semibold text-gray-500">Rộng ảnh (px)<input type="number" min="40" step="10" value="${q.imageWidth || ""}" oninput="setImageSize('${q.id}', 'width', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></label><label class="text-xs font-semibold text-gray-500">Cao ảnh (px)<input type="number" min="40" step="10" value="${q.imageHeight || ""}" oninput="setImageSize('${q.id}', 'height', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"></label><label class="text-xs font-semibold text-gray-500">Giải thích<input type="text" value="${escapeHtml(q.explanation || "")}" oninput="updExp('${q.id}', this.value)" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Giải thích: ..."></label></div>`;
+
+          if (q.type === "mcq") {
             h += `<div class="pl-14 space-y-3">`;
-            (q.options || []).forEach((opt, oI) => {
-              const isC =
-                q.type === "multi"
-                  ? ensureArray(q.correctIndices).includes(oI)
-                  : Number(q.correctIndex) === oI;
-              const checkInput =
-                q.type === "multi"
-                  ? `<input type="checkbox" onchange="toggleMultiCorrect('${q.id}', ${oI}, this.checked)" ${isC ? "checked" : ""} class="w-4 h-4 text-orange-600 cursor-pointer mt-2">`
-                  : `<input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">`;
-              const answerLabel =
-                q.type === "multi"
-                  ? `<span class="font-bold text-gray-500 mt-2">${String.fromCharCode(65 + oI)}.</span>`
-                  : `<span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI] || String.fromCharCode(65 + oI)}.</span>`;
-              h += `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3 border ${isC ? (q.type === "multi" ? "border-orange-300 bg-orange-50" : "border-green-300 bg-green-50") : "border-transparent"} transition">${checkInput}${answerLabel}<div class="flex-1">${createEditMode === "latex" ? `<textarea class="search-input editor-textarea editor-latex font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea><div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>` : `<div contenteditable="true" onblur="updOpt('${q.id}', ${oI}, window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm ${isC ? "font-semibold text-green-700" : ""}">${window.renderTextToWysiwyg(opt)}</div>`}${renderAnswerImageEditor(q, oI)}</div></div>`;
+            q.options.forEach((opt, oI) => {
+              const isC = Number(q.correctIndex) === oI;
+              if (createEditMode === "latex") {
+                h += `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition">
+            <input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">
+            <span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI]}.</span>
+            <div class="flex-1">
+              <textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea>
+              <div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>
+            </div>
+          </div>`;
+              } else {
+                h += `<div class="flex items-center gap-3 bg-gray-50 rounded-lg p-2 pr-4 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition"><input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer ml-2"><span class="font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span><div contenteditable="true" onblur="updOpt('${q.id}', ${oI}, window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm ${isC ? "font-semibold text-green-700" : ""}">${window.renderTextToWysiwyg(opt)}</div></div>`;
+              }
             });
             h += `</div>`;
           } else if (q.type === "tf") {
             h += `<div class="pl-14 space-y-3">`;
-            (q.statements || []).forEach((s, sI) => {
-              h +=
-                createEditMode === "latex"
-                  ? `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div class="flex-1"><textarea class="search-input editor-textarea editor-latex font-mono text-sm leading-6" oninput="updTf('${q.id}','${s.id}', this.value)" onblur="updTf('${q.id}','${s.id}', this.value)">${escapeHtml(s.text)}</textarea><div class="inline-preview">${window.renderTextToWysiwyg(s.text)}</div></div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`
-                  : `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div contenteditable="true" onblur="updTf('${q.id}','${s.id}', window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm">${window.renderTextToWysiwyg(s.text)}</div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`;
+            q.statements.forEach((s, sI) => {
+              if (createEditMode === "latex") {
+                h += `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div class="flex-1"><textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updTf('${q.id}','${s.id}', this.value)" onblur="updTf('${q.id}','${s.id}', this.value)">${escapeHtml(s.text)}</textarea><div class="inline-preview">${window.renderTextToWysiwyg(s.text)}</div></div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`;
+              } else {
+                h += `<div class="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200"><span class="font-bold text-gray-500 mt-1">${String.fromCharCode(97 + sI)})</span><div contenteditable="true" onblur="updTf('${q.id}','${s.id}', window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm">${window.renderTextToWysiwyg(s.text)}</div><div class="flex gap-2 ml-2 shrink-0 bg-white p-1 rounded-lg border border-gray-200"><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-green-50 ${s.isTrue ? "bg-green-100 text-green-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',true)" ${s.isTrue ? "checked" : ""} class="hidden"> Đúng</label><label class="text-xs flex items-center gap-1 cursor-pointer px-2 py-1 rounded hover:bg-red-50 ${!s.isTrue ? "bg-red-100 text-red-700 font-bold" : ""}"><input type="radio" name="t_${s.id}" onchange="setTfCor('${q.id}','${s.id}',false)" ${!s.isTrue ? "checked" : ""} class="hidden"> Sai</label></div></div>`;
+              }
             });
             h += `</div>`;
           } else if (q.type === "short") {
-            h +=
-              createEditMode === "latex"
-                ? `<div class="pl-14 mt-3"><textarea class="search-input editor-textarea editor-latex font-mono text-sm leading-6 md:w-1/2" oninput="updSh('${q.id}', this.value)" onblur="updSh('${q.id}', this.value)">${escapeHtml((q.exactAnswers || []).join(" | "))}</textarea><div class="inline-preview md:w-1/2">${window.renderTextToWysiwyg((q.exactAnswers || []).join(" | "))}</div></div>`
-                : `<div class="pl-14 mt-3"><div contenteditable="true" onblur="updSh('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 outline-none focus:border-purple-500 text-purple-700 font-mono text-sm bg-purple-50/30" placeholder="Nhập đáp án chính xác...">${window.renderTextToWysiwyg((q.exactAnswers || []).join(" | "))}</div></div>`;
+            if (createEditMode === "latex") {
+              h += `<div class="pl-14 mt-3"><textarea class="search-input source-editor font-mono text-sm leading-6 md:w-1/2" oninput="updSh('${q.id}', this.value)" onblur="updSh('${q.id}', this.value)">${escapeHtml((q.exactAnswers || []).join(" | "))}</textarea><div class="inline-preview md:w-1/2">${window.renderTextToWysiwyg((q.exactAnswers || []).join(" | "))}</div></div>`;
+            } else {
+              h += `<div class="pl-14 mt-3"><div contenteditable="true" onblur="updSh('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 outline-none focus:border-purple-500 text-purple-700 font-mono text-sm bg-purple-50/30" placeholder="Nhập đáp án chính xác...">${window.renderTextToWysiwyg((q.exactAnswers || []).join(" | "))}</div></div>`;
+            }
           }
-          h += `</div></div>`;
-          return h;
-        };
-        container.classList.add("admin-font-scale-host");
-        container.innerHTML = qs.length
-          ? qs.map((n, i) => renderNode(n, i, 0)).join("")
-          : `<div id="empty-exam-state" class="text-center text-gray-400 mt-24"><div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl"><i class="fa-regular fa-clipboard"></i></div><p class="text-xl font-medium text-gray-500">Chưa có câu hỏi nào</p><p class="text-sm mt-2">Chọn công cụ bên trái để bắt đầu tạo đề</p></div>`;
+
+          div.innerHTML = h;
+          container.appendChild(div);
+        });
+
         typesetMath();
+
+        // Trả lại vị trí cuộn sau khi render
         requestAnimationFrame(() => {
           container.scrollTop = prevScrollTop;
           container.scrollLeft = prevScrollLeft;
@@ -5481,7 +5117,7 @@
         if (!holder || !manualGradeState?.exam) return;
         const exam = manualGradeState.exam;
         const answers = manualGradeState.answers || {};
-        holder.innerHTML = flattenExamQuestions(exam.questions || [])
+        holder.innerHTML = (exam.questions || [])
           .map((q, idx) => {
             const state = getSubmissionQuestionState(q, { answers }, "attempt");
             let body = `
@@ -5578,32 +5214,6 @@
             details: `HS: ${normalizeLoggedValue(ans)} | Đúng: ${q.correctIndex}`,
           };
         }
-        if (q.type === "multi") {
-          const selected = Array.isArray(ans)
-            ? ans.map((n) => Number(n)).filter((n) => Number.isFinite(n))
-            : [];
-          const correctIndices = ensureArray(q.correctIndices)
-            .map((n) => Number(n))
-            .filter((n) => Number.isFinite(n));
-          const selSet = new Set(selected);
-          const corSet = new Set(correctIndices);
-          const exact =
-            selected.length === correctIndices.length &&
-            selected.every((n) => corSet.has(n));
-          const matched = selected.filter((n) => corSet.has(n)).length;
-          return {
-            score:
-              q.partialScore && correctIndices.length
-                ? pointsPerQuestion *
-                  Math.max(0, Math.min(1, matched / correctIndices.length))
-                : exact
-                  ? pointsPerQuestion
-                  : 0,
-            correct: exact,
-            type: "multi",
-            details: `HS: ${selected.join("+") || "Trống"} | Đúng: ${correctIndices.join("+") || "—"}`,
-          };
-        }
         if (q.type === "tf") {
           const statements = q.statements || [];
           const correctStatements = statements.filter(
@@ -5644,21 +5254,11 @@
         };
       }
 
-      function flattenExamQuestions(list, out = []) {
-        (list || []).forEach((node) => {
-          if (node && node.type === "section")
-            flattenExamQuestions(node.questions || [], out);
-          else if (node) out.push(node);
-        });
-        return out;
-      }
       function recomputeResultScore(exam, res) {
-        const currentQs = flattenExamQuestions(
-          Array.isArray(exam?.questions) ? exam.questions : [],
-        );
-        const oldQs = flattenExamQuestions(
-          Array.isArray(res?.attemptQuestions) ? res.attemptQuestions : [],
-        );
+        const currentQs = Array.isArray(exam?.questions) ? exam.questions : [];
+        const oldQs = Array.isArray(res?.attemptQuestions)
+          ? res.attemptQuestions
+          : [];
         const oldQMap = new Map(oldQs.map((x) => [x.id, x]));
         const totalQuestions = currentQs.length || 0;
         const pointsPerQuestion = totalQuestions > 0 ? 10 / totalQuestions : 0;
@@ -5668,6 +5268,45 @@
         currentQs.forEach((q) => {
           const ans = res.answers?.[q.id];
           const attemptQ = oldQMap.get(q.id) || q;
+
+          if (q.type === "mcq") {
+            const attemptOrder = getAttemptOptionOrder(attemptQ);
+            const selectedAttemptIndex =
+              ans === undefined || ans === null ? undefined : Number(ans);
+            const selectedOriginalIndex =
+              selectedAttemptIndex === undefined
+                ? undefined
+                : attemptOrder[selectedAttemptIndex];
+            const currentCorrectOriginalIndex = getOriginalCorrectIndex(q);
+            const prevCorrectOriginalIndex = getOriginalCorrectIndex(attemptQ);
+            const curCorrect =
+              Number(selectedOriginalIndex) ===
+              Number(currentCorrectOriginalIndex);
+            const prevCorrect =
+              Number(selectedOriginalIndex) ===
+              Number(prevCorrectOriginalIndex);
+            const curScore = curCorrect ? pointsPerQuestion : 0;
+            const prevScore = prevCorrect ? pointsPerQuestion : 0;
+            score += curScore;
+            if (curCorrect) correctCount += 1;
+            if (
+              Math.abs((curScore || 0) - (prevScore || 0)) > 0.0001 ||
+              curCorrect !== prevCorrect
+            ) {
+              questionChanges.push({
+                questionId: q.id,
+                text: q.text || "",
+                beforeScore: Number((prevScore || 0).toFixed(2)),
+                afterScore: Number((curScore || 0).toFixed(2)),
+                beforeCorrect: !!prevCorrect,
+                afterCorrect: !!curCorrect,
+                beforeDetail: `HS: ${normalizeLoggedValue(selectedOriginalIndex)} | Đúng: ${prevCorrectOriginalIndex}`,
+                afterDetail: `HS: ${normalizeLoggedValue(selectedOriginalIndex)} | Đúng: ${currentCorrectOriginalIndex}`,
+              });
+            }
+            return;
+          }
+
           const cur = evaluateQuestionDetail(q, ans, pointsPerQuestion);
           const prev = evaluateQuestionDetail(attemptQ, ans, pointsPerQuestion);
           score += cur.score;
@@ -5688,10 +5327,11 @@
             });
           }
         });
+        const wrongCount = Math.max(0, totalQuestions - correctCount);
         return {
-          score: Number(score.toFixed(2)),
+          score: Number(score.toFixed(1)),
           correctCount,
-          wrongCount: Math.max(0, totalQuestions - correctCount),
+          wrongCount,
           totalQuestions,
           questionChanges,
         };

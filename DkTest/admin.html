@@ -1631,6 +1631,45 @@
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
+      window.__fsReads = 0;
+
+      async function trackedGetDocs(q, label = "") {
+        const snap = await getDocs(q);
+
+        const reads = snap.size || 0;
+        window.__fsReads += reads;
+
+        console.log(
+          `%c[FIRESTORE READ] ${label}`,
+          "color:#22c55e;font-weight:bold",
+        );
+
+        console.log({
+          currentQueryReads: reads,
+          totalReads: window.__fsReads,
+        });
+
+        return snap;
+      }
+
+      async function trackedGetDoc(ref, label = "") {
+        const snap = await getDoc(ref);
+
+        const reads = snap.exists() ? 1 : 0;
+        window.__fsReads += reads;
+
+        console.log(
+          `%c[FIRESTORE READ] ${label}`,
+          "color:#3b82f6;font-weight:bold",
+        );
+
+        console.log({
+          currentQueryReads: reads,
+          totalReads: window.__fsReads,
+        });
+
+        return snap;
+      }
       const rtdb = getDatabase(app);
       const basePath = `artifacts/${appId}/public/data`;
       let explanationText = null;
