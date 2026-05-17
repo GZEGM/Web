@@ -571,7 +571,10 @@
                   định của giáo viên.
                 </p>
                 <p class="text-sm text-blue-700 mt-1">
-                  Nếu để giá trị 0 thì sẽ load toàn bộ câu hỏi phần đó.
+                  Nếu để giá trị -1 thì sẽ load toàn bộ câu hỏi phần đó.
+                </p>
+                <p class="text-sm text-blue-700 mt-1">
+                  Nếu để giá trị 0 thì sẽ không load câu hỏi phần đó.
                 </p>
               </div>
               <span
@@ -586,7 +589,7 @@
                 <input
                   id="subexam-mcq-count"
                   type="number"
-                  min="0"
+                  min="-1"
                   class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
                   placeholder="0"
                 />
@@ -596,7 +599,7 @@
                 <input
                   id="subexam-tf-count"
                   type="number"
-                  min="0"
+                  min="-1"
                   class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
                   placeholder="0"
                 />
@@ -606,7 +609,7 @@
                 <input
                   id="subexam-short-count"
                   type="number"
-                  min="0"
+                  min="-1"
                   class="mt-1 w-full border border-blue-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-100 bg-white"
                   placeholder="0"
                 />
@@ -1938,57 +1941,75 @@
       };
       loadSavedExamFontScale();
 
-      function buildSubExamConfigFromExam(exam) {
-        const cfg = exam?.subExamConfig || {};
-        return {
-          enabled: !!exam?.allowSubExam,
-          mcqCount: Math.max(0, Number(cfg.mcqCount || 0)),
-          tfCount: Math.max(0, Number(cfg.tfCount || 0)),
-          shortCount: Math.max(0, Number(cfg.shortCount || 0)),
-        };
-      }
+     function buildSubExamConfigFromExam(exam) {
+  const cfg = exam?.subExamConfig || {};
+  return {
+    enabled: !!exam?.allowSubExam,
+    mcqCount: Number.isFinite(Number(cfg.mcqCount)) ? Number(cfg.mcqCount) : 0,
+    tfCount: Number.isFinite(Number(cfg.tfCount)) ? Number(cfg.tfCount) : 0,
+    shortCount: Number.isFinite(Number(cfg.shortCount)) ? Number(cfg.shortCount) : 0,
+  };
+}
       function normalizeSubExamCount(value) {
-        const n = Number.parseInt(value, 10);
-        return Number.isFinite(n) && n > 0 ? n : 0;
-      }
+  const raw = String(value ?? "").trim();
+  if (raw === "") return 0;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function resolveSubExamCount(count, total) {
+  const n = Number(count);
+
+  if (!Number.isFinite(n)) return 0;
+
+  if (n === -1) return total; // load full
+
+  if (n === 0) return 0; // bỏ phần này
+
+  if (n < -1) return 0;
+
+  return Math.min(n, total);
+}
+
       function pickRandomQuestions(list, count) {
         const source = shuffleArray(Array.isArray(list) ? list : []);
         return source.slice(0, Math.max(0, count));
       }
-      function buildSubExamAttemptQuestions(
-        exam,
-        config = {},
-        allowOverride = false,
-      ) {
-        const questions = deepClone(exam?.questions || []);
-        const mcq = questions.filter((q) => q.type === "mcq");
-        const tf = questions.filter((q) => q.type === "tf");
-        const short = questions.filter((q) => q.type === "short");
-        const other = questions.filter(
-          (q) => !["mcq", "tf", "short"].includes(q.type),
-        );
-        const nextConfig = {
-          enabled: !!config.enabled,
-          mcqCount: Math.max(0, Number(config.mcqCount || 0)),
-          tfCount: Math.max(0, Number(config.tfCount || 0)),
-          shortCount: Math.max(0, Number(config.shortCount || 0)),
-        };
-        if (!nextConfig.enabled) {
-          return { questions, config: nextConfig, isSubExam: false };
-        }
-        const picked = [
-          ...pickRandomQuestions(mcq, nextConfig.mcqCount || mcq.length),
-          ...pickRandomQuestions(tf, nextConfig.tfCount || tf.length),
-          ...pickRandomQuestions(short, nextConfig.shortCount || short.length),
-          ...other,
-        ];
-        return {
-          questions: shuffleArray(picked),
-          config: nextConfig,
-          isSubExam: true,
-        };
-      }
+      function buildSubExamAttemptQuestions(exam, config = {}, allowOverride = false) {
+  const questions = deepClone(exam?.questions || []);
+  const mcq = questions.filter((q) => q.type === "mcq");
+  const tf = questions.filter((q) => q.type === "tf");
+  const short = questions.filter((q) => q.type === "short");
+  const other = questions.filter((q) => !["mcq", "tf", "short"].includes(q.type));
 
+  const nextConfig = {
+    enabled: !!config.enabled,
+    mcqCount: Number.isFinite(Number(config.mcqCount)) ? Number(config.mcqCount) : 0,
+    tfCount: Number.isFinite(Number(config.tfCount)) ? Number(config.tfCount) : 0,
+    shortCount: Number.isFinite(Number(config.shortCount)) ? Number(config.shortCount) : 0,
+  };
+
+  if (!nextConfig.enabled) {
+    return { questions, config: nextConfig, isSubExam: false };
+  }
+
+  const mcqCount = resolveSubExamCount(nextConfig.mcqCount, mcq.length);
+  const tfCount = resolveSubExamCount(nextConfig.tfCount, tf.length);
+  const shortCount = resolveSubExamCount(nextConfig.shortCount, short.length);
+
+  const picked = [
+    ...(mcqCount > 0 ? pickRandomQuestions(mcq, mcqCount) : []),
+    ...(tfCount > 0 ? pickRandomQuestions(tf, tfCount) : []),
+    ...(shortCount > 0 ? pickRandomQuestions(short, shortCount) : []),
+    ...other,
+  ];
+
+  return {
+    questions: shuffleArray(picked),
+    config: nextConfig,
+    isSubExam: true,
+  };
+}
       function shuffleArray(arr) {
         const a = arr.slice();
         for (let i = a.length - 1; i > 0; i--) {

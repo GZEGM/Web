@@ -3423,31 +3423,31 @@
             "bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6 relative group transition-all hover:shadow-md";
 
           let h = `
-      <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-        <button onclick="triggerImageUpload('${q.id}')" class="text-gray-400 hover:text-blue-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Thêm Ảnh"><i id="img-btn-icon-${q.id}" class="fa-regular fa-image"></i></button>
-        <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-      </div>
-      <div class="flex gap-4 mb-4">
-        <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
-        <div class="flex-1">
-    `;
+            <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+              <button onclick="triggerImageUpload('${q.id}')" class="text-gray-400 hover:text-blue-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Thêm Ảnh"><i id="img-btn-icon-${q.id}" class="fa-regular fa-image"></i></button>
+              <button onclick="deleteQuestion('${q.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 w-8 h-8 rounded flex items-center justify-center transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div class="flex gap-4 mb-4">
+              <div class="font-black text-xl text-blue-600 bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl shrink-0">${displayNo}</div>
+              <div class="flex-1">
+          `;
 
           if (createEditMode === "latex") {
             h += `
-        <textarea
-          class="search-input source-editor font-mono text-sm leading-6"
-          placeholder="Nhập câu hỏi bằng LaTeX hoặc dấu nhanh như sqrt(x), x^2..."
-          oninput="updText('${q.id}', this.value); this.value = this.value;"
-          onblur="updText('${q.id}', this.value)"
-        >${escapeHtml(q.text || "")}</textarea>
-        <div class="inline-preview">${window.renderTextToWysiwyg(q.text)}</div>
-      </div>
-    </div>`;
+              <textarea
+                class="search-input source-editor font-mono text-sm leading-6"
+                placeholder="Nhập câu hỏi bằng LaTeX hoặc dấu nhanh như sqrt(x), x^2..."
+                oninput="updText('${q.id}', this.value); this.value = this.value;"
+                onblur="updText('${q.id}', this.value)"
+              >${escapeHtml(q.text || "")}</textarea>
+              <div class="inline-preview">${window.renderTextToWysiwyg(q.text)}</div>
+            </div>
+          </div>`;
           } else {
             h += `
-        <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
-      </div>
-    </div>`;
+              <div contenteditable="true" onblur="updText('${q.id}', window.extractText(this))" class="wysiwyg-editor w-full bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none py-1 text-gray-800 font-medium" placeholder="Nội dung câu hỏi...">${window.renderTextToWysiwyg(q.text)}</div>
+            </div>
+          </div>`;
           }
 
           if (q.imageUrl) {
@@ -3462,13 +3462,13 @@
               const isC = Number(q.correctIndex) === oI;
               if (createEditMode === "latex") {
                 h += `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition">
-            <input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">
-            <span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI]}.</span>
-            <div class="flex-1">
-              <textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea>
-              <div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>
-            </div>
-          </div>`;
+                  <input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer mt-2">
+                  <span class="font-bold text-gray-500 mt-2">${["A", "B", "C", "D"][oI]}.</span>
+                  <div class="flex-1">
+                    <textarea class="search-input source-editor font-mono text-sm leading-6" oninput="updOpt('${q.id}', ${oI}, this.value)" onblur="updOpt('${q.id}', ${oI}, this.value)">${escapeHtml(opt)}</textarea>
+                    <div class="inline-preview">${window.renderTextToWysiwyg(opt)}</div>
+                  </div>
+                </div>`;
               } else {
                 h += `<div class="flex items-center gap-3 bg-gray-50 rounded-lg p-2 pr-4 border ${isC ? "border-green-300 bg-green-50" : "border-transparent"} transition"><input type="radio" name="c_${q.id}" onchange="setCor('${q.id}', ${oI})" ${isC ? "checked" : ""} class="w-4 h-4 text-green-600 cursor-pointer ml-2"><span class="font-bold text-gray-500">${["A", "B", "C", "D"][oI]}.</span><div contenteditable="true" onblur="updOpt('${q.id}', ${oI}, window.extractText(this))" class="wysiwyg-editor flex-1 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-1 text-sm ${isC ? "font-semibold text-green-700" : ""}">${window.renderTextToWysiwyg(opt)}</div></div>`;
               }
@@ -3880,21 +3880,21 @@
         for (const ex of exams) {
           const link = `${window.location.origin}${window.location.pathname.replace(/admin\.html$/, "student.html")}?examId=${encodeURIComponent(ex.id)}`;
           listEl.innerHTML += `
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition flex flex-col">
-              <h3 class="font-bold text-lg text-gray-800 mb-3 truncate" title="${escapeHtml(ex.title)}">${escapeHtml(ex.title)}</h3>
-              <div class="space-y-2 text-sm text-gray-600 mb-5 flex-1">
-                <div class="flex items-center"><i class="fa-regular fa-clock w-6"></i> ${ex.timeLimit} phút</div>
-                <div class="flex items-center"><i class="fa-solid fa-list-ol w-6"></i> ${ex.questions?.length || 0} câu</div>
-                <div class="flex items-center"><i class="fa-solid fa-rotate-left w-6"></i> Lượt: ${ex.maxAttempts || "Vô hạn"}</div>
-                <div class="flex items-center gap-4"><div class="flex items-center"><i class="fa-solid ${ex.showResults !== false ? "fa-eye" : "fa-eye-slash"} w-6"></i> Điểm</div><div class="flex items-center"><i class="fa-solid ${ex.showDetails ? "fa-file-lines" : "fa-file-excel"} w-6"></i> Chi tiết</div></div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100">
-                <button onclick="editExam('${ex.id}')" class="bg-amber-50 text-amber-700 hover:bg-amber-100 py-2.5 rounded-xl text-sm font-bold transition">Sửa</button>
-                <button onclick="deleteExam('${ex.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 py-2.5 rounded-xl text-sm font-bold transition">Xóa</button>
-                <button onclick="viewExamStatsDetail('${ex.id}')" class="bg-purple-50 text-purple-600 hover:bg-purple-100 py-2.5 rounded-xl text-sm font-bold transition">Thống kê</button>
-                <button onclick="copyLink('${link}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 py-2.5 rounded-xl text-sm font-bold transition"><i class="fa-solid fa-link"></i> Copy</button>
-              </div>
-            </div>`;
+                  <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition flex flex-col">
+                    <h3 class="font-bold text-lg text-gray-800 mb-3 truncate" title="${escapeHtml(ex.title)}">${escapeHtml(ex.title)}</h3>
+                    <div class="space-y-2 text-sm text-gray-600 mb-5 flex-1">
+                      <div class="flex items-center"><i class="fa-regular fa-clock w-6"></i> ${ex.timeLimit} phút</div>
+                      <div class="flex items-center"><i class="fa-solid fa-list-ol w-6"></i> ${ex.questions?.length || 0} câu</div>
+                      <div class="flex items-center"><i class="fa-solid fa-rotate-left w-6"></i> Lượt: ${ex.maxAttempts || "Vô hạn"}</div>
+                      <div class="flex items-center gap-4"><div class="flex items-center"><i class="fa-solid ${ex.showResults !== false ? "fa-eye" : "fa-eye-slash"} w-6"></i> Điểm</div><div class="flex items-center"><i class="fa-solid ${ex.showDetails ? "fa-file-lines" : "fa-file-excel"} w-6"></i> Chi tiết</div></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100">
+                      <button onclick="editExam('${ex.id}')" class="bg-amber-50 text-amber-700 hover:bg-amber-100 py-2.5 rounded-xl text-sm font-bold transition">Sửa</button>
+                      <button onclick="deleteExam('${ex.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 py-2.5 rounded-xl text-sm font-bold transition">Xóa</button>
+                      <button onclick="viewExamStatsDetail('${ex.id}')" class="bg-purple-50 text-purple-600 hover:bg-purple-100 py-2.5 rounded-xl text-sm font-bold transition">Thống kê</button>
+                      <button onclick="copyLink('${link}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 py-2.5 rounded-xl text-sm font-bold transition"><i class="fa-solid fa-link"></i> Copy</button>
+                    </div>
+                  </div>`;
         }
       }
 
@@ -4057,11 +4057,11 @@
         const kpis = document.getElementById("esd-kpis");
         if (kpis) {
           kpis.innerHTML = `
-            <div class="bg-blue-50 rounded-xl p-4 border border-blue-100"><p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Đang làm</p><p class="text-3xl font-black text-gray-800">${snap.activeCount}</p></div>
-            <div class="bg-green-50 rounded-xl p-4 border border-green-100"><p class="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Đã nộp</p><p class="text-3xl font-black text-gray-800">${snap.resultCount}</p></div>
-            <div class="bg-purple-50 rounded-xl p-4 border border-purple-100"><p class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1">Điểm TB</p><p class="text-3xl font-black text-gray-800">${snap.avgScore}</p></div>
-            <div class="bg-orange-50 rounded-xl p-4 border border-orange-100"><p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-1">Gian lận</p><p class="text-3xl font-black text-gray-800">${snap.cheatCount}</p></div>
-          `;
+                  <div class="bg-blue-50 rounded-xl p-4 border border-blue-100"><p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Đang làm</p><p class="text-3xl font-black text-gray-800">${snap.activeCount}</p></div>
+                  <div class="bg-green-50 rounded-xl p-4 border border-green-100"><p class="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Đã nộp</p><p class="text-3xl font-black text-gray-800">${snap.resultCount}</p></div>
+                  <div class="bg-purple-50 rounded-xl p-4 border border-purple-100"><p class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1">Điểm TB</p><p class="text-3xl font-black text-gray-800">${snap.avgScore}</p></div>
+                  <div class="bg-orange-50 rounded-xl p-4 border border-orange-100"><p class="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-1">Gian lận</p><p class="text-3xl font-black text-gray-800">${snap.cheatCount}</p></div>
+                `;
         }
         const activeBody = document.getElementById("esd-active-body");
         if (activeBody) {
@@ -4586,11 +4586,11 @@
           : "0.0";
         count.innerText = `${student.submissions} bài nộp`;
         kpis.innerHTML = `
-          <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4"><div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Lượt nộp</div><div class="text-2xl font-black text-gray-800">${student.submissions}</div></div>
-          <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4"><div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Bài thi</div><div class="text-2xl font-black text-gray-800">${student.examSet.size}</div></div>
-          <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4"><div class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">Điểm TB</div><div class="text-2xl font-black text-gray-800">${avg}</div></div>
-          <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4"><div class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Cao nhất</div><div class="text-2xl font-black text-gray-800">${Number(student.maxScore || 0).toFixed(1)}</div></div>
-        `;
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4"><div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Lượt nộp</div><div class="text-2xl font-black text-gray-800">${student.submissions}</div></div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4"><div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Bài thi</div><div class="text-2xl font-black text-gray-800">${student.examSet.size}</div></div>
+                <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4"><div class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">Điểm TB</div><div class="text-2xl font-black text-gray-800">${avg}</div></div>
+                <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4"><div class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Cao nhất</div><div class="text-2xl font-black text-gray-800">${Number(student.maxScore || 0).toFixed(1)}</div></div>
+              `;
 
         const studentKey = getStableStudentKey(student);
         const studentResults = (statsDataCache?.results || [])
@@ -4724,57 +4724,57 @@
             String(student.docId || student.userId || student.id || ""),
           );
           stBody.innerHTML += `
-<tr class="hover:bg-gray-50">
+      <tr class="hover:bg-gray-50">
 
-  <td class="px-6 py-4 font-medium">
-    ${escapeHtml(student.name || "Không rõ")}
-  </td>
+        <td class="px-6 py-4 font-medium">
+          ${escapeHtml(student.name || "Không rõ")}
+        </td>
 
-  <td class="px-6 py-4 text-xs text-gray-500">
-    ${escapeHtml(student.docId || student.userId || student.id || "")}
-  </td>
+        <td class="px-6 py-4 text-xs text-gray-500">
+          ${escapeHtml(student.docId || student.userId || student.id || "")}
+        </td>
 
-  <td class="px-6 py-4">
-    ${student.submissions}
-  </td>
+        <td class="px-6 py-4">
+          ${student.submissions}
+        </td>
 
-  <td class="px-6 py-4">
-    ${student.examSet.size}
-  </td>
+        <td class="px-6 py-4">
+          ${student.examSet.size}
+        </td>
 
-  <td class="px-6 py-4 font-bold text-blue-600">
-    ${avg}
-  </td>
+        <td class="px-6 py-4 font-bold text-blue-600">
+          ${avg}
+        </td>
 
-  <td class="px-6 py-4 font-bold text-green-600">
-    ${Number(student.maxScore || 0).toFixed(1)}
-  </td>
+        <td class="px-6 py-4 font-bold text-green-600">
+          ${Number(student.maxScore || 0).toFixed(1)}
+        </td>
 
-  <td class="px-6 py-4">
-    <div class="flex flex-wrap gap-2">
+        <td class="px-6 py-4">
+          <div class="flex flex-wrap gap-2">
 
-      <button
-        onclick="openStudentDetail('${sid}')"
-        class="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm font-bold hover:bg-purple-200"
-      >
-        Chi tiết
-      </button>
+            <button
+              onclick="openStudentDetail('${sid}')"
+              class="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm font-bold hover:bg-purple-200"
+            >
+              Chi tiết
+            </button>
 
-   
 
-      <button
-        onclick="window.deleteStudentCascade('${sid}')"
-        class="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-bold hover:bg-red-200"
-      >
-        <i class="fa-solid fa-trash mr-1"></i>
-        Xóa
-      </button>
 
-    </div>
-  </td>
+            <button
+              onclick="window.deleteStudentCascade('${sid}')"
+              class="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-bold hover:bg-red-200"
+            >
+              <i class="fa-solid fa-trash mr-1"></i>
+              Xóa
+            </button>
 
-</tr>
-`;
+          </div>
+        </td>
+
+      </tr>
+      `;
         });
         document.getElementById("stats-students-empty").style.display =
           studentRows.length ? "none" : "block";
@@ -5036,10 +5036,10 @@
           .map((q, idx) => {
             const state = getSubmissionQuestionState(q, { answers }, "attempt");
             let body = `
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div class="font-bold text-gray-800"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg mr-2">Câu ${idx + 1}</span>${window.renderTextToWysiwyg(q.text || "")}</div>
-              <div class="text-xs font-bold px-2 py-1 rounded-full ${state.isCorrect ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}">${state.isCorrect ? "Đúng" : "Sai"}</div>
-            </div>`;
+                  <div class="flex items-start justify-between gap-3 mb-3">
+                    <div class="font-bold text-gray-800"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg mr-2">Câu ${idx + 1}</span>${window.renderTextToWysiwyg(q.text || "")}</div>
+                    <div class="text-xs font-bold px-2 py-1 rounded-full ${state.isCorrect ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}">${state.isCorrect ? "Đúng" : "Sai"}</div>
+                  </div>`;
             if (q.imageUrl)
               body += `<img src="${q.imageUrl}" class="image-preview mb-4" style="${q.imageWidth ? `width:${q.imageWidth}px;max-width:100%;` : "max-width:100%;"}${q.imageHeight ? `height:${q.imageHeight}px;object-fit:contain;` : ""}" />`;
             if (q.type === "mcq") {
